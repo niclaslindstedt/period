@@ -2,6 +2,7 @@
 import { useMemo, type ReactNode } from "react";
 
 import {
+  addDays,
   daysBetween,
   type DayKey,
   type GridCell,
@@ -101,8 +102,9 @@ export function ForecastScreen({
   const t = useT();
   const advanced = detail === "advanced";
 
-  // The calendar markers still come from the simple derivation: the month grid
-  // wants one predicted span, not a distribution over twelve days.
+  // The cycle day, the fertile window and the months-ahead list still come from
+  // the simple derivation — a month grid wants one span, not a distribution
+  // over twelve days.
   const f = useMemo(
     () => forecast(data, today, options),
     [data, today, options],
@@ -127,7 +129,18 @@ export function ForecastScreen({
     );
   }
 
-  const ci80 = probabilistic.intervals.find((i) => i.mass === 0.8)!;
+  // The calendar's predicted span runs from the date the headline names, for
+  // however long a period usually lasts. It is deliberately drawn from the
+  // *model's* date rather than `cycle.ts`'s: the two normally agree, but a day
+  // of disagreement would show up as a calendar contradicting the sentence
+  // above it. The uncertainty around that date is the chart's job — widening
+  // the ring to cover an interval would say "period" about days that are only
+  // candidate *starts*.
+  const predictedStart = probabilistic.expectedDay;
+  const predictedEnd = addDays(
+    predictedStart,
+    f.nextEnd && f.nextStart ? daysBetween(f.nextStart, f.nextEnd) : 0,
+  );
 
   return (
     <div className="flex flex-col gap-3 px-3 py-3">
@@ -175,8 +188,8 @@ export function ForecastScreen({
             <DayMarker
               cell={cell}
               data={data}
-              predictedStart={ci80.start}
-              predictedEnd={f.nextEnd}
+              predictedStart={predictedStart}
+              predictedEnd={predictedEnd}
               fertileStart={showFertileWindow ? f.fertileStart : null}
               fertileEnd={showFertileWindow ? f.fertileEnd : null}
             />
