@@ -1,0 +1,40 @@
+name: lighthouse
+
+# The measured half of the §11.3.10 quality gate: Lighthouse over the built
+# app, asserting the performance / accessibility / best-practices / SEO / PWA
+# category scores and the three field metrics configured in
+# `.github/lighthouse/lighthouserc.json`.
+#
+# The assertions are `warn`, not `error`: Lighthouse scores move a point or two
+# between runs on shared CI hardware, and a gate that goes red on noise gets
+# ignored. The run is here to be *read* — a regression shows up as a warning
+# block in the job summary with the report linked.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # npm ci resolves @niclaslindstedt/oss-framework from GitHub Packages.
+  packages: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@niclaslindstedt"
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm run build
+      - name: Run Lighthouse CI
+        run: npx --yes @lhci/cli@0.15.x autorun --config=.github/lighthouse/lighthouserc.json

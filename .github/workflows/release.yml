@@ -1,0 +1,87 @@
+name: release
+
+# Step two of the release pipeline (OSS_SPEC §10.3): triggered by the `v*` tag
+# `version-bump.yml` pushes. It builds the tagged tree, publishes a GitHub
+# Release whose notes are that version's CHANGELOG section, and chains into
+# `pages.yml` so the new tag is served at `/` immediately rather than waiting
+# for the next push to main.
+#
+# The app is not published to any package registry — it is a website, and
+# `pages.yml` is where it ships — so there is no publish job and no long-lived
+# registry token anywhere in this pipeline.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  # npm ci resolves @niclaslindstedt/oss-framework from GitHub Packages.
+  packages: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@niclaslindstedt"
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve the tag
+        id: meta
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      # A tag that doesn't build must not become a release — the deploy below
+      # would fail on the same tree minutes later, with the release already
+      # published.
+      - name: Sanity build
+        run: npm run build
+        env:
+          VITE_BASE: /
+          VITE_PWA_IGNORE_PATHS: /preview/
+          VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
+          VITE_GDRIVE_APP_FOLDER: ${{ vars.VITE_GDRIVE_APP_FOLDER }}
+
+      - name: Extract release notes
+        run: node scripts/release/extract-section.mjs "${{ steps.meta.outputs.version }}" > .release-notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.meta.outputs.tag }}" \
+            --title "${{ steps.meta.outputs.tag }}" \
+            --notes-file .release-notes.md
+
+  deploy:
+    # Chain into pages.yml so the new tag is served at `/` immediately.
+    needs: release
+    uses: ./.github/workflows/pages.yml
+    with:
+      release_ref: ${{ needs.release.outputs.tag }}
+    permissions:
+      # A reusable workflow can't be granted fewer permissions than it
+      # requests, so these must match pages.yml's own block or the whole run
+      # fails at startup before any job executes.
+      contents: read
+      pages: write
+      id-token: write
+      packages: read
+    secrets: inherit

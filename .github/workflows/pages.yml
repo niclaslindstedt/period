@@ -1,0 +1,129 @@
+name: pages
+
+# The app IS the website, so this is the deploy pipeline: the latest release
+# tag is served at `/`, and whatever is on main rides along at `/preview/` so a
+# change can be tried out before it is cut. Independent of the release
+# pipeline — a push to main redeploys on its own — with a `workflow_call` entry
+# so `release.yml` can chain straight into it and publish a new tag without
+# waiting for the next push.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      release_ref:
+        description: "Tag or sha to build for the production '/' slot."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  # npm ci resolves @niclaslindstedt/oss-framework from GitHub Packages.
+  packages: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@niclaslindstedt"
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Which tag to serve at `/`. The highest semver tag, not the nearest
+      # reachable one: only release.yml creates tags here, so the highest is
+      # always the intended production release. Before the first release exists
+      # both lookups come up empty and main is served at `/` instead.
+      - name: Resolve production tag
+        id: tag
+        run: |
+          REF="${{ inputs.release_ref }}"
+          if [ -z "$REF" ]; then
+            REF=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+          fi
+          if [ -n "$REF" ]; then
+            echo "ref=$REF" >> "$GITHUB_OUTPUT"
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
+            echo "No release tag found — main will be served at /."
+          fi
+
+      # ---- The rolling main build, deployed to /preview/ ----
+      - name: Build preview
+        run: npm run build
+        env:
+          VITE_BASE: /preview/
+          VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          # App-folder names for the stored document; unset -> both default to
+          # "Period".
+          VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
+          VITE_GDRIVE_APP_FOLDER: ${{ vars.VITE_GDRIVE_APP_FOLDER }}
+
+      - name: Stash preview dist
+        run: |
+          rm -rf /tmp/preview
+          mv dist /tmp/preview
+          # Only the root artifact may carry a CNAME — a copy in a subdirectory
+          # confuses the Pages custom-domain check.
+          rm -f /tmp/preview/CNAME
+
+      # ---- The production build ----
+      - name: Check out production tag
+        if: steps.tag.outputs.has_release == 'true'
+        run: git checkout ${{ steps.tag.outputs.ref }}
+
+      - name: Reinstall deps for production tag
+        if: steps.tag.outputs.has_release == 'true'
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build production
+        run: npm run build
+        env:
+          VITE_BASE: /
+          # The root release shares its service-worker scope with /preview/, so
+          # it has to disown that path or it would serve the released shell in
+          # place of the preview app — see pwa-plugin.ts `ignorePaths`.
+          VITE_PWA_IGNORE_PATHS: /preview/
+          VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
+          VITE_GDRIVE_APP_FOLDER: ${{ vars.VITE_GDRIVE_APP_FOLDER }}
+
+      - name: Assemble the artifact
+        run: |
+          mkdir -p dist/preview
+          cp -r /tmp/preview/. dist/preview/
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

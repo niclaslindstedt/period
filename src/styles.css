@@ -1,0 +1,109 @@
+/* SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0 */
+
+/* App stylesheet.
+
+     1. Tailwind v4 base + utilities.
+     2. The framework's prebuilt stylesheet — the theme-token map, the button /
+        elevation flavours, and every preset palette (baked in — no runtime
+        `installPresetTokens()` call needed).
+     3. `@source` — scan the installed framework package so the utility classes
+        its components use are emitted into this app's CSS.
+     4. App-shell layout: the html/body reset that makes this a full-viewport,
+        non-scrolling PWA, and the safe-area padding the bottom nav needs. This
+        stays the app's — it is layout, not framework. */
+
+@import "tailwindcss";
+@import "@niclaslindstedt/oss-framework/styles.css";
+
+@source "../node_modules/@niclaslindstedt/oss-framework/dist";
+
+/* ── Accent ──────────────────────────────────────────────────────────────────
+   The framework's GitHub palettes carry a green accent; this app wears rose,
+   the colour of its own mark (see public/icons/icon.svg). Only the accent slot
+   is overridden — every other token stays the framework's, so contrast and the
+   semantic colours (danger, link, success) keep their vetted values.
+
+   `--success` deliberately keeps the palette's green: with a rose accent it is
+   the only thing left distinguishing "this worked" from "this is the app's
+   colour", and the sync glyph relies on that difference.
+
+   Each of the three theme values the app can apply is listed. `system` needs
+   both branches, since it resolves via `prefers-color-scheme` at paint time
+   rather than through the attribute. */
+/* `:root` is load-bearing: the framework's generated blocks are
+   `:root[data-theme="…"]`, so a bare attribute selector loses on specificity
+   and the override silently does nothing. */
+:root[data-theme="githubDark"],
+:root[data-theme="system"] {
+  --accent: #fb7185;
+}
+
+:root[data-theme="githubLight"] {
+  --accent: #be123c;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    --accent: #be123c;
+  }
+}
+
+/* ── The bleeding scale ──────────────────────────────────────────────────────
+   Five options on a 390px phone is more than the framework's segmented control
+   sizes for: at its default `text-sm` + `px-3` the track overflows its card and
+   "Heavy" is clipped. Tighten just this one control.
+
+   Written as a rule rather than utility classes on the component because the
+   framework sets `text-sm` on each option button itself — a wrapper utility
+   would lose, and an inline `!important` variant would depend on Tailwind's
+   layer ordering. This rule is unlayered, so it wins deterministically. */
+.bleeding-scale button {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  padding-inline: 0.5rem;
+}
+
+/* ── App shell ───────────────────────────────────────────────────────────────
+   The app fills the viewport and never scrolls as a document: the <main>
+   between the header and the bottom nav is the one scrolling region, so the
+   nav stays put under the thumb while a long settings page moves behind it.
+
+   `100dvh` rather than `100vh`: on mobile Safari the large viewport unit would
+   put the bottom nav under the browser's own chrome until the toolbar
+   collapses. */
+html,
+body {
+  height: 100%;
+  overscroll-behavior-y: none;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--fg);
+  font-family: var(--app-font-family, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The notch and the home indicator. The header pads down from the status bar
+   and the nav pads up from the gesture area, so an installed PWA paints edge
+   to edge without putting a control under either. */
+.app-header {
+  padding-top: calc(0.5rem + env(safe-area-inset-top));
+}
+
+.app-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* A tab is a thumb target, so give it the platform minimum regardless of how
+   short the label renders. */
+.app-bottom-nav button {
+  min-height: 3rem;
+}
