@@ -9,13 +9,13 @@ index.html
        └── src/App.tsx        theme, today, store, sync, tab switch, chrome
             ├── ReportScreen      writes day reports
             ├── ForecastScreen    reads cycle.ts
-            ├── HistoryScreen     reads cycle.ts + moods.ts
+            ├── HistoryScreen     reads cycle.ts + swings.ts
             └── SettingsScreen    settings, sync controls, backup, about
 
 src/app/
-  types.ts          the model: DayEntry, AppData, the bleeding + mood rosters
+  types.ts          the model: DayEntry (two booleans and a date), AppData
   cycle.ts          periods → cycle lengths → forecast     (pure, clock-free)
-  moods.ts          reports → mood tallies per cycle phase (pure, clock-free)
+  swings.ts         reports → swing shares per cycle phase (pure, clock-free)
   merge.ts          two documents → one                    (pure)
   migrations.ts     bytes ⇄ AppData, with validation
   usePeriodStore.ts the document in state, persisted to localStorage
@@ -30,19 +30,30 @@ One document, one key in localStorage:
 
 ```jsonc
 {
-  "version": 1,
+  "version": 2,
   "entries": {
     "2026-03-01": {
       "date": "2026-03-01",
-      "bleeding": "medium", // none | spotting | light | medium | heavy
-      "moods": ["tired", "sad"],
-      "swing": 2, // 0–3
-      "note": "…", // optional
+      "bleeding": true, // any bleeding at all, spotting included
+      "moodSwings": false,
       "updatedAt": "2026-03-01T20:14:03.219Z",
     },
   },
 }
 ```
+
+A report is two yes/no answers and the day they belong to. `bleeding` is
+exactly what the derivation reads; `moodSwings` is the one thing plotted
+against it. A field nobody derives anything from would be a field asked for
+every evening for nothing — v2 removed the four that were (a five-level
+bleeding scale, a nine-mood roster, a 0–3 swing scale, and a note), and
+`migrations.ts` carries a v1 document across: any level but `none` becomes
+`bleeding: true`, and any swing above steady becomes `moodSwings: true`.
+
+An **absent** entry and an entry with both answers `false` are different
+claims — "I never logged this day" against "I checked, nothing happened" — so
+saving a no/no report stores it rather than clearing the day. Only **Clear this
+day** removes one.
 
 Keyed by day, because every question the app answers is "what happened on this
 day?" or "what do all the days add up to?". A report is an upsert; the calendar

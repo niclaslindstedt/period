@@ -39,6 +39,15 @@ puts the forecast back on track.
 A single non-bleeding day inside a run is bridged deliberately (see
 [cycle.md](cycle.md)). Two or more quiet days split them.
 
+**My old mood tags and notes are gone**
+The report was reduced to two yes/no answers, and the update carried across
+what the app actually derives anything from: any bleeding level other than
+`none` became **Blood: yes**, and any mood swing above `steady` became **Mood
+swings: yes**. The mood tags, the bleeding heaviness and the free-text notes
+were not migrated — nothing read them. A backup exported before the update
+still holds them as plain JSON and can be read in any text editor, but
+restoring it runs the same conversion: the days come back, the tags do not.
+
 **The fertile window is showing and I don't want it**
 Settings → Cycle → turn off **Show the fertile window**. It disappears from the
 Forecast screen and the calendar legend entirely.

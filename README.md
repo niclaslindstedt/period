@@ -1,6 +1,6 @@
 # period
 
-> A local-first period tracking PWA — log bleeding and mood each day, then read your cycle history and a forecast of the next period and fertile window. No account, no server.
+> A local-first period tracking PWA — two taps a day, then read your cycle history and a forecast of the next period and fertile window. No account, no server.
 
 [![ci](https://github.com/niclaslindstedt/period/actions/workflows/ci.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/ci.yml)
 [![seo](https://github.com/niclaslindstedt/period/actions/workflows/seo.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/seo.yml)
@@ -10,11 +10,15 @@
 ## What
 
 **period** is a period tracker that runs entirely in your browser. Each day you
-answer four short questions — how heavy the bleeding was, which moods fit, how
-much your mood swung, and anything else worth a note — and the app derives
-everything else from those reports: where you are in your cycle, when the next
-period is likely, how your cycle length has moved over time, and which phase
-your mood swings cluster in.
+answer two yes/no questions — was there blood, were there mood swings — on a
+screen that fits a phone without scrolling, and the app derives everything else
+from those reports: where you are in your cycle, when the next period is likely,
+how your cycle length has moved over time, and which phase your mood swings
+cluster in.
+
+Two questions is the whole report on purpose. The forecast is arithmetic over
+bleeding days, so a heaviness scale, a mood roster and a free-text note were
+fields asked every evening that no number ever read.
 
 It is built on [`@niclaslindstedt/oss-framework`](https://github.com/niclaslindstedt/oss-framework),
 the shared React/Preact surface behind the sibling
@@ -65,9 +69,9 @@ npm run dev
 ```
 
 Open the printed URL. The app boots on the **Report** tab with today selected:
-pick a bleeding level, tap the moods that fit, and press **Save report**. Log a
-few days of a period and the **Forecast** tab starts predicting; log a second
-period and **History** starts drawing.
+answer **Blood** and **Mood swings**, then press **Save report**. Log a few days
+of a period and the **Forecast** tab starts predicting; log a second period and
+**History** starts drawing.
 
 To try the production build the way it deploys:
 
@@ -81,9 +85,9 @@ Four tabs, on a bottom bar:
 
 | Tab          | What it does                                                                                                                                                  |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Report**   | One day at a time: bleeding level, mood tags, mood-swing level, note. A week strip and a date picker reach any past day.                                      |
+| **Report**   | One day at a time: blood yes/no, mood swings yes/no. Press the date to reach any past day.                                                                    |
 | **Forecast** | Which day of the cycle today is, the predicted next period with a confidence label, the optional fertile window, and a calendar of logged and predicted days. |
-| **History**  | Average cycle and period length, cycle-length trend, mood swings by cycle phase, most-reported moods, and the list of periods every number is derived from.   |
+| **History**  | Average cycle and period length, cycle-length trend, mood swings by cycle phase, and the list of periods every number is derived from.                        |
 | **Settings** | Theme, week start, cycle assumptions, cloud sync, backup / restore / delete, and the build's version.                                                         |
 
 ## Configuration
@@ -115,9 +119,8 @@ const doc = emptyDoc();
 for (const date of ["2026-03-01", "2026-03-02", "2026-03-03"]) {
   doc.entries[date] = {
     date,
-    bleeding: "medium",
-    moods: ["tired"],
-    swing: 1,
+    bleeding: true,
+    moodSwings: false,
     updatedAt: new Date().toISOString(),
   };
 }

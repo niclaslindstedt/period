@@ -112,7 +112,10 @@ export function App() {
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl">
+        {/* `min-h-full` + `flex` so a screen can ask for the leftover height
+            — the Report screen centres its card in it rather than stranding
+            three controls at the top of an empty phone. */}
+        <div className="mx-auto flex min-h-full max-w-2xl flex-col">
           {tab === "report" && (
             <ReportScreen
               store={store}

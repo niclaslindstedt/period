@@ -1,21 +1,40 @@
 # Daily report
 
-The screen the app opens on. One day, four questions, one **Save**.
+The screen the app opens on. One day, two questions, one **Save** — and the
+whole of it on a single phone screen, with nothing to scroll.
 
-- **Bleeding** — none, spotting, light, medium, or heavy. `None` is a real
-  answer: it records that you checked and there was nothing, which the cycle
-  derivation treats differently from a day you simply didn't log.
-- **Mood** — tap any of the nine moods that fit, or none.
-- **Mood swings** — steady, mild, noticeable, or strong. Deliberately separate
-  from the mood tags: "sad all day" and "fine to furious and back" are
-  different reports, and only the second is a swing.
-- **Note** — anything the fixed fields missed.
+- **Blood** — yes or no. Any bleeding counts, spotting included: spotting is how
+  most periods start, and the derivation has no use for a heaviness it never
+  reads.
+- **Mood swings** — yes or no. Whether your mood moved noticeably across the
+  day.
 
-The week strip along the top moves between days and shows a dot under each day
-that already has a report, so a gap in the week is visible without opening every
-day. **Pick a date** opens a month calendar for anything further back. Future
-days can't be selected — there is nothing to report yet.
+`No` is a real answer. It records that you checked and there was nothing, which
+the cycle derivation treats differently from a day you simply didn't log — so a
+day where you answered no to both is still stored, and the line under the date
+tells you which of the two you are looking at (**Logged** or **Nothing logged
+yet**).
 
-Nothing is saved until you press **Save report**, so opening the wrong day
-costs nothing. Saving a day with everything left blank clears that day's report
-rather than storing an empty one.
+## Picking the day
+
+The report opens on today. Press the date at the top of the card to open a month
+calendar and report for any earlier day; future days can't be selected, since
+there is nothing to report yet.
+
+Nothing is saved until you press **Save report**, so opening the wrong day costs
+nothing. **Clear this day** removes a day's report entirely — which is not the
+same as answering no to both, and is the only way to take a report back.
+
+## Why only two questions
+
+The forecast is arithmetic over bleeding days (see [the cycle
+derivation](../cycle.md)), and nothing else on the old five-field report fed it.
+The bleeding level, the mood roster, the 0–3 swing scale and the free-text note
+were asked every evening and read by nothing but themselves. `bleeding` is the
+one answer the prediction needs; `moodSwings` is the one pattern worth plotting
+against it on the [History](history.md) screen.
+
+Existing reports were carried across when the model changed: any bleeding level
+other than `none` became a yes, and any swing above `steady` became a yes. The
+mood tags and notes were not migrated — see
+[troubleshooting](../troubleshooting.md).

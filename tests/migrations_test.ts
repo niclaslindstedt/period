@@ -17,44 +17,34 @@ describe("normalizeDoc", () => {
 
   it("stamps a version onto a pre-versioning document", () => {
     const doc = normalizeDoc({ entries: {} });
-    expect(doc.version).toBe(1);
+    expect(doc.version).toBe(2);
   });
 
   it("drops unknown fields and coerces bad ones to their defaults", () => {
     const doc = normalizeDoc({
-      version: 1,
+      version: 2,
       entries: {
         "2026-03-01": {
           date: "2026-03-01",
           bleeding: "torrential",
-          moods: ["happy", "hungry"],
-          swing: 9,
+          moodSwings: 1,
           colour: "blue",
           updatedAt: "2026-03-01T00:00:00.000Z",
         },
       },
     });
     const entry = doc.entries["2026-03-01"]!;
-    expect(entry.bleeding).toBe("none");
-    expect(entry.moods).toEqual(["happy"]);
-    expect(entry.swing).toBe(0);
+    // Only a literal `true` is a yes — anything else is an answer this build
+    // cannot read, and a false negative is the safer way to be wrong here.
+    expect(entry.bleeding).toBe(false);
+    expect(entry.moodSwings).toBe(false);
     expect(entry).not.toHaveProperty("colour");
-  });
-
-  it("normalises moods to roster order however they were stored", () => {
-    const doc = normalizeDoc({
-      version: 1,
-      entries: {
-        "2026-03-01": { moods: ["tired", "calm", "sad"] },
-      },
-    });
-    expect(doc.entries["2026-03-01"]!.moods).toEqual(["calm", "sad", "tired"]);
   });
 
   it("files an entry under its own date, not the key it was stored beside", () => {
     const doc = normalizeDoc({
-      version: 1,
-      entries: { wrong: { date: "2026-03-01", bleeding: "light" } },
+      version: 2,
+      entries: { wrong: { date: "2026-03-01", bleeding: true } },
     });
     expect(Object.keys(doc.entries)).toEqual(["2026-03-01"]);
   });
@@ -64,17 +54,63 @@ describe("normalizeDoc", () => {
   });
 });
 
+// The v1 → v2 collapse. A phone that has been logging on the old build has a
+// document full of bleeding levels, mood tags, 0–3 swings and notes; this is
+// the one chance to carry the two answers that survived out of it.
+describe("the v1 → v2 migration", () => {
+  const v1 = (entry: Record<string, unknown>) =>
+    normalizeDoc({
+      version: 1,
+      entries: { "2026-03-01": { date: "2026-03-01", ...entry } },
+    }).entries["2026-03-01"]!;
+
+  it("reads every bleeding level except none as a bleeding day", () => {
+    for (const level of ["spotting", "light", "medium", "heavy"]) {
+      expect(v1({ bleeding: level }).bleeding).toBe(true);
+    }
+    expect(v1({ bleeding: "none" }).bleeding).toBe(false);
+  });
+
+  it("reads any swing above steady as mood swings", () => {
+    expect(v1({ swing: 0 }).moodSwings).toBe(false);
+    expect(v1({ swing: 1 }).moodSwings).toBe(true);
+    expect(v1({ swing: 3 }).moodSwings).toBe(true);
+  });
+
+  it("keeps a day that only carried moods or a note, as a no/no report", () => {
+    // The tags themselves are gone, but the day was reported — and "I checked
+    // in and nothing happened" is a different claim from "I never opened it".
+    const entry = v1({ moods: ["tired", "sad"], note: "long day" });
+    expect(entry.bleeding).toBe(false);
+    expect(entry.moodSwings).toBe(false);
+    expect(entry).not.toHaveProperty("moods");
+    expect(entry).not.toHaveProperty("note");
+  });
+
+  it("keeps the edit timestamp, so a migrated day still merges correctly", () => {
+    expect(v1({ updatedAt: "2026-03-01T10:00:00.000Z" }).updatedAt).toBe(
+      "2026-03-01T10:00:00.000Z",
+    );
+  });
+
+  it("survives a v1 document whose entries are junk", () => {
+    const doc = normalizeDoc({
+      version: 1,
+      entries: { "2026-03-01": "not an entry", "2026-03-02": null },
+    });
+    expect(doc.entries).toEqual({});
+  });
+});
+
 describe("serializeDoc", () => {
   it("round-trips a document", () => {
     const doc: AppData = {
-      version: 1,
+      version: 2,
       entries: {
         "2026-03-01": {
           date: "2026-03-01",
-          bleeding: "heavy",
-          moods: ["sad"],
-          swing: 2,
-          note: "rough one",
+          bleeding: true,
+          moodSwings: true,
           updatedAt: "2026-03-01T10:00:00.000Z",
         },
       },
@@ -88,18 +124,16 @@ describe("serializeDoc", () => {
     for (const date of ["2026-03-03", "2026-03-01", "2026-03-02"]) {
       a.entries[date] = {
         date,
-        bleeding: "light",
-        moods: [],
-        swing: 0,
+        bleeding: true,
+        moodSwings: false,
         updatedAt: "2026-03-01T00:00:00.000Z",
       };
     }
     for (const date of ["2026-03-01", "2026-03-02", "2026-03-03"]) {
       b.entries[date] = {
         date,
-        bleeding: "light",
-        moods: [],
-        swing: 0,
+        bleeding: true,
+        moodSwings: false,
         updatedAt: "2026-03-01T00:00:00.000Z",
       };
     }

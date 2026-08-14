@@ -1,8 +1,8 @@
 # Period
 
 > A local-first period tracking PWA built on @niclaslindstedt/oss-framework.
-> One report per day — bleeding level, mood tags, and how much the mood swung —
-> stored on-device as JSON, with an optional copy synced to the user's own
+> One report per day — two yes/no answers, blood and mood swings — stored
+> on-device as JSON, with an optional copy synced to the user's own
 > Dropbox or Google Drive. Cycles, averages, and the next-period forecast are
 > derived from those reports at read time; nothing about a cycle is stored.
 
@@ -12,8 +12,8 @@
 
 ## Features
 
-- Daily report: bleeding level (none/spotting/light/medium/heavy), mood tags,
-  mood-swing level, and a free-text note
+- Daily report: blood yes/no and mood swings yes/no, for a date that defaults
+  to today; the whole screen fits a phone without scrolling
 - Forecast: cycle day, predicted next period, and an optional fertile window,
   with a stated confidence rather than a bare date
 - History: average cycle and period length, cycle-length trend, mood swings by

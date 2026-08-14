@@ -17,7 +17,7 @@
 import { addDays, daysBetween } from "@niclaslindstedt/oss-framework/calendar";
 import type { DayKey } from "@niclaslindstedt/oss-framework/calendar";
 
-import { isBleeding, sortedEntries, type AppData } from "./types.ts";
+import { sortedEntries, type AppData } from "./types.ts";
 
 /** One observed bleeding episode: the first and last day it covers, and how
  *  many days were actually logged as bleeding inside it. */
@@ -122,7 +122,7 @@ const MAX_GAP_DAYS = 1;
  */
 export function derivePeriods(data: AppData): PeriodSpan[] {
   const bleedingDays = sortedEntries(data)
-    .filter((e) => isBleeding(e.bleeding))
+    .filter((e) => e.bleeding)
     .map((e) => e.date);
   if (bleedingDays.length === 0) return [];
 
@@ -310,7 +310,7 @@ export function upcomingStarts(
 }
 
 /** Where a day sits in its cycle. Used to colour the calendar and to bucket
- *  moods by phase in the History screen. */
+ *  mood swings by phase in the History screen. */
 export type CyclePhase = "menstrual" | "follicular" | "fertile" | "luteal";
 
 /**

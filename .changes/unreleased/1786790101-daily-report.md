@@ -3,4 +3,4 @@ type: Added
 title: Daily reports
 ---
 
-Log a day's bleeding level, the moods that fit it, and how much your mood swung, on a screen that takes one tap per answer. [Learn more](feature:daily-report)
+Two yes/no questions — blood, and mood swings — for whichever day you pick, on a screen that fits a phone without scrolling. [Learn more](feature:daily-report)
