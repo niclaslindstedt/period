@@ -1,0 +1,38 @@
+name: seo
+
+# The structural SEO / PWA gate (OSS_SPEC §11.3.10). `scripts/check-seo.mjs`
+# asserts over the *built* `dist/` — the meta and social tags, the canonical
+# URL, the JSON-LD block, robots.txt / sitemap.xml / llms.txt, the manifest's
+# shape, the maskable icon, and the critical-path JS budget — so a refactor
+# that quietly drops a tag fails here instead of on a crawler weeks later.
+#
+# Separate from `ci.yml` because it is the badge in the README's badge row: a
+# red `seo` badge should mean "the SEO assertions broke", not "some job in a
+# combined pipeline broke".
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # npm ci resolves @niclaslindstedt/oss-framework from GitHub Packages.
+  packages: read
+
+jobs:
+  check-seo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@niclaslindstedt"
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: make check-seo

@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { dayKeyOf } from "@niclaslindstedt/oss-framework/calendar";
+import {
+  SpinnerIcon,
+  ToastViewport,
+  createToastStore,
+} from "@niclaslindstedt/oss-framework/components";
+import { LogViewer } from "@niclaslindstedt/oss-framework/logging";
+import { UpdateToast, usePwaUpdate } from "@niclaslindstedt/oss-framework/pwa";
+import {
+  SyncDetailsModal,
+  SyncStatus,
+} from "@niclaslindstedt/oss-framework/sync";
+import { useApplyTheme } from "@niclaslindstedt/oss-framework/theme";
+
+import { BottomNav, type Tab } from "./app/BottomNav.tsx";
+import { ForecastScreen } from "./app/ForecastScreen.tsx";
+import { HistoryScreen } from "./app/HistoryScreen.tsx";
+import { ReportScreen } from "./app/ReportScreen.tsx";
+import { SettingsScreen } from "./app/SettingsScreen.tsx";
+import { useT } from "./app/i18n/index.ts";
+import { appearanceFor } from "./app/look.ts";
+import { descendingLogStore, logStore } from "./app/log.ts";
+import { cacheIdForBase } from "./app/pwa.ts";
+import { cycleOptions, useAppSettings } from "./app/useAppSettings.ts";
+import { usePeriodStore } from "./app/usePeriodStore.ts";
+import { useSyncEngine } from "./app/useSyncEngine.ts";
+import { status } from "./output.ts";
+
+// A local-first period tracker built from the framework's shared surface. The
+// app owns the report store, the cycle derivation, and the four screens; the
+// framework supplies the theme engine, the storage adapters behind sync, the
+// charts, the calendar grid, and the PWA update lifecycle.
+//
+// Everything hangs off one document in localStorage. There is no server: cloud
+// sync, when connected, is a copy of that same document in the user's own
+// Dropbox or Drive.
+
+// Module-scoped so the identity stays stable across renders (the framework's
+// `useToasts` keys its subscription on the store object).
+const toasts = createToastStore();
+
+export function App() {
+  const t = useT();
+  const { settings, update } = useAppSettings();
+  useApplyTheme(useMemo(() => appearanceFor(settings.theme), [settings.theme]));
+
+  // Today, as a calendar day. Recomputed on focus rather than on a timer:
+  // the only way the answer changes while the app is open is midnight passing
+  // — and the app being open at midnight then returned to is exactly when the
+  // stale value would be wrong.
+  const [today, setToday] = useState(() => dayKeyOf(new Date()));
+  useEffect(() => {
+    const refresh = () => setToday(dayKeyOf(new Date()));
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, []);
+
+  const store = usePeriodStore();
+  const sync = useSyncEngine(store);
+  const options = useMemo(() => cycleOptions(settings), [settings]);
+
+  const [tab, setTab] = useState<Tab>("report");
+  const [syncDetailsOpen, setSyncDetailsOpen] = useState(false);
+  // Applying an update (skip-waiting → the new worker takes control → the page
+  // reloads) has a visible gap. Flip a flag on the tap so the toast shows a
+  // spinner instead of a dead button until the reload lands.
+  const [reloading, setReloading] = useState(false);
+
+  // Console capture follows the setting; the buffer itself is always on, so a
+  // failure that happened before the toggle was found is still in the log.
+  useEffect(() => {
+    logStore.setCaptureEnabled(settings.captureLogs);
+  }, [settings.captureLogs]);
+
+  const notice = useCallback((message: string) => {
+    toasts.clear();
+    toasts.push({ message, kind: "success", durationMs: 2500 });
+  }, []);
+
+  const pwa = usePwaUpdate({
+    base: import.meta.env.BASE_URL,
+    cacheId: cacheIdForBase(import.meta.env.BASE_URL),
+    enabled: !import.meta.env.DEV,
+  });
+  useEffect(() => {
+    if (pwa.needRefresh) status(`Update ready: ${pwa.incomingVersion ?? "?"}`);
+  }, [pwa.needRefresh, pwa.incomingVersion]);
+
+  return (
+    <div className="flex h-full flex-col bg-page text-fg">
+      <header className="app-header flex shrink-0 items-center justify-between gap-2 border-b border-line bg-surface-3 px-3 py-2">
+        <h1 className="text-sm font-bold tracking-wide text-fg-bright">
+          {t("app.name")}
+        </h1>
+        {sync.backend !== "local" && (
+          <SyncStatus
+            providerName={sync.providerName}
+            status={sync.status}
+            dirty={sync.dirty}
+            offline={sync.offline}
+            onOpenDetails={() => setSyncDetailsOpen(true)}
+            labels={{ syncedTo: (name) => t("sync.syncedTo", { name }) }}
+          />
+        )}
+      </header>
+
+      <main className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-2xl">
+          {tab === "report" && (
+            <ReportScreen
+              store={store}
+              today={today}
+              weekStartsOn={settings.weekStartsOn}
+              onSaved={notice}
+            />
+          )}
+          {tab === "forecast" && (
+            <ForecastScreen
+              data={store.data}
+              today={today}
+              options={options}
+              showFertileWindow={settings.showFertileWindow}
+              weekStartsOn={settings.weekStartsOn}
+            />
+          )}
+          {tab === "history" && (
+            <HistoryScreen data={store.data} options={options} />
+          )}
+          {tab === "settings" && (
+            <SettingsScreen
+              settings={settings}
+              update={update}
+              store={store}
+              sync={sync}
+              onNotice={notice}
+            />
+          )}
+        </div>
+      </main>
+
+      <BottomNav active={tab} onSelect={setTab} />
+
+      <SyncDetailsModal
+        open={syncDetailsOpen}
+        providerName={sync.providerName}
+        backendKind="cloud"
+        location={sync.location}
+        status={sync.status}
+        statusDetail={sync.statusDetail}
+        dirty={sync.dirty}
+        offline={sync.offline}
+        onSaveNow={sync.saveNow}
+        onReload={() => void sync.reload()}
+        onReconnect={sync.reconnect}
+        onCheckConnection={sync.checkConnection}
+        logPanel={
+          settings.devMode ? (
+            <LogViewer store={descendingLogStore} />
+          ) : undefined
+        }
+        onClose={() => setSyncDetailsOpen(false)}
+      />
+
+      {/* Applying an update reloads the page, which takes a visible moment;
+          the spinner banner replaces the prompt so the wait reads as progress
+          rather than a stuck button. */}
+      {pwa.needRefresh && reloading ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-x-3 bottom-[max(4.5rem,calc(3.5rem+env(safe-area-inset-bottom)))] z-[60] mx-auto flex max-w-md items-center gap-3 rounded-md border border-line bg-surface px-3 py-2.5 text-fg shadow-md"
+        >
+          <SpinnerIcon className="h-5 w-5 animate-spin text-accent" />
+          <span className="text-sm font-medium">{t("update.reload")}</span>
+        </div>
+      ) : (
+        <UpdateToast
+          needRefresh={pwa.needRefresh}
+          incomingVersion={pwa.incomingVersion}
+          onReload={() => {
+            setReloading(true);
+            pwa.reload();
+          }}
+          onDismiss={() => pwa.dismiss()}
+          labels={{
+            ready: t("update.available"),
+            action: t("update.reload"),
+            dismiss: t("common.close"),
+          }}
+        />
+      )}
+      <ToastViewport store={toasts} labels={{ dismiss: t("common.close") }} />
+    </div>
+  );
+}

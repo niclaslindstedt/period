@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// App-owned glyphs — the marks the framework's set has no vocabulary for
+// because they are this app's domain: a droplet for bleeding, a face for
+// mood, a chart for history. Everything else (calendar, cog, cloud, chevrons)
+// comes from `@niclaslindstedt/oss-framework/components`, so the two sets only
+// ever differ where the domain does.
+//
+// Traced on the same Lucide 24×24 grid at the same 2px stroke weight as the
+// framework glyphs, and stroked with `currentColor`, so a mark from either set
+// sits on the same line without retuning.
+
+import type { ReactNode } from "react";
+
+export type IconProps = { className?: string };
+
+function Glyph({
+  className,
+  filled = false,
+  children,
+}: IconProps & { filled?: boolean; children: ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke={filled ? "none" : "currentColor"}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      {children}
+    </svg>
+  );
+}
+
+/** Bleeding. The outline form for controls, the filled form for calendar
+ *  markers where a 6px outline would read as a smudge. */
+export function DropletIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className}>
+      <path d="M12 2.7 6.7 8a7.5 7.5 0 1 0 10.6 0Z" />
+    </Glyph>
+  );
+}
+
+export function DropletFilledIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className} filled>
+      <path d="M12 2.7 6.7 8a7.5 7.5 0 1 0 10.6 0Z" />
+    </Glyph>
+  );
+}
+
+/** Mood. A neutral face — deliberately not a smile, since the control it
+ *  labels covers the whole range. */
+export function MoodIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 15h7" />
+      <path d="M9 9.5h.01" />
+      <path d="M15 9.5h.01" />
+    </Glyph>
+  );
+}
+
+/** Mood swings — a wave, the same idea the mood-swing scale measures. */
+export function WaveIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className}>
+      <path d="M2 12c2.5-4 4.5-4 7 0s4.5 4 7 0 4.5-4 6 0" />
+    </Glyph>
+  );
+}
+
+/** History — a bar chart. */
+export function ChartIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className}>
+      <path d="M3 21h18" />
+      <path d="M7 21V10" />
+      <path d="M12 21V4" />
+      <path d="M17 21v-7" />
+    </Glyph>
+  );
+}
+
+/** Forecast — a crescent of days ahead. */
+export function ForecastIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className}>
+      <path d="M21 12a9 9 0 1 1-9-9" />
+      <path d="M12 7v5l3 2" />
+      <path d="M17.5 3.5 21 5l-1.5 3.5" />
+    </Glyph>
+  );
+}
