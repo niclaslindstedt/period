@@ -44,6 +44,11 @@ export const en = {
     nextMonth: "Next month",
     blood: "Blood",
     swings: "Mood swings",
+    temperature: "Waking temperature",
+    temperatureOptional: "Optional",
+    temperaturePlaceholder: "—",
+    temperatureInvalid:
+      "Enter a temperature between {min} and {max}, or leave it blank.",
     saveNew: "Save report",
     saveExisting: "Update report",
     clear: "Clear this day",
@@ -80,6 +85,141 @@ export const en = {
     },
     disclaimer:
       "An estimate from your own reports — not medical advice, and not contraception.",
+
+    // How much of the forecast is on screen. Both settings show the same
+    // prediction from the same model — "simple" hides the workings, it does
+    // not simplify the arithmetic, and the copy must never suggest otherwise.
+    detail: {
+      label: "Detail",
+      simple: "Simple",
+      advanced: "Advanced",
+      sameAnswer:
+        "Both views show the same prediction. Advanced adds the workings.",
+    },
+
+    // Which reports the model is allowed to read.
+    evidence: {
+      label: "Based on",
+      cycles: "Cycles",
+      cyclesAndReports: "Cycles + reports",
+      cyclesHint: "Uses the gaps between your periods and nothing else.",
+      cyclesAndReportsHint:
+        "Also reads this cycle's mood swings and waking temperatures. Mood swings cluster in the days before bleeding starts, and temperature steps up after ovulation and falls again as a period arrives.",
+      needsMore:
+        "Not enough reported days yet to learn your patterns, so this matches the cycles-only forecast.",
+      usingMood: "Reading your mood swings",
+      usingTemperature: "Reading your temperatures",
+      usingBoth: "Reading your mood swings and temperatures",
+    },
+
+    likelyBetween: "Most likely {start} — {end}",
+    chanceWithinWeek: "{percent} chance it starts within a week",
+    plusMinus: "±{days} days",
+
+    chart: {
+      title: "When the next period is likely to start",
+      description:
+        "Probability that the next period starts on each day from {from} to {to}. Most likely {day}.",
+      keyboardHint:
+        "Forecast chart. Use the left and right arrow keys to read each day.",
+      startsOn: "{percent} chance it starts this day",
+      startedBy: "{percent} chance it has started by then",
+      priorAt: "{percent} from cycle history alone",
+      ruledOut: "Ruled out — you reported no bleeding",
+      ruledOutLegend: "Ruled out",
+      bandLabel: "{percent}% likely",
+      historyOnly: "Cycle history only",
+      look: "Chart",
+      marksBars: "Columns",
+      marksCurve: "Curve",
+      viewDaily: "Per day",
+      viewCumulative: "By day",
+      bands: "Bands",
+      compare: "Compare",
+    },
+
+    // The advanced panel. Every label here names a real quantity the model
+    // computed — nothing is rounded up into a reassuring adjective.
+    model: {
+      title: "The model",
+      how: "Cycle lengths are modelled as log-normal with a conjugate Normal-Inverse-Gamma prior, so the prediction is a Student-t over the days ahead. Days you reported without bleeding are removed and the rest rescaled.",
+      howReports:
+        "On top of that, each candidate day is weighed by how well this cycle's mood swings and temperatures fit the pattern your own history shows at that distance from a period. Both are discounted before they are applied, so they shift the date rather than decide it.",
+      typicalLength: "Typical cycle",
+      spread: "Predictive spread",
+      effectiveSample: "Effective sample",
+      effectiveSampleValue: "{value} of {total} cycles",
+      effectiveSampleHint:
+        "Older cycles count for less, halving every six, so a change in your pattern shows up within a season.",
+      degreesOfFreedom: "Degrees of freedom",
+      degreesOfFreedomHint:
+        "Grows with your history. It is what makes an early forecast honestly wide rather than falsely precise.",
+      intervals: "Credible intervals",
+      intervalRow: "{percent}%",
+      intervalRange: "{start} — {end}",
+      intervalWidth: "{count} days wide",
+    },
+
+    // The mood-swing profile the multivariate model learned.
+    moodProfile: {
+      title: "Your mood pattern",
+      chartDesc:
+        "How often you reported mood swings at each number of days before a period started.",
+      axisLag: "Days before a period",
+      baseline: "Rest of the cycle: {percent}",
+      sample:
+        "From {window} reported days before a period and {baseline} elsewhere.",
+      thin: "Log a few more days and this fills in. Until it does, your mood reports do not move the forecast.",
+    },
+
+    // The temperature profile — the biphasic shift, learned from the reports.
+    temperatureProfile: {
+      title: "Your temperature pattern",
+      chartDesc:
+        "How far your waking temperature sat above the rest of the cycle, at each number of days before a period started.",
+      axis: "Days before a period · above the rest of your cycle",
+      shift: "Rises {amount} after ovulation",
+      shiftNone: "No clear shift across the cycle yet",
+      sample:
+        "From {window} readings before a period and {baseline} elsewhere.",
+      thin: "Take a few more morning readings and this fills in. Until it does, your temperatures do not move the forecast.",
+      none: "No temperatures reported yet. Adding them is the single biggest thing you can do for this forecast — the rise after ovulation is what pins down when the next period is due.",
+    },
+
+    // What this cycle's own reports did to the date.
+    shift: {
+      earlier: "This cycle's reports moved the forecast {count} days earlier.",
+      earlierOne: "This cycle's reports moved the forecast a day earlier.",
+      later: "This cycle's reports moved the forecast {count} days later.",
+      laterOne: "This cycle's reports moved the forecast a day later.",
+      none: "This cycle's reports agree with the cycle history.",
+    },
+
+    // The backtest: the model scored against the cycles it did not see.
+    accuracy: {
+      title: "Track record",
+      how: "Each of your past cycles re-predicted from only the cycles before it, a few days ahead — the same test a new cycle will face.",
+      meanError: "Average miss",
+      meanErrorValue: "{days} days",
+      baseline: "Plain average would miss",
+      coverage: "{percent}% of {count} cycles",
+      coverage80: "80% band held",
+      coverage95: "95% band held",
+      coverageHint:
+        "A band that holds about as often as it claims is a band worth reading.",
+      needsMore:
+        "Log a few more cycles and this fills in — five are needed before a track record means anything.",
+    },
+
+    // The cycle lengths the fit was made from.
+    observations: {
+      title: "Cycles used",
+      row: "{length} days",
+      weight: "weight {value}",
+      imputed: "split from a longer gap",
+      imputedHint:
+        "A gap close to a whole number of cycles is read as one you did not log, and counted at half weight.",
+    },
   },
 
   history: {
@@ -94,6 +234,11 @@ export const en = {
     swingChart: "Mood swings by cycle phase",
     swingChartDesc:
       "Share of the days you reported in each phase that had mood swings.",
+    temperatureChart: "Waking temperature",
+    temperatureChartDesc:
+      "Your recent waking temperatures. Gaps are mornings with no reading.",
+    temperatureReadings:
+      "{count} readings, in {unit}. Gaps are days you skipped.",
     phase: {
       menstrual: "Menstrual",
       follicular: "Follicular",
@@ -127,6 +272,18 @@ export const en = {
     showFertileWindow: "Show the fertile window",
     showFertileWindowHint:
       "Turn off to keep the app to periods only — no fertility estimate.",
+    temperatureUnit: "Temperature unit",
+    celsius: "Celsius",
+    fahrenheit: "Fahrenheit",
+    temperatureUnitHint:
+      "How readings are shown and typed. Your reports are stored the same way either way, so changing this never rewrites a day.",
+    forecast: "Forecast",
+    forecastDetail: "Detail",
+    forecastDetailHint:
+      "Advanced adds the model's parameters, the patterns it learned from your reports, and how well it has done on your past cycles. The prediction itself is the same.",
+    forecastModel: "Based on",
+    forecastModelHint:
+      "Cycles + reports also reads this cycle's mood swings and temperatures. It falls back to cycles alone until there is enough history to learn your pattern.",
     sync: "Sync",
     syncHint:
       "Reports live on this device. Connect a cloud account to keep a copy and read it on your other devices.",

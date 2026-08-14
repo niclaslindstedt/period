@@ -52,6 +52,39 @@ restoring it runs the same conversion: the days come back, the tags do not.
 Settings → Cycle → turn off **Show the fertile window**. It disappears from the
 Forecast screen and the calendar legend entirely.
 
+**The advanced view says my mood or temperature pattern is too thin**
+Each one needs reported days both in the fortnight before a period and outside
+it before it is allowed to move anything — 20 days for mood, 12 readings for
+temperature. Until then the pattern is treated as flat, and the forecast is
+exactly the cycles-only one. This is deliberate: a pattern estimated from three
+days is noise, and letting noise move a date would be worse than ignoring it.
+
+**Advanced shows a different date from simple**
+It shouldn't, ever — both read the same distribution, and simple just quotes its
+middle and its 80% range. If they disagree, that is a bug worth reporting.
+
+**Turning on Cycles + reports didn't change the prediction**
+Then your reports agree with your cycle history, which is the common case. The
+advanced view's **Compare** chip overlays what the cycle history alone predicted;
+if the two curves sit on top of each other, there was nothing to correct.
+
+**The predicted range feels too wide**
+It is as wide as your history says it should be. The advanced view's **Track
+record** is the check: if the 80% band held about 80% of the time on your past
+cycles, the width is right and the cycles genuinely vary that much. A band
+narrow enough to feel confident but only right half the time would be worse.
+
+**My temperature won't save**
+Readings outside 30–45 °C (86–113 °F) are refused, because a value that far out
+is almost always a decimal point missed on the keypad — 365 rather than 36.5.
+Correct it or clear the box, and **Save** unblocks.
+
+**I switched to Fahrenheit and my readings look different**
+They shouldn't: the unit is a display choice and the stored values never change.
+Readings are kept in Celsius at enough precision to convert back exactly, so
+97.71 °F typed on one device still reads 97.71 °F on another. If a value really
+did move, that is a bug worth reporting.
+
 ## Sync
 
 **"Reconnect needed"**

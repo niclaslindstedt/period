@@ -62,6 +62,16 @@ export function WaveIcon({ className }: IconProps) {
   );
 }
 
+/** Waking temperature — a thermometer, bulb down. */
+export function ThermometerIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className}>
+      <path d="M14 14.8V5a2.5 2.5 0 0 0-5 0v9.8a4.5 4.5 0 1 0 5 0Z" />
+      <path d="M11.5 18.5h.01" />
+    </Glyph>
+  );
+}
+
 /** History — a bar chart. */
 export function ChartIcon({ className }: IconProps) {
   return (

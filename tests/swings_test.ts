@@ -16,6 +16,7 @@ function doc(entries: Partial<DayEntry>[]): AppData {
       date: partial.date!,
       bleeding: partial.bleeding ?? false,
       moodSwings: partial.moodSwings ?? false,
+      temperature: null,
       updatedAt: "2026-01-01T00:00:00.000Z",
     };
     data.entries[entry.date] = entry;

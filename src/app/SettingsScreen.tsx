@@ -23,6 +23,8 @@ import { downloadBackup, readBackupFile } from "./backup.ts";
 import { useT } from "./i18n/index.ts";
 import { mergeDocs } from "./merge.ts";
 import { serializeDoc } from "./migrations.ts";
+import type { ForecastModelKind } from "./forecastModel.ts";
+import type { TemperatureUnit } from "./temperature.ts";
 import { emptyDoc } from "./types.ts";
 import type { AppSettings, ThemeChoice } from "./useAppSettings.ts";
 import type { PeriodStore } from "./usePeriodStore.ts";
@@ -158,6 +160,68 @@ export function SettingsScreen({
           checked={settings.showFertileWindow}
           onChange={(next) => update("showFertileWindow", next)}
         />
+      </Section>
+
+      <Section
+        title={t("settings.forecast")}
+        icon={<CogIcon className="h-3.5 w-3.5" />}
+      >
+        {/* The same two controls live on the Forecast screen itself, next to
+            what they change. They are repeated here because Settings is where
+            people look for them, and a preference that only exists in one
+            place is a preference half the users never find. */}
+        <Labelled label={t("settings.forecastDetail")}>
+          <SegmentedControl
+            value={settings.forecastDetail}
+            options={[
+              { value: "simple", label: t("forecast.detail.simple") },
+              { value: "advanced", label: t("forecast.detail.advanced") },
+            ]}
+            onChange={(next) =>
+              update("forecastDetail", next as "simple" | "advanced")
+            }
+            ariaLabel={t("settings.forecastDetail")}
+            fullWidth
+          />
+        </Labelled>
+        <p className="text-xs text-muted">{t("settings.forecastDetailHint")}</p>
+
+        <Labelled label={t("settings.forecastModel")}>
+          <SegmentedControl
+            value={settings.forecastModel}
+            options={[
+              { value: "univariate", label: t("forecast.evidence.cycles") },
+              {
+                value: "multivariate",
+                label: t("forecast.evidence.cyclesAndReports"),
+              },
+            ]}
+            onChange={(next) =>
+              update("forecastModel", next as ForecastModelKind)
+            }
+            ariaLabel={t("settings.forecastModel")}
+            fullWidth
+          />
+        </Labelled>
+        <p className="text-xs text-muted">{t("settings.forecastModelHint")}</p>
+
+        <Labelled label={t("settings.temperatureUnit")}>
+          <SegmentedControl
+            value={settings.temperatureUnit}
+            options={[
+              { value: "c", label: t("settings.celsius") },
+              { value: "f", label: t("settings.fahrenheit") },
+            ]}
+            onChange={(next) =>
+              update("temperatureUnit", next as TemperatureUnit)
+            }
+            ariaLabel={t("settings.temperatureUnit")}
+            fullWidth
+          />
+        </Labelled>
+        <p className="text-xs text-muted">
+          {t("settings.temperatureUnitHint")}
+        </p>
       </Section>
 
       <Section
@@ -322,6 +386,23 @@ export function SettingsScreen({
         }}
         onCancel={() => setConfirmClear(false)}
       />
+    </div>
+  );
+}
+
+/** A label above a control, matching the spacing the framework's own labelled
+ *  inputs use so a segmented control sits in the same rhythm as a text field. */
+function Labelled({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-medium text-fg">{label}</span>
+      {children}
     </div>
   );
 }
