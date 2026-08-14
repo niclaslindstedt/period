@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import { normalizeDoc, parseDoc, serializeDoc } from "../src/app/migrations.ts";
-import { emptyDoc, type AppData } from "../src/app/types.ts";
+import { DOC_VERSION, emptyDoc, type AppData } from "../src/app/types.ts";
 
 // Everything that reaches the app from storage — localStorage, a cloud pull, a
 // restored backup — goes through here first, so this is where "the bytes are
@@ -17,7 +17,7 @@ describe("normalizeDoc", () => {
 
   it("stamps a version onto a pre-versioning document", () => {
     const doc = normalizeDoc({ entries: {} });
-    expect(doc.version).toBe(2);
+    expect(doc.version).toBe(DOC_VERSION);
   });
 
   it("drops unknown fields and coerces bad ones to their defaults", () => {
@@ -100,17 +100,79 @@ describe("the v1 → v2 migration", () => {
     });
     expect(doc.entries).toEqual({});
   });
+
+  it("carries a v1 day all the way to a v3 entry", () => {
+    // Two migrations in one read: the collapse to booleans, then the added
+    // temperature. A phone that skipped the v2 build must land in the same
+    // place as one that did not.
+    const entry = v1({ bleeding: "light", swing: 2 });
+    expect(entry).toEqual({
+      date: "2026-03-01",
+      bleeding: true,
+      moodSwings: true,
+      temperature: null,
+      updatedAt: new Date(0).toISOString(),
+    });
+  });
+});
+
+// The v2 → v3 addition. Purely additive: a day that was logged before the
+// field existed simply has no reading, which is the same claim as skipping it.
+describe("the v2 → v3 migration", () => {
+  const v2 = (entry: Record<string, unknown>) =>
+    normalizeDoc({
+      version: 2,
+      entries: { "2026-03-01": { date: "2026-03-01", ...entry } },
+    }).entries["2026-03-01"]!;
+
+  it("gives every existing day an explicit absent reading", () => {
+    expect(v2({ bleeding: true, moodSwings: false }).temperature).toBeNull();
+  });
+
+  it("keeps the two answers the day already carried", () => {
+    const entry = v2({ bleeding: true, moodSwings: true });
+    expect(entry.bleeding).toBe(true);
+    expect(entry.moodSwings).toBe(true);
+  });
+
+  it("keeps a reading a v3 document already stored", () => {
+    const doc = normalizeDoc({
+      version: 3,
+      entries: {
+        "2026-03-01": {
+          date: "2026-03-01",
+          bleeding: false,
+          moodSwings: false,
+          temperature: 36.52,
+        },
+      },
+    });
+    expect(doc.entries["2026-03-01"]!.temperature).toBe(36.52);
+  });
+
+  it("drops a stored reading that cannot be one", () => {
+    for (const value of [365, "36.5", null, 0, Number.NaN]) {
+      const doc = normalizeDoc({
+        version: 3,
+        entries: {
+          "2026-03-01": { date: "2026-03-01", temperature: value },
+        },
+      });
+      expect(doc.entries["2026-03-01"]!.temperature).toBeNull();
+    }
+  });
 });
 
 describe("serializeDoc", () => {
   it("round-trips a document", () => {
     const doc: AppData = {
-      version: 2,
+      version: DOC_VERSION,
       entries: {
         "2026-03-01": {
           date: "2026-03-01",
           bleeding: true,
           moodSwings: true,
+          temperature: 36.52,
           updatedAt: "2026-03-01T10:00:00.000Z",
         },
       },
@@ -126,6 +188,7 @@ describe("serializeDoc", () => {
         date,
         bleeding: true,
         moodSwings: false,
+        temperature: null,
         updatedAt: "2026-03-01T00:00:00.000Z",
       };
     }
@@ -134,6 +197,7 @@ describe("serializeDoc", () => {
         date,
         bleeding: true,
         moodSwings: false,
+        temperature: null,
         updatedAt: "2026-03-01T00:00:00.000Z",
       };
     }

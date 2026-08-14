@@ -26,6 +26,17 @@ export type DayEntry = {
   bleeding: boolean;
   /** Whether the mood moved noticeably across the day. */
   moodSwings: boolean;
+  /**
+   * Waking body temperature in **degrees Celsius**, or null when none was
+   * taken. Celsius is the canonical unit whatever the user reads: a document
+   * that changed meaning when a setting changed would be a document that syncs
+   * wrong between two devices set differently.
+   *
+   * Optional in a way the two booleans are not. Nobody takes their temperature
+   * every day, and a forecast that quietly got worse because you skipped a
+   * fortnight would be a bad trade for a field you cannot always fill.
+   */
+  temperature: number | null;
   /** ISO timestamp of the last edit, used as the tiebreak when two devices
    *  edited the same day between syncs. */
   updatedAt: string;
@@ -45,9 +56,9 @@ export function emptyDoc(): AppData {
 }
 
 /** The current document schema version. v2 collapsed the five-level bleeding
- *  scale, the mood roster, the 0–3 swing scale and the note into two booleans.
- */
-export const DOC_VERSION = 2;
+ *  scale, the mood roster, the 0–3 swing scale and the note into two booleans;
+ *  v3 added the optional waking temperature. */
+export const DOC_VERSION = 3;
 
 /** A day's entry, or `null` when nothing was reported that day. */
 export function entryFor(data: AppData, day: DayKey): DayEntry | null {
@@ -69,6 +80,7 @@ export function blankEntry(day: DayKey, now: string): DayEntry {
     date: day,
     bleeding: false,
     moodSwings: false,
+    temperature: null,
     updatedAt: now,
   };
 }

@@ -10,7 +10,8 @@ import { ChartIcon } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
 import { phaseLabel } from "./labels.ts";
 import { swingsByPhase } from "./swings.ts";
-import type { AppData } from "./types.ts";
+import { inUnit, type TemperatureUnit } from "./temperature.ts";
+import { sortedEntries, type AppData } from "./types.ts";
 
 // What the reports add up to: the four numbers worth knowing, the shape of the
 // cycle lengths over time, whether the mood swings cluster in a phase, and the
@@ -23,13 +24,34 @@ import type { AppData } from "./types.ts";
 type Props = {
   data: AppData;
   options: CycleOptions;
+  temperatureUnit: TemperatureUnit;
 };
 
-export function HistoryScreen({ data, options }: Props) {
+/** Readings shown on the temperature chart. About three cycles: enough to see
+ *  the sawtooth repeat, few enough that each point still has room. */
+const TEMPERATURE_WINDOW = 90;
+
+export function HistoryScreen({ data, options, temperatureUnit }: Props) {
   const t = useT();
   const stats = useMemo(() => cycleStats(data), [data]);
   const phases = useMemo(() => swingsByPhase(data, options), [data, options]);
   const daysLogged = Object.keys(data.entries).length;
+
+  // The recent temperature series, in the unit being read. Gaps stay gaps —
+  // a `null` is a morning the reading was skipped, and joining across it would
+  // draw a trend nobody measured.
+  const temperatures = useMemo(() => {
+    const recent = sortedEntries(data).slice(-TEMPERATURE_WINDOW);
+    const readings = recent.filter((e) => e.temperature !== null);
+    if (readings.length < 5) return null;
+    return {
+      values: recent.map((e) =>
+        e.temperature === null ? null : inUnit(e.temperature, temperatureUnit),
+      ),
+      labels: recent.map((e) => formatShortDay(e.date)),
+      count: readings.length,
+    };
+  }, [data, temperatureUnit]);
 
   if (stats.periods.length === 0) {
     return (
@@ -90,6 +112,26 @@ export function HistoryScreen({ data, options }: Props) {
             desc={t("history.cycleLengthChartDesc")}
             formatValue={(v) => `${Math.round(v)}`}
           />
+        </Section>
+      )}
+
+      {temperatures && (
+        <Section title={t("history.temperatureChart")}>
+          <LineChart
+            series={[{ values: temperatures.values }]}
+            x={{ labels: temperatures.labels }}
+            height={160}
+            curve="monotone"
+            ariaLabel={t("history.temperatureChart")}
+            desc={t("history.temperatureChartDesc")}
+            formatValue={(v) => v.toFixed(2)}
+          />
+          <p className="text-xs text-muted">
+            {t("history.temperatureReadings", {
+              count: String(temperatures.count),
+              unit: temperatureUnit === "f" ? "°F" : "°C",
+            })}
+          </p>
         </Section>
       )}
 

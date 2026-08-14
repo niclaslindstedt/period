@@ -108,3 +108,86 @@ body {
 .app-bottom-nav button {
   min-height: 3rem;
 }
+
+/* ── Forecast chart ──────────────────────────────────────────────────────────
+   The animations for the probability chart on the Forecast screen. They live
+   here rather than inline because keyframes are not expressible as Tailwind
+   utilities, and because every one of them is disabled together at the bottom
+   of this block when the device asks for reduced motion.
+
+   Only `transform` and `opacity` are animated — both composited, so a
+   twenty-bar chart re-animating on a model switch costs nothing on a phone. */
+
+/* A day's column growing out of the baseline. `fill-box` origin keeps each
+   rect anchored to its own bottom edge rather than the SVG's. */
+.forecast-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: forecast-grow 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes forecast-grow {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+}
+
+/* The filled density, revealed left to right. */
+.forecast-area {
+  transform-box: fill-box;
+  transform-origin: left;
+  animation: forecast-sweep 520ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes forecast-sweep {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+
+/* The credible bands, widening from their centre. */
+.forecast-band {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: forecast-widen 460ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes forecast-widen {
+  from {
+    transform: scaleX(0.2);
+    opacity: 0;
+  }
+}
+
+/* Markers and labels arriving after the shape they annotate. */
+.forecast-marker {
+  animation: forecast-fade 320ms ease-out backwards;
+}
+
+@keyframes forecast-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The hover crosshair follows the pointer between days rather than jumping. */
+.forecast-cursor {
+  transition: transform 90ms linear;
+}
+
+/* A chart is decoration on top of a number that is already on screen, so the
+   whole thing is safe to hold still. */
+@media (prefers-reduced-motion: reduce) {
+  .forecast-bar,
+  .forecast-area,
+  .forecast-band,
+  .forecast-marker {
+    animation: none;
+  }
+
+  .forecast-cursor {
+    transition: none;
+  }
+}

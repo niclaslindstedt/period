@@ -12,6 +12,7 @@
 
 import { createMigrator } from "@niclaslindstedt/oss-framework/storage";
 
+import { normalizeStoredTemperature } from "./temperature.ts";
 import { DOC_VERSION, emptyDoc, type AppData, type DayEntry } from "./types.ts";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -27,6 +28,10 @@ function parseEntry(day: string, value: unknown): DayEntry | null {
     date: typeof value.date === "string" ? value.date : day,
     bleeding: value.bleeding === true,
     moodSwings: value.moodSwings === true,
+    // An implausible number is dropped to null rather than clamped: a reading
+    // of 365 is a mis-keyed 36.5, and inventing 45 °C out of it would be worse
+    // than having no reading for the day.
+    temperature: normalizeStoredTemperature(value.temperature),
     updatedAt:
       typeof value.updatedAt === "string"
         ? value.updatedAt
@@ -69,6 +74,20 @@ const migrator = createMigrator({
         entries[day] = liftEntry(value);
       }
       return { ...doc, version: 2, entries };
+    },
+    // v3 adds the optional waking temperature. Purely additive: every existing
+    // day gets an explicit null, which is the same claim the absent field made
+    // — no reading was taken. `parseEntry` would produce that anyway; the step
+    // exists so the stored version number moves and the intent is recorded.
+    2: (doc) => {
+      const entriesRaw = isRecord(doc.entries) ? doc.entries : {};
+      const entries: Record<string, unknown> = {};
+      for (const [day, value] of Object.entries(entriesRaw)) {
+        entries[day] = isRecord(value)
+          ? { ...value, temperature: null }
+          : value;
+      }
+      return { ...doc, version: 3, entries };
     },
   },
 });

@@ -13,10 +13,16 @@ import {
   SegmentedControl,
 } from "@niclaslindstedt/oss-framework/components";
 
-import { DropletIcon, WaveIcon } from "./icons.tsx";
+import { DropletIcon, ThermometerIcon, WaveIcon } from "./icons.tsx";
 import { MonthCalendar } from "./MonthCalendar.tsx";
 import { formatDay, formatFullDay } from "./format.ts";
 import { useT, type TFn } from "./i18n/index.ts";
+import {
+  inputBounds,
+  parseTemperature,
+  temperatureInputValue,
+  type TemperatureUnit,
+} from "./temperature.ts";
 import { blankEntry, type DayEntry } from "./types.ts";
 import type { PeriodStore } from "./usePeriodStore.ts";
 
@@ -46,10 +52,17 @@ type Props = {
   store: PeriodStore;
   today: DayKey;
   weekStartsOn: WeekStart;
+  temperatureUnit: TemperatureUnit;
   onSaved: (message: string) => void;
 };
 
-export function ReportScreen({ store, today, weekStartsOn, onSaved }: Props) {
+export function ReportScreen({
+  store,
+  today,
+  weekStartsOn,
+  temperatureUnit,
+  onSaved,
+}: Props) {
   const t = useT();
   const [day, setDay] = useState<DayKey>(today);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -61,16 +74,33 @@ export function ReportScreen({ store, today, weekStartsOn, onSaved }: Props) {
   const [draft, setDraft] = useState<DayEntry>(
     () => stored ?? blankEntry(day, new Date().toISOString()),
   );
+  // The temperature box keeps its own text. A number field cannot hold "36."
+  // on the way to "36.5", so parsing on every keystroke would delete the
+  // decimal point out from under the typist.
+  const [temperatureText, setTemperatureText] = useState(() =>
+    temperatureInputValue(stored?.temperature ?? null, temperatureUnit),
+  );
+
   useEffect(() => {
-    setDraft(
-      store.data.entries[day] ?? blankEntry(day, new Date().toISOString()),
+    const entry = store.data.entries[day];
+    setDraft(entry ?? blankEntry(day, new Date().toISOString()));
+    setTemperatureText(
+      temperatureInputValue(entry?.temperature ?? null, temperatureUnit),
     );
-  }, [day, store.data.entries]);
+  }, [day, store.data.entries, temperatureUnit]);
+
+  const typedTemperature = temperatureText.trim();
+  const parsedTemperature = parseTemperature(temperatureText, temperatureUnit);
+  // Something was typed that is not a temperature. Saving anyway would drop it
+  // silently, so the button waits instead — clearing the box is one tap.
+  const temperatureInvalid =
+    typedTemperature !== "" && parsedTemperature === null;
 
   const save = () => {
     store.saveEntry({
       ...draft,
       date: day,
+      temperature: parsedTemperature,
       updatedAt: new Date().toISOString(),
     });
     onSaved(t("report.saved"));
@@ -79,6 +109,7 @@ export function ReportScreen({ store, today, weekStartsOn, onSaved }: Props) {
   const clear = () => {
     store.deleteEntry(day);
     setDraft(blankEntry(day, new Date().toISOString()));
+    setTemperatureText("");
     onSaved(t("report.cleared"));
   };
 
@@ -125,10 +156,21 @@ export function ReportScreen({ store, today, weekStartsOn, onSaved }: Props) {
             setDraft((prev) => ({ ...prev, moodSwings }))
           }
         />
+        <Temperature
+          unit={temperatureUnit}
+          value={temperatureText}
+          invalid={temperatureInvalid}
+          onChange={setTemperatureText}
+        />
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <Button variant="primary" className="w-full" onClick={save}>
+        <Button
+          variant="primary"
+          className="w-full"
+          onClick={save}
+          disabled={temperatureInvalid}
+        >
           {stored ? t("report.saveExisting") : t("report.saveNew")}
         </Button>
         {/* Clearing is rarer than saving and destructive, so it reads as a
@@ -182,6 +224,78 @@ function headlineFor(t: TFn, day: DayKey, today: DayKey): string {
   if (day === today) return t("common.today");
   if (day === addDays(today, -1)) return t("common.yesterday");
   return formatDay(day);
+}
+
+/**
+ * The optional third field: this morning's waking temperature.
+ *
+ * Optional in a way the two questions are not, and the layout says so — an
+ * empty box that reads as "skipped" rather than a control sitting on a default.
+ * Nobody takes their temperature every day, and the model is built to cope with
+ * that (see `forecastModel.ts`), so nagging for it would buy nothing.
+ *
+ * `inputMode="decimal"` rather than a plain number type: it summons the keypad
+ * with the decimal point on it, which is the whole interaction. The step and
+ * bounds still come from the unit, so a browser that offers spinners offers
+ * hundredths.
+ */
+function Temperature({
+  unit,
+  value,
+  invalid,
+  onChange,
+}: {
+  unit: TemperatureUnit;
+  value: string;
+  invalid: boolean;
+  onChange: (next: string) => void;
+}) {
+  const t = useT();
+  const bounds = inputBounds(unit);
+  const label = t("report.temperature");
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="flex items-center justify-between gap-2 text-sm font-medium text-fg">
+        <span className="flex items-center gap-1.5">
+          <span className="text-muted">
+            <ThermometerIcon className="h-4 w-4" />
+          </span>
+          {label}
+        </span>
+        <span className="text-xs font-normal text-muted">
+          {t("report.temperatureOptional")}
+        </span>
+      </span>
+      <div className="relative">
+        <input
+          type="number"
+          inputMode="decimal"
+          value={value}
+          min={bounds.min}
+          max={bounds.max}
+          step={bounds.step}
+          placeholder={t("report.temperaturePlaceholder")}
+          aria-label={label}
+          aria-invalid={invalid}
+          onChange={(e) => onChange(e.currentTarget.value)}
+          className={`h-12 w-full rounded-md border bg-surface-3 px-3 pr-12 text-base text-fg-bright tabular-nums outline-none focus:border-accent ${
+            invalid ? "border-danger" : "border-line"
+          }`}
+        />
+        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted">
+          {unit === "f" ? "°F" : "°C"}
+        </span>
+      </div>
+      {invalid && (
+        <p className="text-xs text-danger">
+          {t("report.temperatureInvalid", {
+            min: String(bounds.min),
+            max: String(bounds.max),
+          })}
+        </p>
+      )}
+    </div>
+  );
 }
 
 /** One yes/no question: a labelled row over a full-width two-option control.

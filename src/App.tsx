@@ -24,7 +24,11 @@ import { useT } from "./app/i18n/index.ts";
 import { appearanceFor } from "./app/look.ts";
 import { descendingLogStore, logStore } from "./app/log.ts";
 import { cacheIdForBase } from "./app/pwa.ts";
-import { cycleOptions, useAppSettings } from "./app/useAppSettings.ts";
+import {
+  chartLook,
+  cycleOptions,
+  useAppSettings,
+} from "./app/useAppSettings.ts";
 import { usePeriodStore } from "./app/usePeriodStore.ts";
 import { useSyncEngine } from "./app/useSyncEngine.ts";
 import { status } from "./output.ts";
@@ -65,6 +69,7 @@ export function App() {
   const store = usePeriodStore();
   const sync = useSyncEngine(store);
   const options = useMemo(() => cycleOptions(settings), [settings]);
+  const look = useMemo(() => chartLook(settings), [settings]);
 
   const [tab, setTab] = useState<Tab>("report");
   const [syncDetailsOpen, setSyncDetailsOpen] = useState(false);
@@ -121,6 +126,7 @@ export function App() {
               store={store}
               today={today}
               weekStartsOn={settings.weekStartsOn}
+              temperatureUnit={settings.temperatureUnit}
               onSaved={notice}
             />
           )}
@@ -131,10 +137,30 @@ export function App() {
               options={options}
               showFertileWindow={settings.showFertileWindow}
               weekStartsOn={settings.weekStartsOn}
+              detail={settings.forecastDetail}
+              model={settings.forecastModel}
+              look={look}
+              temperatureUnit={settings.temperatureUnit}
+              onDetailChange={(next) => update("forecastDetail", next)}
+              onModelChange={(next) => update("forecastModel", next)}
+              onLookChange={(next) => {
+                if (next.mark !== undefined) update("chartMark", next.mark);
+                if (next.view !== undefined) update("chartView", next.view);
+                if (next.showBands !== undefined) {
+                  update("chartBands", next.showBands);
+                }
+                if (next.showPrior !== undefined) {
+                  update("chartComparePrior", next.showPrior);
+                }
+              }}
             />
           )}
           {tab === "history" && (
-            <HistoryScreen data={store.data} options={options} />
+            <HistoryScreen
+              data={store.data}
+              options={options}
+              temperatureUnit={settings.temperatureUnit}
+            />
           )}
           {tab === "settings" && (
             <SettingsScreen
