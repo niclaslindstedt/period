@@ -8,21 +8,34 @@ index.html
   └── src/main.tsx            mounts <App> inside the i18n LanguageRoot
        └── src/App.tsx        theme, today, store, sync, tab switch, chrome
             ├── ReportScreen      writes day reports
-            ├── ForecastScreen    reads cycle.ts
+            ├── ForecastScreen    reads cycle.ts + forecastModel.ts
             ├── HistoryScreen     reads cycle.ts + swings.ts
             └── SettingsScreen    settings, sync controls, backup, about
 
 src/app/
-  types.ts          the model: DayEntry (two booleans and a date), AppData
-  cycle.ts          periods → cycle lengths → forecast     (pure, clock-free)
-  swings.ts         reports → swing shares per cycle phase (pure, clock-free)
-  merge.ts          two documents → one                    (pure)
+  types.ts          the model: DayEntry (two booleans, a temperature, a date)
+  cycle.ts          periods → cycle lengths → one date      (pure, clock-free)
+  forecastModel.ts  reports → a distribution over days      (pure, clock-free)
+  stats.ts          Student-t, incomplete beta, discrete distributions (pure)
+  swings.ts         reports → swing shares per cycle phase  (pure, clock-free)
+  temperature.ts    °C ⇄ °F, parsing, two-decimal formatting (pure)
+  merge.ts          two documents → one                     (pure)
   migrations.ts     bytes ⇄ AppData, with validation
   usePeriodStore.ts the document in state, persisted to localStorage
   useSyncEngine.ts  the cloud copy: pull on open, debounced push on edit
   useAppSettings.ts the settings blob
   backup.ts         export / restore a JSON file
+
+  ForecastChart.tsx the probability-per-day chart with its credible bands
+  ProfileCharts.tsx the learned mood and temperature patterns
 ```
+
+`cycle.ts` and `forecastModel.ts` are two answers to the same question at
+different resolutions. `cycle.ts` gives the single date the calendar and the
+fertile window need; `forecastModel.ts` gives the distribution the headline and
+the chart draw, reading mood swings and temperature as well as the gaps. They
+share the anchor and the roll-forward rule so they never disagree by a cycle.
+See [the forecast model](forecast-model.md).
 
 ## The shape of the data
 
@@ -30,25 +43,35 @@ One document, one key in localStorage:
 
 ```jsonc
 {
-  "version": 2,
+  "version": 3,
   "entries": {
     "2026-03-01": {
       "date": "2026-03-01",
       "bleeding": true, // any bleeding at all, spotting included
       "moodSwings": false,
+      "temperature": 36.52, // waking, °C, or null when none was taken
       "updatedAt": "2026-03-01T20:14:03.219Z",
     },
   },
 }
 ```
 
-A report is two yes/no answers and the day they belong to. `bleeding` is
-exactly what the derivation reads; `moodSwings` is the one thing plotted
-against it. A field nobody derives anything from would be a field asked for
-every evening for nothing — v2 removed the four that were (a five-level
-bleeding scale, a nine-mood roster, a 0–3 swing scale, and a note), and
-`migrations.ts` carries a v1 document across: any level but `none` becomes
-`bleeding: true`, and any swing above steady becomes `moodSwings: true`.
+A report is two yes/no answers, an optional temperature, and the day they
+belong to. `bleeding` is what the periods and the cycle lengths are derived
+from; `moodSwings` and `temperature` are the two evidence channels the forecast
+model reads within a cycle. A field nobody derives anything from would be a
+field asked for every evening for nothing — v2 removed the four that were (a
+five-level bleeding scale, a nine-mood roster, a 0–3 swing scale, and a note).
+
+`migrations.ts` carries older documents across: v1 → v2 turns any bleeding level
+but `none` into `bleeding: true` and any swing above steady into
+`moodSwings: true`; v2 → v3 gives every existing day `temperature: null`, which
+is the same claim the absent field made.
+
+Temperature is stored in **Celsius** whatever unit the reader has chosen, at
+three decimal places. The third is not precision anybody typed — it is what lets
+a two-decimal Fahrenheit reading round-trip, since one Fahrenheit hundredth is
+0.0056 °C. See [`temperature.ts`](../src/app/temperature.ts).
 
 An **absent** entry and an entry with both answers `false` are different
 claims — "I never logged this day" against "I checked, nothing happened" — so
@@ -66,10 +89,13 @@ moment it was typed, so filing Monday's report on Thursday is not a conflict.
 
 ### Nothing derived is stored
 
-Not the period spans, not the averages, not the predicted date. `cycle.ts`
-recomputes all of it on render, in O(reports) over a dataset that is a few
-hundred entries after a decade of daily use — far below the point where caching
-would earn its keep.
+Not the period spans, not the averages, not the predicted date, and not the
+fitted model. `cycle.ts` and `forecastModel.ts` recompute all of it on render,
+in O(reports) over a dataset that is a few hundred entries after a decade of
+daily use — far below the point where caching would earn its keep. The whole
+posterior, both learned profiles and the backtest together are a few
+milliseconds on a phone, which is what the closed-form conjugate update buys:
+no sampler, no optimiser, nothing to warm up.
 
 The payoff is that there is no stale state to invalidate. Correct a report from
 three weeks ago and the cycle length, the average, the confidence label, the
@@ -104,7 +130,7 @@ menstrual cycles:
 | `/components` | `Modal`, `Section`, `ToggleRow`, `SegmentedControl`, `Button`, `LabeledInput`, `ConfirmDialog`, the toast store and viewport, the icon set |
 | `/theme`      | The token vocabulary, the palettes, and `useApplyTheme`                                                                                    |
 | `/calendar`   | `DayKey` arithmetic (`addDays`, `daysBetween`, `startOfWeek`) and `MonthGrid`                                                              |
-| `/charts`     | The dependency-free SVG `LineChart` and `BarChart`                                                                                         |
+| `/charts`     | The dependency-free SVG `LineChart` and `BarChart`, plus the scale/path primitives `ForecastChart` is built from                           |
 | `/storage`    | The `StorageAdapter` contract and the Dropbox / Drive backends, plus the offline cache wrapper                                             |
 | `/sync`       | `SyncStatus` (the header glyph) and `SyncDetailsModal` (the command centre) — presentation only                                            |
 | `/logging`    | The log buffer and `LogViewer`                                                                                                             |

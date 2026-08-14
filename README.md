@@ -10,15 +10,25 @@
 ## What
 
 **period** is a period tracker that runs entirely in your browser. Each day you
-answer two yes/no questions — was there blood, were there mood swings — on a
-screen that fits a phone without scrolling, and the app derives everything else
-from those reports: where you are in your cycle, when the next period is likely,
-how your cycle length has moved over time, and which phase your mood swings
-cluster in.
+answer two yes/no questions — was there blood, were there mood swings — and
+optionally add your waking temperature, on a screen that fits a phone without
+scrolling. The app derives everything else from those reports: where you are in
+your cycle, when the next period is likely, how your cycle length has moved over
+time, and which phase your mood swings cluster in.
 
-Two questions is the whole report on purpose. The forecast is arithmetic over
-bleeding days, so a heaviness scale, a mood roster and a free-text note were
-fields asked every evening that no number ever read.
+The forecast is not a single date. It is a probability for each day ahead, drawn
+with its 50/80/95% credible bands, from a Bayesian model fitted to your own
+history — log-normal cycle lengths under a conjugate prior, recent cycles
+weighted more heavily, days you already reported without bleeding ruled out, and
+your mood swings and temperatures read as evidence about _this_ cycle. A
+**simple** view names the date and the range; an **advanced** view shows the
+fitted parameters, the patterns it learned, and how well it has done on your past
+cycles. Both read the same posterior, so they are equally accurate — advanced
+just shows the workings.
+
+Three fields is the whole report on purpose, and each one feeds a number you can
+see: a heaviness scale, a mood roster and a free-text note were fields asked
+every evening that nothing ever read.
 
 It is built on [`@niclaslindstedt/oss-framework`](https://github.com/niclaslindstedt/oss-framework),
 the shared React/Preact surface behind the sibling
@@ -83,12 +93,12 @@ npm run build && npm run preview
 
 Four tabs, on a bottom bar:
 
-| Tab          | What it does                                                                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Report**   | One day at a time: blood yes/no, mood swings yes/no. Press the date to reach any past day.                                                                    |
-| **Forecast** | Which day of the cycle today is, the predicted next period with a confidence label, the optional fertile window, and a calendar of logged and predicted days. |
-| **History**  | Average cycle and period length, cycle-length trend, mood swings by cycle phase, and the list of periods every number is derived from.                        |
-| **Settings** | Theme, week start, cycle assumptions, cloud sync, backup / restore / delete, and the build's version.                                                         |
+| Tab          | What it does                                                                                                                                                                                                                           |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Report**   | One day at a time: blood yes/no, mood swings yes/no, and an optional two-decimal waking temperature. Press the date to reach any past day.                                                                                             |
+| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, the optional fertile window, and a calendar. Switch between **simple** and **advanced** detail. |
+| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                            |
+| **Settings** | Theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync, backup / restore / delete, and the build's version.                                                                                            |
 
 ## Configuration
 
@@ -121,6 +131,7 @@ for (const date of ["2026-03-01", "2026-03-02", "2026-03-03"]) {
     date,
     bleeding: true,
     moodSwings: false,
+    temperature: null,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -133,6 +144,25 @@ forecast(doc, "2026-03-10");
 `usingDefault: true` and `confidence: "none"` are the point: with one period
 logged there is no observed cycle to predict from, and the app says so instead
 of quietly presenting the 28-day default as your number.
+
+The probabilistic forecast is the same shape of call, and returns the whole
+distribution rather than one date:
+
+```ts
+import { probabilisticForecast } from "./src/app/forecastModel.ts";
+
+const f = probabilisticForecast(doc, "2026-03-10", "multivariate")!;
+
+f.expectedDay; // → "2026-03-29"   the median: even odds either side
+f.intervals; // → [{ mass: 0.95, start: "2026-03-19", end: "2026-04-11", … }, …]
+f.probabilityWithinWeek; // → 0.0…  the chance it starts in the next seven days
+f.params.df; // → 5   Student-t degrees of freedom: fat tails, one period logged
+f.confidence; // → "low"
+```
+
+Every number is a function of the reports and `today`, which is always passed
+in — nothing here reads the clock. See
+[`docs/forecast-model.md`](docs/forecast-model.md).
 
 ## Troubleshooting
 
@@ -150,7 +180,8 @@ More in [`docs/troubleshooting.md`](docs/troubleshooting.md).
 - [Getting started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
 - [Architecture](docs/architecture.md)
-- [Cycle derivation](docs/cycle.md) — how every predicted number is computed
+- [Cycle derivation](docs/cycle.md) — periods, cycle lengths, phases
+- [The forecast model](docs/forecast-model.md) — the Bayesian model behind the prediction
 - [Sync](docs/sync.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [`AGENTS.md`](AGENTS.md) — conventions for humans and coding agents

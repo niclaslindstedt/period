@@ -112,10 +112,18 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
 ### The app owns the domain ("store stays in the app")
 
 - `src/app/types.ts` — the `DayEntry` / `AppData` model. A report is two
-  booleans (`bleeding`, `moodSwings`) and the day they belong to; adding a
-  third question is a decision, not a detail.
+  booleans (`bleeding`, `moodSwings`), an optional `temperature`, and the day
+  they belong to; adding a fourth question is a decision, not a detail.
 - `src/app/cycle.ts` — the derivation: periods from bleeding days, cycle
-  lengths, averages, the forecast, the phase of a day. **Pure and clock-free.**
+  lengths, averages, one predicted date, the phase of a day. **Pure and
+  clock-free.**
+- `src/app/forecastModel.ts` — the probabilistic forecast: a distribution over
+  the days ahead rather than one of them, plus the mood and temperature
+  evidence channels and the rolling-origin backtest. Also pure and clock-free.
+- `src/app/stats.ts` — the numerics underneath it (Student-t, the regularized
+  incomplete beta, weighted moments, discrete distributions). Textbook
+  definitions with textbook-value tests.
+- `src/app/temperature.ts` — °C ⇄ °F, parsing, two-decimal formatting.
 - `src/app/swings.ts` — mood-swing shares bucketed by cycle phase. Also pure.
 - `src/app/merge.ts` — the per-day, last-edit-wins document merge that both
   cloud sync and backup restore run through.
@@ -126,6 +134,9 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   adapters (debounced push, conflict / auth / throttle handling).
 - `src/app/ReportScreen.tsx`, `ForecastScreen.tsx`, `HistoryScreen.tsx`,
   `SettingsScreen.tsx` — the four screens, one per bottom-nav tab.
+- `src/app/ForecastChart.tsx`, `ProfileCharts.tsx` — the forecast's own charts.
+  Built from the framework's chart _primitives_ (`bandScale`, `linePath`,
+  `barPath`, `linearScale`), not from its finished chart components.
 - `src/app/i18n/en.ts` — every user-facing string.
 - `src/output.ts` — the §19.4 central output module (semantic log helpers over
   the in-app log store).
@@ -144,11 +155,14 @@ a report from three weeks ago immediately fixes every downstream number, and
 why there is no cache to invalidate. **Adding a derived field to `AppData` is
 almost always the wrong fix** — the right one is a function in `cycle.ts`.
 
-### The report is two questions, and the bar for a third is high
+### The report is three fields, and the bar for a fourth is high
 
-The Report screen asks whether there was blood and whether there were mood
-swings. That is the whole document. `bleeding` is exactly what the forecast
-reads; `moodSwings` is the one thing plotted against it on History.
+The Report screen asks whether there was blood, whether there were mood swings,
+and — optionally — this morning's waking temperature. That is the whole
+document. Every one of them feeds a number that is visible somewhere:
+`bleeding` derives the periods and the cycle lengths; `moodSwings` and
+`temperature` are the two evidence channels `forecastModel.ts` reads, both
+plotted on the Forecast screen's advanced view.
 
 v2 removed a five-level bleeding scale, a nine-mood roster, a 0–3 swing scale
 and a free-text note, all of which were asked every evening and read by nothing
@@ -158,13 +172,31 @@ field is a nightly chore with no output, and the answer is no — however
 reasonable it sounds in isolation. A tracker earns its place by being answerable
 in two taps in the dark at 23:50.
 
+Temperature cleared that bar because the post-ovulatory rise is the strongest
+single signal for onset there is, and it is **optional** precisely so the two
+taps still work on a morning nobody reached for a thermometer. A new field that
+has to be filled in every day to be useful has not cleared the bar.
+
 The screen fits one phone screen, portrait, without scrolling — verified on a
 375×667 viewport. A change that makes it scroll is a regression, not a layout
 detail.
 
+### Simple and advanced read the same posterior
+
+The Forecast screen has two detail levels. They are **not** two models: the
+simple view quotes the median and the 80% interval of the identical
+distribution the advanced view draws. Anything that makes them disagree — a
+different fit, a rounded number, a separate code path — breaks the one promise
+the screen makes about itself. If advanced needs a figure, expose it on
+`ProbabilisticForecast` and let both views read it.
+
+The same goes for the univariate / multivariate switch: with too little history
+the multivariate model must reduce _exactly_ to the univariate one, which is
+what makes it safe as the default.
+
 ### Keep the derivation clock-free
 
-`cycle.ts` and `swings.ts` never call `new Date()`. `today` is a parameter,
+`cycle.ts`, `forecastModel.ts` and `swings.ts` never call `new Date()`. `today` is a parameter,
 supplied by `App.tsx` (which refreshes it on focus, so midnight passing while
 the app is open doesn't leave a stale day). Keep it that way: it is what lets
 the tests pin real dates without fake timers.
@@ -217,14 +249,16 @@ with `[Learn more](feature:<slug>)`.
 
 ## Documentation sync points
 
-| If you change…               | Update…                                                                                                        |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| The derivation in `cycle.ts` | `docs/cycle.md`, and the README's Examples block if the output shape moved                                     |
-| The sync engine or the merge | `docs/sync.md`                                                                                                 |
-| A `VITE_*` variable          | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it |
-| A screen's behaviour         | The matching `docs/features/*.md` and the README's Usage table                                                 |
-| Module layout                | The "Where new code goes" table above and `docs/architecture.md`                                               |
-| A make target or script      | `CONTRIBUTING.md`, the README's Quick start, and this file's command list                                      |
+| If you change…                   | Update…                                                                                                        |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| The derivation in `cycle.ts`     | `docs/cycle.md`, and the README's Examples block if the output shape moved                                     |
+| `forecastModel.ts` or `stats.ts` | `docs/forecast-model.md`, `docs/features/forecast.md`, and the README's What block                             |
+| The `DayEntry` shape             | `docs/architecture.md`'s data shape, `docs/features/daily-report.md`, and a `migrations.ts` step               |
+| The sync engine or the merge     | `docs/sync.md`                                                                                                 |
+| A `VITE_*` variable              | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it |
+| A screen's behaviour             | The matching `docs/features/*.md` and the README's Usage table                                                 |
+| Module layout                    | The "Where new code goes" table above and `docs/architecture.md`                                               |
+| A make target or script          | `CONTRIBUTING.md`, the README's Quick start, and this file's command list                                      |
 
 ## Parity and cross-cutting rules
 

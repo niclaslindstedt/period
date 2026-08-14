@@ -6,6 +6,10 @@ What the reports add up to.
   cycles have been tracked, and how many days carry a report.
 - **Cycle length over time** — one point per completed cycle, so a drift or a
   one-off outlier is visible rather than buried in an average.
+- **Waking temperature** — your recent readings, in whichever unit you read.
+  Appears once there are a few. Gaps in the line are mornings you skipped, left
+  as gaps rather than joined across: a line drawn through a fortnight nobody
+  measured is a trend nobody measured.
 - **Mood swings by cycle phase** — the share of the days you reported in each of
   the four phases (menstrual, follicular, fertile, luteal) that had mood swings.
   This is the "is it always like this the week before?" question, answered as a

@@ -1,6 +1,6 @@
 # How the numbers are worked out
 
-Every figure on the Forecast and History screens comes from
+The periods, the cycle lengths, the phases and the fertile window all come from
 [`src/app/cycle.ts`](../src/app/cycle.ts), computed from the day reports at
 render time. This page is that module in prose — worth reading before trusting
 a date, and before changing the code.
@@ -9,6 +9,15 @@ The short version: **this is arithmetic, not a model.** There is no learning,
 no symptom weighting, no population data. That is a deliberate choice — a
 simple rule whose failure modes are legible beats a clever one whose output
 nobody can check.
+
+> **The prediction has moved on.** The single date this page derives is still
+> what the Forecast screen's calendar and fertile window are drawn from, and it
+> is still the definition of a period, a cycle length and a phase. But the
+> Forecast screen's headline and chart now come from a probabilistic model that
+> reports a _distribution_ over days rather than one of them, and that reads
+> mood swings and waking temperature as well as the gaps. See
+> [the forecast model](forecast-model.md). The two agree on the anchor and the
+> roll-forward rule, so they never name dates a month apart.
 
 ## From reports to periods
 
@@ -58,6 +67,11 @@ The spread cap matters: with genuinely irregular cycles the answer stays
 make it less noisy, and a tracker that grows more confident as the evidence
 gets _worse_ is lying.
 
+The label on the Forecast screen is [the model's own](forecast-model.md#confidence-from-the-interval-itself),
+read off the width of its 80% interval rather than off a cycle count — so it can
+never contradict the band drawn beside it. This table is the coarser historical
+version, kept because it is what `cycleStats()` reports.
+
 ## The forecast
 
 ```
@@ -106,10 +120,12 @@ with every share for the same reason.
 
 ## What it does not do
 
-- It does not detect ovulation. Nothing here is measured — no temperature, no
-  LH, no cervical fluid. The "ovulation" date is `nextStart − 14 days` and
-  nothing more.
+- It does not detect ovulation. The "ovulation" date is `nextStart − 14 days`
+  and nothing more. (The forecast model reads waking temperature to tell whether
+  the post-ovulatory shift has _happened_, but it still does not date it.)
 - It does not adapt to a changing cycle beyond what the median does on its own.
+  [The forecast model](forecast-model.md) does, by weighting recent cycles more
+  heavily.
 - It does not know about pregnancy, perimenopause, hormonal contraception,
   PCOS, or any condition that changes what a cycle is.
 - **It is not contraception**, and it is not a medical device.

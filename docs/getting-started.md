@@ -36,7 +36,10 @@ The app opens on the **Report** tab with today selected.
    different from not logging at all, and the cycle derivation treats the two
    differently.
 2. Answer **Mood swings** — whether your mood moved noticeably across the day.
-3. **Save report.**
+3. Optionally, type your **waking temperature** — to two decimal places, taken
+   before getting up. Leave it blank on any morning you didn't take one; the
+   forecast is built to cope with gaps.
+4. **Save report.**
 
 That is the whole screen. To report for an earlier day, press the date at the
 top of the card and pick it from the month calendar; the line under the date
@@ -47,16 +50,28 @@ says whether the day you are looking at already has a report.
 There is nothing to configure for the forecast — it is derived from the
 reports, so it fills in as you log.
 
-| After you have logged… | The Forecast tab shows                                                                                                           |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Nothing                | A prompt to log some bleeding days                                                                                               |
-| One period             | A prediction from the default 28-day cycle, labelled as an estimate ("Using a 28-day cycle until enough of your own is tracked") |
-| Two periods            | Your own observed cycle length, with a `Rough estimate` confidence                                                               |
-| Three or more          | A `Fair estimate`, tightening to `Steady pattern` at six steady cycles                                                           |
+| After you have logged…       | The Forecast tab shows                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Nothing                      | A prompt to log some bleeding days                                                                            |
+| One period                   | A prediction from the default 28-day cycle, labelled as an estimate, with a deliberately wide range around it |
+| Two periods                  | Your own observed cycle length, a narrower range, and a `Rough estimate` confidence                           |
+| Three or more                | A `Fair estimate`, tightening to `Steady pattern` once the range is about a week wide                         |
+| Five or more                 | A **Track record** in the advanced view: how far off the model has been on your own past cycles               |
+| A few weeks of daily reports | Your mood and temperature patterns, which start sharpening the prediction within each cycle                   |
+
+The prediction is a range, not just a date: the chart shows how likely each day
+is, with the bands it falls in half, four-fifths and nineteen-twentieths of the
+time. It starts wide and narrows honestly as you log — including _during_ a
+cycle, since every day you report without bleeding rules that day out.
 
 The confidence label is not decoration. A date from two cycles and a date from
-twelve look the same on a calendar; the label is the only thing that tells them
-apart.
+twelve look the same on a calendar; the label — read straight off the width of
+the range — is what tells them apart.
+
+Switch the **Detail** control at the bottom of the screen to **Advanced** if you
+want to see the model's parameters, the patterns it has learned from you, and
+how well it has scored on your past cycles. It is the same prediction either
+way.
 
 ## Get it onto your phone
 
