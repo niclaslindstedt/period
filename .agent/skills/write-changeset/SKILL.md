@@ -51,7 +51,7 @@ description: "Use before opening a PR with any user-visible change, to add the c
 | Changed source                         | Fragment needed                           |
 | -------------------------------------- | ----------------------------------------- |
 | `src/app/*Screen.tsx`, `BottomNav.tsx` | Yes — the UI moved                        |
-| `src/app/cycle.ts`, `moods.ts`         | Yes — the numbers a user reads changed    |
+| `src/app/cycle.ts`, `swings.ts`        | Yes — the numbers a user reads changed    |
 | `src/app/useSyncEngine.ts`, `merge.ts` | Yes — sync behaviour is user-visible      |
 | `src/app/types.ts`, `migrations.ts`    | Yes, and consider `breaking: true`        |
 | `src/app/i18n/en.ts` alone             | Only if the wording change alters meaning |

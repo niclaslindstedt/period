@@ -53,20 +53,7 @@ export function DropletFilledIcon({ className }: IconProps) {
   );
 }
 
-/** Mood. A neutral face — deliberately not a smile, since the control it
- *  labels covers the whole range. */
-export function MoodIcon({ className }: IconProps) {
-  return (
-    <Glyph className={className}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M8.5 15h7" />
-      <path d="M9 9.5h.01" />
-      <path d="M15 9.5h.01" />
-    </Glyph>
-  );
-}
-
-/** Mood swings — a wave, the same idea the mood-swing scale measures. */
+/** Mood swings — a wave, the shape of a mood that moved. */
 export function WaveIcon({ className }: IconProps) {
   return (
     <Glyph className={className}>

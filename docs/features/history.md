@@ -6,11 +6,12 @@ What the reports add up to.
   cycles have been tracked, and how many days carry a report.
 - **Cycle length over time** — one point per completed cycle, so a drift or a
   one-off outlier is visible rather than buried in an average.
-- **Mood swings by cycle phase** — the average reported swing level in each of
-  the four phases (menstrual, follicular, fertile, luteal). This is the "is it
-  always like this the week before?" question, answered as a count rather than
-  a claim about cause.
-- **Most reported moods** — the overall tally.
+- **Mood swings by cycle phase** — the share of the days you reported in each of
+  the four phases (menstrual, follicular, fertile, luteal) that had mood swings.
+  This is the "is it always like this the week before?" question, answered as a
+  count rather than a claim about cause. It is a share and not a raw count
+  because the phases are different lengths: the luteal phase has roughly twice
+  the days of a period, and counts alone would make it look worse for free.
 - **Periods** — every period, newest first, with its length and the cycle it
   closed.
 

@@ -34,7 +34,7 @@ git diff --name-only "${BASELINE:-$(git rev-list --max-parents=0 HEAD)}"..HEAD -
 | Changed source                                 | Doc to update                                                                                         |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `src/app/cycle.ts`                             | `docs/cycle.md`; `docs/features/forecast.md`; the README's Examples block if the returned shape moved |
-| `src/app/moods.ts`                             | `docs/cycle.md` (phases section); `docs/features/history.md`                                          |
+| `src/app/swings.ts`                            | `docs/cycle.md` (phases section); `docs/features/history.md`                                          |
 | `src/app/merge.ts`, `src/app/useSyncEngine.ts` | `docs/sync.md`; `docs/features/cloud-sync.md`                                                         |
 | `src/app/types.ts`, `src/app/migrations.ts`    | `docs/architecture.md` ("The shape of the data")                                                      |
 | `src/app/useAppSettings.ts`                    | `docs/configuration.md` (runtime settings table)                                                      |

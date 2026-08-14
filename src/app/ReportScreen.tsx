@@ -1,43 +1,42 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import {
   addDays,
-  startOfWeek,
   type DayKey,
   type WeekStart,
 } from "@niclaslindstedt/oss-framework/calendar";
 import {
   Button,
-  ChevronLeftIcon,
-  ChevronRightIcon,
+  CalendarIcon,
   Modal,
   SegmentedControl,
-  Section,
-  type SegmentOption,
 } from "@niclaslindstedt/oss-framework/components";
 
-import { DropletIcon, MoodIcon, WaveIcon } from "./icons.tsx";
+import { DropletIcon, WaveIcon } from "./icons.tsx";
 import { MonthCalendar } from "./MonthCalendar.tsx";
-import { bleedingLabel, moodLabel, swingLabel } from "./labels.ts";
-import { formatFullDay, formatWeekday } from "./format.ts";
-import { useT } from "./i18n/index.ts";
-import {
-  BLEEDING_LEVELS,
-  MOODS,
-  MOOD_SWINGS,
-  blankEntry,
-  type BleedingLevel,
-  type DayEntry,
-  type MoodId,
-  type MoodSwing,
-} from "./types.ts";
+import { formatDay, formatFullDay } from "./format.ts";
+import { useT, type TFn } from "./i18n/index.ts";
+import { blankEntry, type DayEntry } from "./types.ts";
 import type { PeriodStore } from "./usePeriodStore.ts";
 
-// The screen the app opens on: one day, four questions, one Save. Everything
-// else in the app is derived from what is entered here, so it is deliberately
-// the shortest screen — a week strip to land on the right day, bleeding, mood,
-// how much the mood moved, and a note.
+// The screen the app opens on: one day, two questions, one Save — and the
+// whole of it on one phone screen, without scrolling, on the smallest phone
+// worth designing for.
+//
+// It is short on purpose. Every field that used to be here (how heavy the
+// bleeding was, which moods, how far the mood moved on a 0–3 scale, a note) was
+// asked every evening and read by nothing: the forecast is built from bleeding
+// days alone. `bleeding` is the one answer the derivation needs, and
+// `moodSwings` is the one pattern worth plotting against it.
+//
+// The layout is centred rather than top-aligned. With three controls there is
+// more screen than content, and putting the card under the thumb — instead of
+// stranding it at the top above 300px of nothing — is what the space is for.
+//
+// The day is picked from the card itself: tapping the date opens the month
+// grid. The old week strip cost a row of chevrons and seven buttons at the top
+// of the screen to save one tap on the six days a year anyone back-fills.
 //
 // The draft is held locally and only reaches the store on Save. That keeps a
 // half-finished report from moving the forecast under the user mid-edit, and
@@ -68,32 +67,6 @@ export function ReportScreen({ store, today, weekStartsOn, onSaved }: Props) {
     );
   }, [day, store.data.entries]);
 
-  // The week the selected day sits in, so the strip stays put while tapping
-  // across it rather than re-centring under the finger.
-  const weekStart = startOfWeek(day, weekStartsOn);
-  const week = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart],
-  );
-
-  const bleedingOptions: SegmentOption<BleedingLevel>[] = BLEEDING_LEVELS.map(
-    (level) => ({ value: level, label: bleedingLabel(t, level) }),
-  );
-  const swingOptions: SegmentOption<string>[] = MOOD_SWINGS.map((level) => ({
-    value: String(level),
-    label: swingLabel(t, level),
-  }));
-
-  const toggleMood = (mood: MoodId) =>
-    setDraft((prev) => ({
-      ...prev,
-      // Kept in roster order rather than tap order so the stored document is
-      // byte-identical however the moods were tapped (see `migrations.ts`).
-      moods: prev.moods.includes(mood)
-        ? prev.moods.filter((m) => m !== mood)
-        : MOODS.filter((m) => m === mood || prev.moods.includes(m)),
-    }));
-
   const save = () => {
     store.saveEntry({
       ...draft,
@@ -110,165 +83,64 @@ export function ReportScreen({ store, today, weekStartsOn, onSaved }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-3">
-      {/* Week strip. Each day says whether it holds a report, so a gap in the
-          week is visible without opening every day in turn. */}
-      <div className="flex items-stretch gap-1">
-        <button
-          type="button"
-          onClick={() => setDay(addDays(day, -7))}
-          aria-label={t("report.prevWeek")}
-          className="flex w-7 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"
-        >
-          <ChevronLeftIcon className="h-4 w-4" />
-        </button>
-        <div className="grid flex-1 grid-cols-7 gap-1">
-          {week.map((key) => {
-            const entry = store.data.entries[key];
-            const selected = key === day;
-            const isToday = key === today;
-            const future = key > today;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setDay(key)}
-                disabled={future}
-                aria-current={selected ? "date" : undefined}
-                className={`flex flex-col items-center gap-0.5 rounded-md border px-1 py-1.5 text-xs transition-colors ${
-                  selected
-                    ? "border-accent bg-accent/15 text-fg-bright"
-                    : "border-line text-muted hover:bg-surface-2"
-                } ${future ? "opacity-40" : ""}`}
-              >
-                <span className="text-[0.65rem] uppercase">
-                  {formatWeekday(key)}
-                </span>
-                <span className={isToday ? "font-bold text-accent" : ""}>
-                  {Number(key.slice(8))}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    entry ? "bg-accent" : "bg-transparent"
-                  }`}
-                />
-              </button>
-            );
-          })}
-        </div>
-        <button
-          type="button"
-          onClick={() => setDay(addDays(day, 7))}
-          disabled={addDays(day, 7) > addDays(today, 6)}
-          aria-label={t("report.nextWeek")}
-          className="flex w-7 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-fg disabled:opacity-30"
-        >
-          <ChevronRightIcon className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="flex items-baseline justify-between gap-2">
-        <h1 className="text-base font-bold text-fg-bright">
-          {day === today ? t("common.today") : formatFullDay(day)}
-        </h1>
+    <div className="flex flex-1 flex-col justify-center gap-6 px-4 py-4">
+      <div className="flex flex-col items-center gap-1.5">
+        {/* The date is the picker. Tapping it opens the month grid — there is
+            no separate control, because the date is the only thing anyone
+            would be pressing it for. */}
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="text-xs text-link hover:underline"
+          aria-label={t("report.pickDate")}
+          className="flex w-full flex-col items-center gap-0.5 rounded-lg border border-line bg-surface-3 px-4 py-3 transition-colors hover:border-accent/60 hover:bg-surface-2"
         >
-          {t("report.pickDate")}
+          <span className="flex items-center gap-1.5 text-[0.7rem] font-medium tracking-wide text-muted uppercase">
+            <CalendarIcon className="h-3.5 w-3.5" />
+            {t("report.forDay")}
+          </span>
+          <span className="text-xl leading-tight font-bold text-fg-bright">
+            {headlineFor(t, day, today)}
+          </span>
+          <span className="text-xs text-muted">{formatFullDay(day)}</span>
         </button>
+        {/* Whether this day already carries a report — the answer to "did I
+            log today?", which is most of why the app gets opened at all. */}
+        <p className="text-xs text-muted">
+          {stored ? t("report.logged") : t("report.empty")}
+        </p>
       </div>
 
-      <Section
-        title={t("bleeding.label")}
-        icon={<DropletIcon className="h-3.5 w-3.5" />}
-      >
-        {/* `bleeding-scale` tightens the five options so the track fits a
-            phone — see styles.css. */}
-        <SegmentedControl
+      <div className="flex flex-col gap-4">
+        <Answer
+          icon={<DropletIcon className="h-4 w-4" />}
+          label={t("report.blood")}
           value={draft.bleeding}
-          options={bleedingOptions}
           onChange={(bleeding) => setDraft((prev) => ({ ...prev, bleeding }))}
-          ariaLabel={t("bleeding.label")}
-          className="bleeding-scale"
-          fullWidth
         />
-      </Section>
-
-      <Section
-        title={t("mood.label")}
-        icon={<MoodIcon className="h-3.5 w-3.5" />}
-      >
-        <p className="text-xs text-muted">{t("mood.hint")}</p>
-        <div className="flex flex-wrap gap-1.5">
-          {MOODS.map((mood) => {
-            const on = draft.moods.includes(mood);
-            return (
-              <button
-                key={mood}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggleMood(mood)}
-                className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                  on
-                    ? "border-accent bg-accent/15 text-fg-bright"
-                    : "border-line text-muted hover:bg-surface-2"
-                }`}
-              >
-                {moodLabel(t, mood)}
-              </button>
-            );
-          })}
-        </div>
-      </Section>
-
-      <Section
-        title={t("swing.label")}
-        icon={<WaveIcon className="h-3.5 w-3.5" />}
-      >
-        <p className="text-xs text-muted">{t("swing.hint")}</p>
-        <SegmentedControl
-          value={String(draft.swing)}
-          options={swingOptions}
-          onChange={(next) =>
-            setDraft((prev) => ({
-              ...prev,
-              swing: Number(next) as MoodSwing,
-            }))
+        <Answer
+          icon={<WaveIcon className="h-4 w-4" />}
+          label={t("report.swings")}
+          value={draft.moodSwings}
+          onChange={(moodSwings) =>
+            setDraft((prev) => ({ ...prev, moodSwings }))
           }
-          ariaLabel={t("swing.label")}
-          fullWidth
         />
-      </Section>
+      </div>
 
-      <Section title={t("report.noteLabel")}>
-        <textarea
-          // Keyed on the day so switching days replaces the draft text rather
-          // than carrying the previous day's note across.
-          key={day}
-          rows={3}
-          value={draft.note ?? ""}
-          placeholder={t("report.notePlaceholder")}
-          onChange={(e) =>
-            setDraft((prev) => ({
-              ...prev,
-              note: (e.target as HTMLTextAreaElement).value,
-            }))
-          }
-          className="w-full min-w-0 rounded-md border border-line bg-surface-2 px-2 py-1.5 text-sm text-fg outline-none focus:border-accent"
-        />
-      </Section>
-
-      <div className="flex gap-2">
-        <Button variant="primary" className="flex-1" onClick={save}>
+      <div className="flex flex-col items-center gap-2">
+        <Button variant="primary" className="w-full" onClick={save}>
           {stored ? t("report.saveExisting") : t("report.saveNew")}
         </Button>
+        {/* Clearing is rarer than saving and destructive, so it reads as a
+            link under the button rather than a second button beside it. */}
         {stored && (
-          <Button variant="danger" onClick={clear}>
+          <button
+            type="button"
+            onClick={clear}
+            className="px-2 py-1 text-xs text-muted hover:text-danger"
+          >
             {t("report.clear")}
-          </Button>
+          </button>
         )}
       </div>
 
@@ -299,6 +171,54 @@ export function ReportScreen({ store, today, weekStartsOn, onSaved }: Props) {
           />
         </div>
       </Modal>
+    </div>
+  );
+}
+
+/** The big line on the date card. "Today" and "Yesterday" carry more than a
+ *  date does — they are the two days almost every report is filed for — and
+ *  the exact date is spelled out underneath either way. */
+function headlineFor(t: TFn, day: DayKey, today: DayKey): string {
+  if (day === today) return t("common.today");
+  if (day === addDays(today, -1)) return t("common.yesterday");
+  return formatDay(day);
+}
+
+/** One yes/no question: a labelled row over a full-width two-option control.
+ *
+ *  Yes/No rather than a single on/off toggle on purpose. A toggle left alone
+ *  cannot say whether it was answered or skipped, and this document's whole
+ *  contract is that "no bleeding" and "no report" are different claims (see
+ *  `types.ts`) — an explicit No is a report. */
+function Answer({
+  icon,
+  label,
+  value,
+  onChange,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="flex items-center gap-1.5 text-sm font-medium text-fg">
+        <span className="text-muted">{icon}</span>
+        {label}
+      </span>
+      <SegmentedControl
+        value={value ? "yes" : "no"}
+        options={[
+          { value: "no", label: t("common.no") },
+          { value: "yes", label: t("common.yes") },
+        ]}
+        onChange={(next) => onChange(next === "yes")}
+        ariaLabel={label}
+        className="yes-no"
+        fullWidth
+      />
     </div>
   );
 }

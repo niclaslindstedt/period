@@ -26,6 +26,8 @@ export const en = {
     cancel: "Cancel",
     close: "Close",
     delete: "Delete",
+    yes: "Yes",
+    no: "No",
     today: "Today",
     yesterday: "Yesterday",
     days: "{count} days",
@@ -34,47 +36,14 @@ export const en = {
     notEnoughData: "Not enough data yet",
   },
 
-  bleeding: {
-    label: "Bleeding",
-    none: "None",
-    spotting: "Spotting",
-    light: "Light",
-    medium: "Medium",
-    heavy: "Heavy",
-  },
-
-  mood: {
-    label: "Mood",
-    hint: "Tap everything that fits. Nothing is also an answer.",
-    calm: "Calm",
-    happy: "Happy",
-    energetic: "Energetic",
-    irritable: "Irritable",
-    anxious: "Anxious",
-    sad: "Sad",
-    angry: "Angry",
-    tearful: "Tearful",
-    tired: "Tired",
-  },
-
-  swing: {
-    label: "Mood swings",
-    hint: "How much your mood moved across the day.",
-    level0: "Steady",
-    level1: "Mild",
-    level2: "Noticeable",
-    level3: "Strong",
-  },
-
   report: {
     title: "Daily report",
-    noteLabel: "Note",
-    notePlaceholder: "Anything else worth remembering?",
+    forDay: "Report for",
     pickDate: "Pick a date",
-    prevWeek: "Previous week",
-    nextWeek: "Next week",
     prevMonth: "Previous month",
     nextMonth: "Next month",
+    blood: "Blood",
+    swings: "Mood swings",
     saveNew: "Save report",
     saveExisting: "Update report",
     clear: "Clear this day",
@@ -124,7 +93,7 @@ export const en = {
       "Days between the start of each period, oldest cycle first.",
     swingChart: "Mood swings by cycle phase",
     swingChartDesc:
-      "Average reported mood-swing level in each phase of the cycle.",
+      "Share of the days you reported in each phase that had mood swings.",
     phase: {
       menstrual: "Menstrual",
       follicular: "Follicular",
@@ -135,7 +104,6 @@ export const en = {
     periodRow: "{start} — {end}",
     periodLength: "{count} days",
     cycleGap: "{count}-day cycle",
-    topMoods: "Most reported moods",
     empty: "Once you have logged a period or two, the numbers show up here.",
   },
 

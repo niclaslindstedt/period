@@ -111,11 +111,12 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
 
 ### The app owns the domain ("store stays in the app")
 
-- `src/app/types.ts` — the `DayEntry` / `AppData` model, the bleeding levels,
-  the mood roster.
+- `src/app/types.ts` — the `DayEntry` / `AppData` model. A report is two
+  booleans (`bleeding`, `moodSwings`) and the day they belong to; adding a
+  third question is a decision, not a detail.
 - `src/app/cycle.ts` — the derivation: periods from bleeding days, cycle
   lengths, averages, the forecast, the phase of a day. **Pure and clock-free.**
-- `src/app/moods.ts` — mood tallies bucketed by cycle phase. Also pure.
+- `src/app/swings.ts` — mood-swing shares bucketed by cycle phase. Also pure.
 - `src/app/merge.ts` — the per-day, last-edit-wins document merge that both
   cloud sync and backup restore run through.
 - `src/app/migrations.ts` — parse / normalise / serialize; the only module that
@@ -143,31 +144,49 @@ a report from three weeks ago immediately fixes every downstream number, and
 why there is no cache to invalidate. **Adding a derived field to `AppData` is
 almost always the wrong fix** — the right one is a function in `cycle.ts`.
 
+### The report is two questions, and the bar for a third is high
+
+The Report screen asks whether there was blood and whether there were mood
+swings. That is the whole document. `bleeding` is exactly what the forecast
+reads; `moodSwings` is the one thing plotted against it on History.
+
+v2 removed a five-level bleeding scale, a nine-mood roster, a 0–3 swing scale
+and a free-text note, all of which were asked every evening and read by nothing
+but the screen that stored them. So before adding a field, name the number on
+Forecast or History that would move because of it. If there isn't one, the
+field is a nightly chore with no output, and the answer is no — however
+reasonable it sounds in isolation. A tracker earns its place by being answerable
+in two taps in the dark at 23:50.
+
+The screen fits one phone screen, portrait, without scrolling — verified on a
+375×667 viewport. A change that makes it scroll is a regression, not a layout
+detail.
+
 ### Keep the derivation clock-free
 
-`cycle.ts` and `moods.ts` never call `new Date()`. `today` is a parameter,
+`cycle.ts` and `swings.ts` never call `new Date()`. `today` is a parameter,
 supplied by `App.tsx` (which refreshes it on focus, so midnight passing while
 the app is open doesn't leave a stale day). Keep it that way: it is what lets
 the tests pin real dates without fake timers.
 
 ## Where new code goes
 
-| Change                             | Goes in                                                                                |
-| ---------------------------------- | -------------------------------------------------------------------------------------- |
-| A new thing to log about a day     | `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` coercion |
-| A new derived number or prediction | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                |
-| A new statistic over moods         | `src/app/moods.ts`                                                                     |
-| A new screen                       | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`                          |
-| A new setting                      | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`   |
-| A new storage backend              | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`        |
-| Any user-facing string             | `src/app/i18n/en.ts`, never inline in a component                                      |
-| A shared UI primitive              | The framework, if it is domain-free; `src/app/` only if it is period-specific          |
+| Change                             | Goes in                                                                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A new thing to log about a day     | Probably nowhere — see below. If it survives that: `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` step |
+| A new derived number or prediction | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                                                               |
+| A new statistic over mood swings   | `src/app/swings.ts`                                                                                                                   |
+| A new screen                       | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`                                                                         |
+| A new setting                      | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                  |
+| A new storage backend              | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                       |
+| Any user-facing string             | `src/app/i18n/en.ts`, never inline in a component                                                                                     |
+| A shared UI primitive              | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                         |
 
 ## Test conventions
 
 Tests live in `tests/` with a `_test` suffix (OSS_SPEC §20.2) and run under
 Vitest in the `node` environment — they cover the pure domain modules
-(`cycle`, `moods`, `merge`, `migrations`), which is where the app's real logic
+(`cycle`, `swings`, `merge`, `migrations`), which is where the app's real logic
 is. No DOM, no testing-library, no mocked clock.
 
 Run one file with `npx vitest run tests/cycle_test.ts`.

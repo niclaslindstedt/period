@@ -10,26 +10,22 @@ import {
   upcomingStarts,
   DEFAULT_CYCLE_OPTIONS,
 } from "../src/app/cycle.ts";
-import {
-  emptyDoc,
-  type AppData,
-  type BleedingLevel,
-} from "../src/app/types.ts";
+import { emptyDoc, type AppData } from "../src/app/types.ts";
 
 // The cycle derivation is the app's load-bearing logic: every number on the
 // Forecast and History screens comes out of it, and a wrong one is invisible
 // until someone plans a holiday around it. It is pure and takes `today` as an
 // argument, so these tests need no fake timers.
 
-/** Build a document from a compact spec: `{ "2026-01-01": "medium" }`. */
-function docOf(days: Record<string, BleedingLevel>): AppData {
+/** Build a document from a compact spec: `{ "2026-01-01": true }`, where the
+ *  value is whether that day was reported as bleeding. */
+function docOf(days: Record<string, boolean>): AppData {
   const data = emptyDoc();
   for (const [date, bleeding] of Object.entries(days)) {
     data.entries[date] = {
       date,
       bleeding,
-      moods: [],
-      swing: 0,
+      moodSwings: false,
       updatedAt: "2026-01-01T00:00:00.000Z",
     };
   }
@@ -37,20 +33,20 @@ function docOf(days: Record<string, BleedingLevel>): AppData {
 }
 
 /** A run of bleeding days starting at `start`. */
-function period(start: string, length: number): Record<string, BleedingLevel> {
-  const out: Record<string, BleedingLevel> = {};
+function period(start: string, length: number): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
   const base = new Date(`${start}T00:00:00Z`);
   for (let i = 0; i < length; i++) {
     const d = new Date(base);
     d.setUTCDate(d.getUTCDate() + i);
-    out[d.toISOString().slice(0, 10)] = "medium";
+    out[d.toISOString().slice(0, 10)] = true;
   }
   return out;
 }
 
 describe("derivePeriods", () => {
   it("returns nothing when no bleeding was reported", () => {
-    expect(derivePeriods(docOf({ "2026-03-02": "none" }))).toEqual([]);
+    expect(derivePeriods(docOf({ "2026-03-02": false }))).toEqual([]);
   });
 
   it("groups consecutive bleeding days into one period", () => {
@@ -69,9 +65,9 @@ describe("derivePeriods", () => {
     // `bleedingDays` while still counting toward the span's `length`.
     const periods = derivePeriods(
       docOf({
-        "2026-03-01": "medium",
-        "2026-03-02": "medium",
-        "2026-03-04": "light",
+        "2026-03-01": true,
+        "2026-03-02": true,
+        "2026-03-04": true,
       }),
     );
     expect(periods).toHaveLength(1);
@@ -81,15 +77,25 @@ describe("derivePeriods", () => {
   it("splits on a gap of two days or more", () => {
     const periods = derivePeriods(
       docOf({
-        "2026-03-01": "medium",
-        "2026-03-05": "medium",
+        "2026-03-01": true,
+        "2026-03-05": true,
       }),
     );
     expect(periods.map((p) => p.start)).toEqual(["2026-03-01", "2026-03-05"]);
   });
 
-  it("counts spotting as bleeding", () => {
-    expect(derivePeriods(docOf({ "2026-03-01": "spotting" }))).toHaveLength(1);
+  it("treats a reported day with no bleeding as a gap, not a period", () => {
+    // The distinction the whole document rests on: an answered "no" is a
+    // report, and it must not read as a bleeding day.
+    const periods = derivePeriods(
+      docOf({
+        "2026-03-01": true,
+        "2026-03-02": false,
+        "2026-03-03": false,
+        "2026-03-04": true,
+      }),
+    );
+    expect(periods.map((p) => p.start)).toEqual(["2026-03-01", "2026-03-04"]);
   });
 });
 

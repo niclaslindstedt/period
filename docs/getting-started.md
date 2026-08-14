@@ -31,18 +31,16 @@ web sessions do it from `.claude/hooks/session-start.sh`.
 
 The app opens on the **Report** tab with today selected.
 
-1. Pick a **bleeding** level. `None` is a real answer — it records "I checked
-   and there was nothing", which is different from not logging at all, and the
-   cycle derivation treats the two differently.
-2. Tap the **moods** that fit. Any number, including none.
-3. Set **mood swings** — how much your mood moved across the day, as opposed to
-   what it settled on.
-4. Add a **note** if the fixed fields missed something.
-5. **Save report.**
+1. Answer **Blood** — yes or no. Any bleeding counts, spotting included. `No`
+   is a real answer: it records "I checked and there was nothing", which is
+   different from not logging at all, and the cycle derivation treats the two
+   differently.
+2. Answer **Mood swings** — whether your mood moved noticeably across the day.
+3. **Save report.**
 
-The week strip at the top moves between days; **Pick a date** opens a month
-calendar for anything further back. A dot under a day means that day has a
-report.
+That is the whole screen. To report for an earlier day, press the date at the
+top of the card and pick it from the month calendar; the line under the date
+says whether the day you are looking at already has a report.
 
 ## Watch the forecast appear
 

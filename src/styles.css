@@ -48,19 +48,20 @@
   }
 }
 
-/* ── The bleeding scale ──────────────────────────────────────────────────────
-   Five options on a 390px phone is more than the framework's segmented control
-   sizes for: at its default `text-sm` + `px-3` the track overflows its card and
-   "Heavy" is clipped. Tighten just this one control.
+/* ── The report's yes/no answers ─────────────────────────────────────────────
+   The two questions on the Report screen are the app's primary controls and
+   are tapped one-handed, so they get the platform's 48px minimum rather than
+   the framework's default segmented-control height, which is sized for a
+   settings row.
 
    Written as a rule rather than utility classes on the component because the
-   framework sets `text-sm` on each option button itself — a wrapper utility
-   would lose, and an inline `!important` variant would depend on Tailwind's
-   layer ordering. This rule is unlayered, so it wins deterministically. */
-.bleeding-scale button {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  padding-inline: 0.5rem;
+   framework sets the type scale on each option button itself — a wrapper
+   utility would lose, and an inline `!important` variant would depend on
+   Tailwind's layer ordering. This rule is unlayered, so it wins
+   deterministically. */
+.yes-no button {
+  min-height: 3rem;
+  font-size: 0.9375rem;
 }
 
 /* ── App shell ───────────────────────────────────────────────────────────────

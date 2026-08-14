@@ -11,9 +11,8 @@ import { emptyDoc, type AppData, type DayEntry } from "../src/app/types.ts";
 function entry(date: string, patch: Partial<DayEntry> = {}): DayEntry {
   return {
     date,
-    bleeding: "medium",
-    moods: [],
-    swing: 0,
+    bleeding: true,
+    moodSwings: false,
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...patch,
   };
@@ -41,46 +40,46 @@ describe("mergeDocs", () => {
     const merged = mergeDocs(
       docOf(
         entry("2026-03-01", {
-          bleeding: "light",
+          bleeding: false,
           updatedAt: "2026-03-01T08:00:00.000Z",
         }),
       ),
       docOf(
         entry("2026-03-01", {
-          bleeding: "heavy",
+          bleeding: true,
           updatedAt: "2026-03-01T20:00:00.000Z",
         }),
       ),
     );
-    expect(merged.entries["2026-03-01"]!.bleeding).toBe("heavy");
+    expect(merged.entries["2026-03-01"]!.bleeding).toBe(true);
   });
 
   it("keeps the local edit when it is the later one", () => {
     const merged = mergeDocs(
       docOf(
         entry("2026-03-01", {
-          bleeding: "heavy",
+          bleeding: true,
           updatedAt: "2026-03-01T20:00:00.000Z",
         }),
       ),
       docOf(
         entry("2026-03-01", {
-          bleeding: "light",
+          bleeding: false,
           updatedAt: "2026-03-01T08:00:00.000Z",
         }),
       ),
     );
-    expect(merged.entries["2026-03-01"]!.bleeding).toBe("heavy");
+    expect(merged.entries["2026-03-01"]!.bleeding).toBe(true);
   });
 
   it("agrees on the outcome whichever side is passed first", () => {
     const a = docOf(
       entry("2026-03-01", { updatedAt: "2026-03-01T20:00:00.000Z" }),
-      entry("2026-03-03", { bleeding: "spotting" }),
+      entry("2026-03-03", { moodSwings: true }),
     );
     const b = docOf(
       entry("2026-03-01", {
-        bleeding: "heavy",
+        bleeding: true,
         updatedAt: "2026-03-02T20:00:00.000Z",
       }),
       entry("2026-03-05"),

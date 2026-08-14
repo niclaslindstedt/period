@@ -12,8 +12,9 @@ nobody can check.
 
 ## From reports to periods
 
-A day counts as bleeding if its level is anything other than `none` — spotting
-included, since that is how many periods start.
+A day counts as bleeding when its report answers **yes** to blood. That is a
+single yes/no answer, spotting included, since that is how many periods start —
+there is no heaviness in the model, because no number here would read it.
 
 Consecutive bleeding days form one period. A gap of **one** unreported or
 non-bleeding day inside a run is bridged rather than treated as the end of one
@@ -89,7 +90,7 @@ egg viability. It is not user-tunable, because it is not a preference.
 ## Cycle phases
 
 Each day in a cycle falls in one of four phases, used to colour the calendar
-and to bucket moods on the History screen:
+and to bucket mood swings on the History screen:
 
 | Phase      | Days                                                |
 | ---------- | --------------------------------------------------- |
@@ -98,10 +99,10 @@ and to bucket moods on the History screen:
 | Fertile    | The window around the projected ovulation           |
 | Luteal     | From the end of the window to the next period       |
 
-Mood bucketing (in [`moods.ts`](../src/app/moods.ts)) only counts days inside
+Swing bucketing (in [`swings.ts`](../src/app/swings.ts)) only counts days inside
 an **observed** cycle — a day before the first logged period belongs to no
-cycle, and is skipped rather than guessed into a phase. The sample size is
-reported alongside every average for the same reason.
+cycle, and is skipped rather than guessed into a phase. The sample size travels
+with every share for the same reason.
 
 ## What it does not do
 

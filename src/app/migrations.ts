@@ -12,54 +12,21 @@
 
 import { createMigrator } from "@niclaslindstedt/oss-framework/storage";
 
-import {
-  BLEEDING_LEVELS,
-  DOC_VERSION,
-  MOODS,
-  emptyDoc,
-  type AppData,
-  type BleedingLevel,
-  type DayEntry,
-  type MoodId,
-  type MoodSwing,
-} from "./types.ts";
+import { DOC_VERSION, emptyDoc, type AppData, type DayEntry } from "./types.ts";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function asBleeding(value: unknown): BleedingLevel {
-  return BLEEDING_LEVELS.includes(value as BleedingLevel)
-    ? (value as BleedingLevel)
-    : "none";
-}
-
-function asMoods(value: unknown): MoodId[] {
-  if (!Array.isArray(value)) return [];
-  const seen = new Set(
-    value.filter((v): v is MoodId => MOODS.includes(v as MoodId)),
-  );
-  // Normalise to roster order so two devices that tapped the same moods in a
-  // different order produce byte-identical documents (and so never sync-fight).
-  return MOODS.filter((mood) => seen.has(mood));
-}
-
-function asSwing(value: unknown): MoodSwing {
-  const n = Math.round(Number(value));
-  return (n === 1 || n === 2 || n === 3 ? n : 0) as MoodSwing;
-}
-
-/** Coerce one stored entry into a valid `DayEntry`, or drop it when it carries
- *  no usable date. Unknown fields are discarded rather than carried forward. */
+/** Coerce one stored entry into a valid `DayEntry`, or drop it when it isn't
+ *  an object at all. Unknown fields are discarded rather than carried forward,
+ *  so a v1 document's `moods` and `note` do not survive the read. */
 function parseEntry(day: string, value: unknown): DayEntry | null {
   if (!isRecord(value)) return null;
-  const note = typeof value.note === "string" ? value.note : undefined;
   return {
     date: typeof value.date === "string" ? value.date : day,
-    bleeding: asBleeding(value.bleeding),
-    moods: asMoods(value.moods),
-    swing: asSwing(value.swing),
-    ...(note?.trim() ? { note } : {}),
+    bleeding: value.bleeding === true,
+    moodSwings: value.moodSwings === true,
     updatedAt:
       typeof value.updatedAt === "string"
         ? value.updatedAt
@@ -67,15 +34,42 @@ function parseEntry(day: string, value: unknown): DayEntry | null {
   };
 }
 
-// v1 is the first published shape, so the only step is the one that stamps a
-// version onto a document that predates versioning (the framework's runner
-// reads a missing `version` as 0). Each future schema change appends one step
-// migrating `n → n + 1`; existing steps are never edited, since that would
-// silently rewrite documents that already migrated through them.
+/** The v1 → v2 collapse for one entry: the five-level bleeding scale becomes
+ *  "was there any", and the 0–3 swing scale becomes "did it move". Both read
+ *  the old value permissively — this runs on bytes written by a build that is
+ *  no longer here to be asked. */
+function liftEntry(value: unknown): unknown {
+  if (!isRecord(value)) return value;
+  const swing = Math.round(Number(value.swing));
+  return {
+    date: value.date,
+    // Every level except "none" counted as bleeding for the derivation, and
+    // still does — a v1 spotting day is a v2 bleeding day.
+    bleeding: typeof value.bleeding === "string" && value.bleeding !== "none",
+    // Any reported swing at all is a yes. Rounding down to "steady" would be
+    // the lossier read of a scale that only ever meant "how much".
+    moodSwings: Number.isFinite(swing) && swing > 0,
+    updatedAt: value.updatedAt,
+  };
+}
+
+// Step `n` migrates a document from version `n` to `n + 1`. v0 is a document
+// that predates versioning (the framework's runner reads a missing `version`
+// as 0); v1 is the first published shape, with a bleeding scale, a mood
+// roster, a 0–3 swing scale and a note. Existing steps are never edited —
+// that would silently rewrite documents that already migrated through them.
 const migrator = createMigrator({
   latestVersion: DOC_VERSION,
   migrations: {
     0: (doc) => ({ ...doc, version: 1 }),
+    1: (doc) => {
+      const entriesRaw = isRecord(doc.entries) ? doc.entries : {};
+      const entries: Record<string, unknown> = {};
+      for (const [day, value] of Object.entries(entriesRaw)) {
+        entries[day] = liftEntry(value);
+      }
+      return { ...doc, version: 2, entries };
+    },
   },
 });
 

@@ -4,12 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DayKey } from "@niclaslindstedt/oss-framework/calendar";
 
 import { parseDoc, serializeDoc } from "./migrations.ts";
-import {
-  emptyDoc,
-  isEmptyEntry,
-  type AppData,
-  type DayEntry,
-} from "./types.ts";
+import { emptyDoc, type AppData, type DayEntry } from "./types.ts";
 import * as output from "../output.ts";
 
 // The app's data store. Holds the document in state, persists it to
@@ -91,8 +86,9 @@ export const localDocBackend: DocBackend = {
 
 export type PeriodStore = {
   data: AppData;
-  /** Upsert a day's report. An entry with nothing in it clears the day
-   *  instead, so "logged a blank" and "logged nothing" stay one state. */
+  /** Upsert a day's report. A report with both answers no is still a report —
+   *  "I checked in, nothing happened" is a claim, and only `deleteEntry`
+   *  retracts it. */
   saveEntry: (entry: DayEntry) => void;
   /** Remove a day's report. */
   deleteEntry: (day: DayKey) => void;
@@ -134,10 +130,10 @@ export function usePeriodStore(
 
   const saveEntry = useCallback((entry: DayEntry) => {
     setData((prev) => {
-      const entries = { ...prev.entries };
-      if (isEmptyEntry(entry)) delete entries[entry.date];
-      else entries[entry.date] = entry;
-      return { ...prev, entries };
+      return {
+        ...prev,
+        entries: { ...prev.entries, [entry.date]: entry },
+      };
     });
     setEditCount((n) => n + 1);
   }, []);

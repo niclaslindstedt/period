@@ -8,8 +8,8 @@ import { cycleStats, type CycleOptions } from "./cycle.ts";
 import { formatShortDay } from "./format.ts";
 import { ChartIcon } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
-import { moodLabel, phaseLabel } from "./labels.ts";
-import { moodsByPhase, topMoods } from "./moods.ts";
+import { phaseLabel } from "./labels.ts";
+import { swingsByPhase } from "./swings.ts";
 import type { AppData } from "./types.ts";
 
 // What the reports add up to: the four numbers worth knowing, the shape of the
@@ -28,8 +28,7 @@ type Props = {
 export function HistoryScreen({ data, options }: Props) {
   const t = useT();
   const stats = useMemo(() => cycleStats(data), [data]);
-  const phases = useMemo(() => moodsByPhase(data, options), [data, options]);
-  const moods = useMemo(() => topMoods(data, 5), [data]);
+  const phases = useMemo(() => swingsByPhase(data, options), [data, options]);
   const daysLogged = Object.keys(data.entries).length;
 
   if (stats.periods.length === 0) {
@@ -43,7 +42,9 @@ export function HistoryScreen({ data, options }: Props) {
     );
   }
 
-  const swingSeries = phases.map((p) => p.averageSwing ?? 0);
+  // A share of the reported days, not a count: the phases are different
+  // lengths, so raw counts would make the luteal phase look worse for free.
+  const swingSeries = phases.map((p) => p.swingShare ?? 0);
   const hasSwingData = phases.some((p) => p.days > 0);
 
   return (
@@ -100,21 +101,8 @@ export function HistoryScreen({ data, options }: Props) {
             height={160}
             ariaLabel={t("history.swingChart")}
             desc={t("history.swingChartDesc")}
-            formatValue={(v) => v.toFixed(1)}
+            formatValue={(v) => `${Math.round(v)}%`}
           />
-        </Section>
-      )}
-
-      {moods.length > 0 && (
-        <Section title={t("history.topMoods")}>
-          <ul className="flex flex-col gap-1 text-sm">
-            {moods.map(({ mood, count }) => (
-              <li key={mood} className="flex justify-between gap-2">
-                <span className="text-fg">{moodLabel(t, mood)}</span>
-                <span className="text-muted">{count}</span>
-              </li>
-            ))}
-          </ul>
         </Section>
       )}
 

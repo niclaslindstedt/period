@@ -19,7 +19,7 @@ import { formatDay, formatShortDay } from "./format.ts";
 import { DropletFilledIcon, ForecastIcon } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
 import { MonthCalendar } from "./MonthCalendar.tsx";
-import { isBleeding, type AppData } from "./types.ts";
+import type { AppData } from "./types.ts";
 
 // The "so what?" screen: where you are in the cycle, when the next period is
 // due, and — unless the user turned it off — the fertile window around the
@@ -194,7 +194,7 @@ function DayMarker({
   fertileEnd: DayKey | null;
 }) {
   const entry = data.entries[cell.key];
-  if (entry && isBleeding(entry.bleeding)) {
+  if (entry?.bleeding) {
     return <DropletFilledIcon className="mx-auto h-2.5 w-2.5 text-accent" />;
   }
   if (within(cell.key, predictedStart, predictedEnd)) {
