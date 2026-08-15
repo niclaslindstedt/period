@@ -166,10 +166,10 @@ export function SettingsScreen({
         title={t("settings.forecast")}
         icon={<CogIcon className="h-3.5 w-3.5" />}
       >
-        {/* The same two controls live on the Forecast screen itself, next to
-            what they change. They are repeated here because Settings is where
-            people look for them, and a preference that only exists in one
-            place is a preference half the users never find. */}
+        {/* These two used to be duplicated at the bottom of the Forecast
+            screen as well. Two copies of one preference is two things to keep
+            in step for no gain — they are preferences, so they live here, and
+            the Forecast screen only reads them. */}
         <Labelled label={t("settings.forecastDetail")}>
           <SegmentedControl
             value={settings.forecastDetail}

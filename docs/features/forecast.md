@@ -55,8 +55,8 @@ today's reports changed.
 
 ## Simple and advanced
 
-The **Detail** control at the bottom of the screen switches between two views of
-the same forecast.
+The **Detail** setting (in **Settings → Forecast**) switches between two views
+of the same forecast.
 
 **Simple** names the date, the range around it, and the chance it lands within a
 week. That is what the screen is for, and most people never need more.
@@ -81,7 +81,8 @@ better model — it shows the one already behind the simple view.
 
 ## What the forecast is based on
 
-The **Based on** control chooses what the model may read.
+The **Based on** setting (also in **Settings → Forecast**) chooses what the
+model may read.
 
 - **Cycles** — the gaps between your period starts, and nothing else.
 - **Cycles + reports** — that, plus this cycle's mood swings and waking
@@ -92,8 +93,6 @@ Cycles + reports is the default. It falls back to the cycles-only forecast on
 its own until there are enough reported days to learn your pattern, so there is
 no early-days cost to leaving it on — the advanced view says plainly when a
 pattern is still too thin to use.
-
-Both controls also live in **Settings → Forecast**.
 
 For the arithmetic behind all of it, see
 [the forecast model](../forecast-model.md); for the period and phase
