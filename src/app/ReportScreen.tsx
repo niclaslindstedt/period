@@ -10,7 +10,6 @@ import {
   Button,
   CalendarIcon,
   Modal,
-  SegmentedControl,
 } from "@niclaslindstedt/oss-framework/components";
 
 import { DropletIcon, ThermometerIcon, WaveIcon } from "./icons.tsx";
@@ -140,20 +139,25 @@ export function ReportScreen({
       </div>
 
       <div className="flex flex-col gap-4">
-        <Answer
-          icon={<DropletIcon className="h-4 w-4" />}
-          label={t("report.blood")}
-          value={draft.bleeding}
-          onChange={(bleeding) => setDraft((prev) => ({ ...prev, bleeding }))}
-        />
-        <Answer
-          icon={<WaveIcon className="h-4 w-4" />}
-          label={t("report.swings")}
-          value={draft.moodSwings}
-          onChange={(moodSwings) =>
-            setDraft((prev) => ({ ...prev, moodSwings }))
-          }
-        />
+        {/* The two questions, side by side. Two targets this size cost less
+            height than two labelled rows did, which is what buys the
+            temperature control its room on a 375×667 screen. */}
+        <div className="grid grid-cols-2 gap-3">
+          <Answer
+            icon={<DropletIcon className="h-8 w-8" />}
+            label={t("report.blood")}
+            value={draft.bleeding}
+            onChange={(bleeding) => setDraft((prev) => ({ ...prev, bleeding }))}
+          />
+          <Answer
+            icon={<WaveIcon className="h-8 w-8" />}
+            label={t("report.swings")}
+            value={draft.moodSwings}
+            onChange={(moodSwings) =>
+              setDraft((prev) => ({ ...prev, moodSwings }))
+            }
+          />
+        </div>
         <Temperature
           unit={temperatureUnit}
           celsius={draft.temperature}
@@ -240,7 +244,9 @@ function headlineFor(t: TFn, day: DayKey, today: DayKey): string {
  *
  * The slider's top stop is a fever. It is a reading worth keeping and a
  * reading the forecast cannot use, and the control is the honest place to say
- * both.
+ * both. The box says it in the word rather than in the 38.00 the stop happens
+ * to store (see `readsAsFever`) — a number in that field is one somebody
+ * measured, and the stop is not that.
  */
 function Temperature({
   unit,
@@ -267,6 +273,17 @@ function Temperature({
   const commit = (next: string) => {
     setFresh(false);
     onChange(maskCelsius(next, unit), next);
+  };
+  // Leaving the box settles what is in it: the digits are re-derived from the
+  // value that is actually stored, so a reading half typed reads back as the
+  // two decimals it was stored with, one abandoned after the leading digit —
+  // which is not a reading — reads back as the blank it amounts to, and a
+  // fever reads back as the word. The value itself is left alone, because
+  // settling the display is all this is: `maskOf` returns "" for a fever, and
+  // running that back through the mask would clear a reading the user chose.
+  const settle = () => {
+    setFresh(false);
+    onChange(celsius, maskOf(celsius, unit));
   };
   return (
     <div className="flex flex-col gap-2">
@@ -330,12 +347,15 @@ function Temperature({
               }
             }}
             onChange={(e) => commit(maskDigits(e.currentTarget.value, unit))}
-            // Leaving the box settles what is in it: a reading half typed
-            // reads back as the two decimals it was stored with, and one
-            // abandoned after the leading digit — which is not a reading —
-            // reads back as the blank it amounts to.
-            onBlur={() => commit(maskOf(celsius, unit))}
-            className="w-[3.25rem] bg-transparent text-right text-base text-fg-bright tabular-nums outline-none placeholder:text-xs placeholder:text-muted"
+            onBlur={settle}
+            // A fever is the one thing this box says in words, so the word is
+            // set in the field's own type rather than in the placeholder's —
+            // it is a recorded answer, not a prompt for one.
+            className={`w-[3.25rem] bg-transparent text-right text-base text-fg-bright tabular-nums outline-none ${
+              fever
+                ? "placeholder:text-sm placeholder:font-semibold placeholder:text-fg-bright"
+                : "placeholder:text-xs placeholder:text-muted"
+            }`}
           />
           <span
             aria-hidden="true"
@@ -395,12 +415,25 @@ function valueTextFor(
   return formatTemperature(celsius, unit);
 }
 
-/** One yes/no question: a labelled row over a full-width two-option control.
+/**
+ * One of the two questions, as a single button: the glyph large, its name
+ * underneath, and pressing it means it happened. Lit in the app's own red when
+ * it did, dimmed when it did not.
  *
- *  Yes/No rather than a single on/off toggle on purpose. A toggle left alone
- *  cannot say whether it was answered or skipped, and this document's whole
- *  contract is that "no bleeding" and "no report" are different claims (see
- *  `types.ts`) — an explicit No is a report. */
+ * A toggle rather than the Yes/No pair this used to be. The objection to a
+ * toggle is real — one left alone cannot say whether it was answered or
+ * skipped, and this document's whole contract is that "no bleeding" and "no
+ * report" are different claims (see `types.ts`). But it is Save that draws that
+ * line here, not the control: nothing reaches the store until Save is pressed,
+ * so a day saved with neither button lit is an explicit "I checked, nothing
+ * happened", and a day never saved stays absent. The line under the date says
+ * which of the two is on screen.
+ *
+ * What the pair buys for that is the whole report in one tap per question, on a
+ * target a thumb finds without looking — which is the gesture the screen is
+ * designed around. `aria-pressed` is what carries the answer to a screen
+ * reader, so the unlit state is still an audible "no" rather than silence.
+ */
 function Answer({
   icon,
   label,
@@ -412,24 +445,24 @@ function Answer({
   value: boolean;
   onChange: (next: boolean) => void;
 }) {
-  const t = useT();
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="flex items-center gap-1.5 text-sm font-medium text-fg">
-        <span className="text-muted">{icon}</span>
+    <button
+      type="button"
+      aria-pressed={value}
+      onClick={() => onChange(!value)}
+      className={`flex flex-col items-center justify-center gap-2 rounded-xl border px-2 py-4 transition-colors ${
+        value
+          ? // The accent is this app's red (see styles.css). `page-bg` for the
+            // contents is what the framework's solid buttons use, so the mark
+            // and the label stay legible on the fill in both themes.
+            "border-accent bg-accent text-page-bg"
+          : "border-line bg-surface-3 text-muted hover:border-accent/60 hover:bg-surface-2 hover:text-fg"
+      }`}
+    >
+      {icon}
+      <span className="text-center text-sm leading-tight font-semibold">
         {label}
       </span>
-      <SegmentedControl
-        value={value ? "yes" : "no"}
-        options={[
-          { value: "no", label: t("common.no") },
-          { value: "yes", label: t("common.yes") },
-        ]}
-        onChange={(next) => onChange(next === "yes")}
-        ariaLabel={label}
-        className="yes-no"
-        fullWidth
-      />
-    </div>
+    </button>
   );
 }

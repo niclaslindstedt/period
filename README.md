@@ -10,11 +10,11 @@
 ## What
 
 **period** is a period tracker that runs entirely in your browser. Each day you
-answer two yes/no questions — was there blood, were there mood swings — and
-optionally add your waking temperature, on a screen that fits a phone without
-scrolling. The app derives everything else from those reports: where you are in
-your cycle, when the next period is likely, how your cycle length has moved over
-time, and which phase your mood swings cluster in.
+tap two buttons — was there blood, were there mood swings — and optionally add
+your waking temperature, on a screen that fits a phone without scrolling. The
+app derives everything else from those reports: where you are in your cycle,
+when the next period is likely, how your cycle length has moved over time, and
+which phase your mood swings cluster in.
 
 The forecast is not a single date. It is a probability for each day ahead, drawn
 with its 50/80/95% credible bands, from a Bayesian model fitted to your own
@@ -79,9 +79,9 @@ npm run dev
 ```
 
 Open the printed URL. The app boots on the **Report** tab with today selected:
-answer **Blood** and **Mood swings**, then press **Save report**. Log a few days
-of a period and the **Forecast** tab starts predicting; log a second period and
-**History** starts drawing.
+press **Blood** and **Mood swings** if they happened, then press **Save
+report**. Log a few days of a period and the **Forecast** tab starts predicting;
+log a second period and **History** starts drawing.
 
 To try the production build the way it deploys:
 
@@ -93,12 +93,12 @@ npm run build && npm run preview
 
 Four tabs, on a bottom bar:
 
-| Tab          | What it does                                                                                                                                                                                                                           |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Report**   | One day at a time: blood yes/no, mood swings yes/no, and an optional waking temperature — a slider across the range one actually lands in, or three digits in the box beside it. Press the date to reach any past day.                 |
-| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, the optional fertile window, and a calendar. Switch between **simple** and **advanced** detail. |
-| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                            |
-| **Settings** | Theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync, backup / restore / delete, and the build's version.                                                                                            |
+| Tab          | What it does                                                                                                                                                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Report**   | One day at a time: a button each for blood and mood swings — lit when it happened — and an optional waking temperature, on a slider across the range one actually lands in or three digits in the box beside it. Press the date to reach any past day. |
+| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, the optional fertile window, and a calendar. Switch between **simple** and **advanced** detail.                 |
+| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                                            |
+| **Settings** | Theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync, backup / restore / delete, and the build's version.                                                                                                            |
 
 ## Configuration
 

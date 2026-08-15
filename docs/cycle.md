@@ -21,7 +21,7 @@ nobody can check.
 
 ## From reports to periods
 
-A day counts as bleeding when its report answers **yes** to blood. That is a
+A day counts as bleeding when its report has the **Blood** button lit. That is a
 single yes/no answer, spotting included, since that is how many periods start —
 there is no heaviness in the model, because no number here would read it.
 

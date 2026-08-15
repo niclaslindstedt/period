@@ -17,6 +17,7 @@ import {
   maskText,
   normalizeStoredTemperature,
   parseTemperature,
+  readsAsFever,
   sliderCelsiusAt,
   sliderIndexOf,
   toCelsius,
@@ -69,7 +70,10 @@ describe("parseTemperature", () => {
 
 describe("the two-decimal round trip", () => {
   it("survives in Celsius", () => {
-    for (const typed of ["3510", "3650", "3652", "3705", "3899"]) {
+    // Every reading here is one somebody could have measured; the fever
+    // threshold and above is a state rather than a number and round-trips as
+    // one (see below).
+    for (const typed of ["3510", "3650", "3652", "3705", "3790"]) {
       const stored = maskCelsius(typed, "c");
       expect(maskOf(stored, "c")).toBe(typed);
     }
@@ -161,11 +165,22 @@ describe("the digit mask", () => {
     expect(maskOf(36.5, "f")).toBe("9770");
   });
 
-  it("cannot hold a Fahrenheit fever, and says so with an empty field", () => {
-    // 38 °C is 100.4 °F — the leading digit stops being a 9, so the control
-    // shows it as a fever rather than as a number with a digit missing.
+  it("empties the box for a fever, in either unit", () => {
+    // The stop stores 38 °C because the document has nowhere to put
+    // "febrile" — showing that back as 38.00 would claim a reading nobody
+    // took, so the box says the word instead. It always did in Fahrenheit,
+    // where 100.40 does not fit the mask at all; now it does in Celsius too.
+    expect(maskOf(FEVER_CELSIUS, "c")).toBe("");
     expect(maskOf(FEVER_CELSIUS, "f")).toBe("");
-    expect(maskOf(FEVER_CELSIUS, "c")).toBe("3800");
+    expect(maskOf(38.6, "c")).toBe("");
+  });
+
+  it("still shows a measured reading above the band as a number", () => {
+    // 37.60 is out of the forecast's temperature channel and still somebody's
+    // measurement. Replacing it with a word would lose what they typed.
+    expect(isFever(37.6)).toBe(true);
+    expect(readsAsFever(37.6)).toBe(false);
+    expect(maskOf(37.6, "c")).toBe("3760");
   });
 
   it("queries a reading nobody wakes up with, without refusing it", () => {
@@ -197,6 +212,10 @@ describe("the slider", () => {
     // forecast can still read.
     expect(isFever(BAND_MAX_CELSIUS)).toBe(false);
     expect(isFever(37.51)).toBe(true);
+    // And the stop reads back as the word rather than as its own value, which
+    // is the only reason it has one.
+    expect(readsAsFever(FEVER_CELSIUS)).toBe(true);
+    expect(readsAsFever(BAND_MAX_CELSIUS)).toBe(false);
   });
 
   it("round-trips every stop", () => {
