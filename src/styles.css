@@ -236,6 +236,27 @@ body {
   min-height: 3rem;
 }
 
+/* ── The cycle calendar ──────────────────────────────────────────────────────
+   The Calendar screen paints a day by putting a coloured circle *behind* its
+   number. The framework's `MonthGrid` owns the day cell's markup and renders
+   the app's `renderDay` output after the number, so the circle is drawn as an
+   absolutely positioned sibling at a negative stack level (`-z-10`, see
+   `DayCircle.tsx`) to get underneath it.
+
+   A negative stack level escapes to the nearest ancestor stacking context, and
+   without one here that is the page — the circle would slide behind the cell's
+   own hover fill and behind the card it sits on. `isolation: isolate` gives
+   every cell a stacking context of its own, which pins the circle to exactly
+   one layer: above the button's background, below its text. `position:
+   relative` is what the circle's `inset` resolves against.
+
+   This is a stylesheet rule rather than a class on the element because the
+   element is the framework's to render. */
+.app-cycle-calendar [role="gridcell"] > button {
+  position: relative;
+  isolation: isolate;
+}
+
 /* ── Forecast chart ──────────────────────────────────────────────────────────
    The animations for the probability chart on the Forecast screen. They live
    here rather than inline because keyframes are not expressible as Tailwind

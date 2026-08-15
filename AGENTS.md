@@ -132,8 +132,16 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
 - `src/app/usePeriodStore.ts` — the document store (localStorage-persisted).
 - `src/app/useSyncEngine.ts` — the sync engine over the framework's storage
   adapters (debounced push, conflict / auth / throttle handling).
-- `src/app/ReportScreen.tsx`, `ForecastScreen.tsx`, `HistoryScreen.tsx`,
-  `SettingsScreen.tsx` — the four screens, one per bottom-nav tab.
+- `src/app/dayStatus.ts` — the posterior turned into one call per day
+  (_period_ / _predicted period_ / _fertile_ / _not fertile_) and the
+  probability behind it. Fits nothing of its own; it only takes mass out of
+  `forecastModel.ts`. Also pure and clock-free.
+- `src/app/StatusScreen.tsx`, `ReportScreen.tsx`, `CalendarScreen.tsx`,
+  `ForecastScreen.tsx`, `HistoryScreen.tsx`, `SettingsScreen.tsx` — the six
+  screens, one per bottom-nav tab.
+- `src/app/DayCircle.tsx` — a day's status as a colour, plus the legend built
+  from the same table. The only place that mapping exists, so the Status week
+  row and the Calendar month grid cannot paint one day two ways.
 - `src/app/ForecastChart.tsx`, `ProfileCharts.tsx` — the forecast's own charts.
   Built from the framework's chart _primitives_ (`bandScale`, `linePath`,
   `barPath`, `linearScale`), not from its finished chart components.
@@ -180,6 +188,23 @@ has to be filled in every day to be useful has not cleared the bar.
 The screen fits one phone screen, portrait, without scrolling — verified on a
 375×667 viewport. A change that makes it scroll is a regression, not a layout
 detail.
+
+### One posterior, three screens
+
+The rule above generalises. The Status screen's word, the Calendar screen's
+colours and the Forecast screen's date are three renderings of the _same_
+fitted distribution, routed through `dayStatus.ts`:
+
+- a day is inside the next period ⟺ the period starts on it or on one of the
+  `periodLength − 1` days before it;
+- a day is fertile ⟺ the next period starts `luteal − after` … `luteal +
+before` days after it (ovulation is defined backwards from the next start,
+  which is exactly why one distribution answers both).
+
+Summing the posterior mass over those start days _is_ the percentage the Status
+screen quotes. Do not add a second estimator for any of it — a screen that says
+"Fertile" over a distribution that puts the fertile window elsewhere is the one
+failure this arrangement exists to make impossible.
 
 ### Simple and advanced read the same posterior
 
@@ -257,6 +282,7 @@ with `[Learn more](feature:<slug>)`.
 | The sync engine or the merge     | `docs/sync.md`                                                                                                 |
 | A `VITE_*` variable              | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it |
 | A screen's behaviour             | The matching `docs/features/*.md` and the README's Usage table                                                 |
+| `dayStatus.ts`                   | `docs/features/status.md` and `docs/features/calendar.md` — both screens quote its rules                       |
 | Module layout                    | The "Where new code goes" table above and `docs/architecture.md`                                               |
 | A make target or script          | `CONTRIBUTING.md`, the README's Quick start, and this file's command list                                      |
 
@@ -267,8 +293,10 @@ with `[Learn more](feature:<slug>)`.
 - **Two themes only** — one light, one dark, plus "follow the device". The
   framework ships a dozen palettes; this app deliberately exposes none of them.
   Don't reintroduce the picker.
-- **The bottom nav is the navigation.** Four tabs, no sidebar, no drawer. A
-  fifth destination should replace one, not be squeezed in.
+- **The bottom nav is the navigation.** Six tabs, no sidebar, no drawer. Six is
+  the ceiling, not a direction of travel: at 375px each tab gets about 62px,
+  which fits "Calendar" and nothing longer. A seventh destination should
+  replace one, not be squeezed in.
 - **No dependency creep.** The framework, Preact, a font, and workbox-window.
   A new runtime dependency needs a reason that the framework can't serve.
 
