@@ -20,6 +20,42 @@ which the cycle derivation treats differently from a day you simply didn't log.
 The line under the date tells you which of the two you are looking at (**Logged**
 or **Nothing logged yet**), and a day you never save stays unlogged.
 
+## Reporting a range of days
+
+Press the date and the picker opens on **One day**. Switch it to **Range** and
+the grid takes two taps: the first sets one end of the span, the second the
+other — in either order, so picking the last day first works too. Save then
+writes the same two answers to every day in between.
+
+This is what filing a period after the fact looks like. Six consecutive
+bleeding days used to be the same four taps six times over; now it is press the
+date, tap the first and last day, tap **Blood**, and **Save 6 days**.
+
+The card tells you what you are about to write. The date reads **3 Aug – 8 Aug**
+with the day count under it, and the line below counts how many of those days
+already carry a report — **2 of 6 days logged**. A span overwrites the days it
+covers, so that count is there before you save rather than after.
+
+Switching back to **One day** collapses the selection onto the first day of the
+span, and **Clear these days** removes every report in it.
+
+A span is capped at 31 days. It is a guard against a mis-tap in a paged calendar
+— a first day picked in March and a second in a month you scrolled to by
+accident — not a limit on anything real: a period is under a fortnight. Once the
+first day is down, the picker greys out everything past the cap, so the limit is
+visible rather than something a tap discovers.
+
+### Temperature is per day
+
+The temperature control is switched off while a span is selected, and reads
+**One day only** where it otherwise says _Optional_. A waking temperature is one
+morning's measurement, so there is no honest value to write across six days.
+
+**Readings already on those days survive.** Filing "I bled these six days" over
+a week you took your temperature every morning leaves all six of those readings
+exactly where they were — a bulk report writes the two answers and nothing else.
+To add or change a temperature, put the picker back on **One day**.
+
 ## Waking temperature
 
 Taken before getting up, this is the single most useful thing you can add to the

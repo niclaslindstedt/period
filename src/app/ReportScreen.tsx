@@ -3,18 +3,31 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import {
   addDays,
+  daysBetween,
+  extendRange,
+  isInRange,
   type DayKey,
+  type DayRange,
   type WeekStart,
 } from "@niclaslindstedt/oss-framework/calendar";
 import {
   Button,
   CalendarIcon,
   Modal,
+  SegmentedControl,
 } from "@niclaslindstedt/oss-framework/components";
 
+import {
+  MAX_RANGE_DAYS,
+  bulkEntries,
+  daysInRange,
+  isSingleDay,
+  loggedCount,
+  rangeLength,
+} from "./bulk.ts";
 import { DropletIcon, ThermometerIcon, WaveIcon } from "./icons.tsx";
 import { MonthCalendar } from "./MonthCalendar.tsx";
-import { formatDay, formatFullDay } from "./format.ts";
+import { formatDay, formatFullDay, formatShortDay } from "./format.ts";
 import { useT, type TFn } from "./i18n/index.ts";
 import {
   SLIDER_MAX_INDEX,
@@ -50,9 +63,25 @@ import type { PeriodStore } from "./usePeriodStore.ts";
 // grid. The old week strip cost a row of chevrons and seven buttons at the top
 // of the screen to save one tap on the six days a year anyone back-fills.
 //
+// That picker also selects a *span*, which is the one bulk gesture the screen
+// has: a period is five or six consecutive bleeding days, and filing one after
+// the fact was the same four taps repeated six times. Save then writes the two
+// answers to every day in the span (see `bulk.ts`). The screen itself does not
+// change shape for it — the same two buttons, the same Save — because a span
+// is not a different kind of report, it is the same report on more days.
+//
+// The temperature is the exception, and it is disabled rather than ignored
+// while a span is selected: it is one morning's measurement, and a control the
+// user can still move whose value is then dropped on six days would promise
+// something the save does not do. The readings already on those days survive
+// the write untouched.
+//
 // The draft is held locally and only reaches the store on Save. That keeps a
 // half-finished report from moving the forecast under the user mid-edit, and
 // makes "I opened the wrong day" a no-op rather than an edit to undo.
+
+/** Which selection the date picker is making: one day, or a span of them. */
+type PickerMode = "day" | "range";
 
 type Props = {
   store: PeriodStore;
@@ -70,8 +99,24 @@ export function ReportScreen({
   onSaved,
 }: Props) {
   const t = useT();
-  const [day, setDay] = useState<DayKey>(today);
+  // The days this report is for. A one-day report is the degenerate span, so
+  // there is one selection here rather than a day and an optional range beside
+  // it — two pieces of state that can disagree about which days Save writes is
+  // exactly the bug worth designing out.
+  const [span, setSpan] = useState<DayRange>(() => ({
+    start: today,
+    end: today,
+  }));
+  const multi = !isSingleDay(span);
+  const day = span.start;
+  const spanDays = rangeLength(span);
+  const spanLogged = multi ? loggedCount(store.data, span) : 0;
   const [pickerOpen, setPickerOpen] = useState(false);
+  // The picker's own state, live only while it is open. `mode` is which of the
+  // two selections is being made; `pending` is the first end of a range that
+  // has been tapped but not finished — null means the next tap starts one.
+  const [mode, setMode] = useState<PickerMode>("day");
+  const [pending, setPending] = useState<DayRange | null>(null);
   const stored = store.data.entries[day] ?? null;
 
   // The editable draft. Re-seeded whenever the selected day changes (or the
@@ -95,20 +140,69 @@ export function ReportScreen({
   }, [day, store.data.entries, temperatureUnit]);
 
   const save = () => {
-    store.saveEntry({
-      ...draft,
-      date: day,
-      updatedAt: new Date().toISOString(),
-    });
+    const now = new Date().toISOString();
+    if (multi) {
+      // Two answers over the span; each day keeps whatever temperature it
+      // already had (see `bulkEntries`).
+      store.saveEntries(bulkEntries(store.data, span, draft, now));
+      onSaved(t("report.savedRange", { count: String(spanDays) }));
+      return;
+    }
+    store.saveEntry({ ...draft, date: day, updatedAt: now });
     onSaved(t("report.saved"));
   };
 
   const clear = () => {
+    if (multi) {
+      store.deleteEntries(daysInRange(span));
+      setDraft(blankEntry(day, new Date().toISOString()));
+      setTemperatureDigits("");
+      onSaved(t("report.clearedRange", { count: String(spanDays) }));
+      return;
+    }
     store.deleteEntry(day);
     setDraft(blankEntry(day, new Date().toISOString()));
     setTemperatureDigits("");
     onSaved(t("report.cleared"));
   };
+
+  const openPicker = () => {
+    // Reopen in the mode the current selection is in, with no half-made range
+    // left over from last time.
+    setMode(multi ? "range" : "day");
+    setPending(null);
+    setPickerOpen(true);
+  };
+
+  const switchMode = (next: PickerMode) => {
+    setMode(next);
+    setPending(null);
+    // Leaving range mode collapses the selection onto its first day. The span
+    // is the thing range mode selects, so keeping one after switching away
+    // would leave the screen writing six days while claiming to write one.
+    if (next === "day" && multi) setSpan({ start: day, end: day });
+  };
+
+  const pickDay = (key: DayKey) => {
+    if (mode === "day") {
+      setSpan({ start: key, end: key });
+      setPickerOpen(false);
+      return;
+    }
+    // Two taps: the first drops an anchor, the second closes the span around
+    // it — in either direction, so picking the end first still works.
+    if (!pending) {
+      setPending({ start: key, end: key });
+      return;
+    }
+    setSpan(extendRange(pending, key));
+    setPending(null);
+    setPickerOpen(false);
+  };
+
+  // What the grid paints as the current span: the range being built if there
+  // is one, otherwise whatever is already selected.
+  const shown = mode === "range" ? (pending ?? span) : null;
 
   return (
     <div className="flex flex-1 flex-col justify-center gap-6 px-4 py-4">
@@ -118,7 +212,7 @@ export function ReportScreen({
             would be pressing it for. */}
         <button
           type="button"
-          onClick={() => setPickerOpen(true)}
+          onClick={openPicker}
           aria-label={t("report.pickDate")}
           className="flex w-full flex-col items-center gap-0.5 rounded-lg border border-line bg-surface-3 px-4 py-3 transition-colors hover:border-accent/60 hover:bg-surface-2"
         >
@@ -127,14 +221,28 @@ export function ReportScreen({
             {t("report.forDay")}
           </span>
           <span className="text-xl leading-tight font-bold text-fg-bright">
-            {headlineFor(t, day, today)}
+            {headlineFor(t, span, today)}
           </span>
-          <span className="text-xs text-muted">{formatFullDay(day)}</span>
+          <span className="text-xs text-muted">
+            {multi
+              ? t("report.rangeSpan", { count: String(spanDays) })
+              : formatFullDay(day)}
+          </span>
         </button>
         {/* Whether this day already carries a report — the answer to "did I
-            log today?", which is most of why the app gets opened at all. */}
+            log today?", which is most of why the app gets opened at all. Over
+            a span the same question needs a count: filing six days over a week
+            where two are already logged is an overwrite, and the line is where
+            that is visible before Save rather than after it. */}
         <p className="text-xs text-muted">
-          {stored ? t("report.logged") : t("report.empty")}
+          {multi
+            ? t("report.rangeLogged", {
+                logged: String(spanLogged),
+                count: String(spanDays),
+              })
+            : stored
+              ? t("report.logged")
+              : t("report.empty")}
         </p>
       </div>
 
@@ -160,8 +268,12 @@ export function ReportScreen({
         </div>
         <Temperature
           unit={temperatureUnit}
-          celsius={draft.temperature}
-          digits={temperatureDigits}
+          // Blank rather than the span's first day's reading: over a span this
+          // control is not showing a value, so showing one would read as the
+          // value about to be written to all of them.
+          celsius={multi ? null : draft.temperature}
+          digits={multi ? "" : temperatureDigits}
+          disabled={multi}
           onChange={(temperature, digits) => {
             setDraft((prev) => ({ ...prev, temperature }));
             setTemperatureDigits(digits);
@@ -180,17 +292,24 @@ export function ReportScreen({
           className="h-[4.25rem] w-full text-base font-semibold"
           onClick={save}
         >
-          {stored ? t("report.saveExisting") : t("report.saveNew")}
+          {multi
+            ? // The count is on the button because it is the one gesture on
+              // this screen that writes more than the day on display, and the
+              // number of days it writes is the thing worth being sure of.
+              t("report.saveRange", { count: String(spanDays) })
+            : stored
+              ? t("report.saveExisting")
+              : t("report.saveNew")}
         </Button>
         {/* Clearing is rarer than saving and destructive, so it reads as a
             link under the button rather than a second button beside it. */}
-        {stored && (
+        {(multi ? spanLogged > 0 : stored !== null) && (
           <button
             type="button"
             onClick={clear}
             className="px-2 py-1 text-xs text-muted hover:text-danger"
           >
-            {t("report.clear")}
+            {multi ? t("report.clearRange") : t("report.clear")}
           </button>
         )}
       </div>
@@ -203,23 +322,68 @@ export function ReportScreen({
         centered
         size="max-w-xs"
       >
-        <div className="p-4">
+        {/* `app-cycle-calendar` is the stylesheet hook that gives each day
+            cell a stacking context, so the range tint can sit behind the day
+            number rather than over it (see `styles.css`). */}
+        <div className="app-cycle-calendar p-4">
           <h2
             id="date-picker-title"
             className="mb-3 text-sm font-bold text-fg-bright"
           >
             {t("report.pickDate")}
           </h2>
+          {/* One day or several, as a two-way switch above the grid. It is a
+              mode rather than a modifier on the grid itself — a calendar where
+              the second tap sometimes extends and sometimes replaces is one
+              nobody can predict, and the switch is what makes which one it is
+              readable before the tap. */}
+          <SegmentedControl<PickerMode>
+            value={mode}
+            options={[
+              { value: "day", label: t("report.modeDay") },
+              { value: "range", label: t("report.modeRange") },
+            ]}
+            onChange={switchMode}
+            ariaLabel={t("report.modeLabel")}
+            fullWidth
+            className="mb-3"
+          />
           <MonthCalendar
             anchor={day}
-            selected={day}
+            selected={pending ? pending.start : day}
             max={today}
+            // Once an anchor is down, everything past the span cap is greyed
+            // out: the limit is visible in the grid rather than discovered by
+            // a tap that does nothing.
+            isDisabled={
+              pending
+                ? (key) =>
+                    Math.abs(daysBetween(pending.start, key)) >= MAX_RANGE_DAYS
+                : undefined
+            }
             weekStartsOn={weekStartsOn}
-            onSelect={(key) => {
-              setDay(key);
-              setPickerOpen(false);
-            }}
+            onSelect={pickDay}
+            renderDay={
+              shown && !isSingleDay(shown)
+                ? (cell) =>
+                    isInRange(cell.key, shown) ? (
+                      <RangeFill
+                        first={cell.key === shown.start}
+                        last={cell.key === shown.end}
+                      />
+                    ) : null
+                : undefined
+            }
           />
+          {mode === "range" && (
+            <p className="mt-2 text-center text-xs text-muted">
+              {pending
+                ? t("report.rangeEndHint")
+                : t("report.rangeStartHint", {
+                    count: String(MAX_RANGE_DAYS),
+                  })}
+            </p>
+          )}
         </div>
       </Modal>
     </div>
@@ -228,11 +392,35 @@ export function ReportScreen({
 
 /** The big line on the date card. "Today" and "Yesterday" carry more than a
  *  date does — they are the two days almost every report is filed for — and
- *  the exact date is spelled out underneath either way. */
-function headlineFor(t: TFn, day: DayKey, today: DayKey): string {
+ *  the exact date is spelled out underneath either way. A span gets both its
+ *  ends in the short form: "3 Mar – 8 Mar" is what fits at this size on a
+ *  375px screen, and the day count sits underneath it. */
+function headlineFor(t: TFn, span: DayRange, today: DayKey): string {
+  if (!isSingleDay(span)) {
+    return `${formatShortDay(span.start)} – ${formatShortDay(span.end)}`;
+  }
+  const day = span.start;
   if (day === today) return t("common.today");
   if (day === addDays(today, -1)) return t("common.yesterday");
   return formatDay(day);
+}
+
+/** The tint behind a day that falls inside the span being picked. Drawn the
+ *  way `DayCircle` is — an absolutely positioned sibling at a negative stack
+ *  level, so it sits behind the day number rather than over it — but as a
+ *  continuous band rather than a circle, because a span is continuous and a
+ *  row of separate circles reads as separate days. The half-cell bleed either
+ *  side is what closes the grid's 2px cell padding so the band joins up; the
+ *  two ends are the only ones rounded. */
+function RangeFill({ first, last }: { first: boolean; last: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-y-1 -inset-x-0.5 -z-10 bg-accent/25 ${
+        first ? "rounded-l-md" : ""
+      } ${last ? "rounded-r-md" : ""}`}
+    />
+  );
 }
 
 /**
@@ -262,11 +450,16 @@ function Temperature({
   unit,
   celsius,
   digits,
+  disabled = false,
   onChange,
 }: {
   unit: TemperatureUnit;
   celsius: number | null;
   digits: string;
+  /** True while a span is selected. The control stays on screen — a field
+   *  that vanishes reads as a field that was lost — but neither the box nor
+   *  the slider accepts a value a span has no room to store. */
+  disabled?: boolean;
   onChange: (celsius: number | null, digits: string) => void;
 }) {
   const t = useT();
@@ -296,7 +489,10 @@ function Temperature({
     onChange(celsius, maskOf(celsius, unit));
   };
   return (
-    <div className="flex flex-col gap-2">
+    <div
+      className={`flex flex-col gap-2 ${disabled ? "opacity-50" : ""}`}
+      aria-disabled={disabled || undefined}
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-fg">
           <span className="text-muted">
@@ -304,7 +500,9 @@ function Temperature({
           </span>
           <span className="truncate">{label}</span>
           <span className="shrink-0 text-xs font-normal text-muted">
-            {t("report.temperatureOptional")}
+            {disabled
+              ? t("report.temperatureRangeOff")
+              : t("report.temperatureOptional")}
           </span>
         </span>
         {/* The whole number lives in the field — the leading digit is filled
@@ -320,6 +518,7 @@ function Temperature({
             inputMode="numeric"
             pattern="[0-9]*"
             value={maskText(digits)}
+            disabled={disabled}
             placeholder={
               fever
                 ? t("report.temperatureFever")
@@ -383,6 +582,7 @@ function Temperature({
         max={SLIDER_MAX_INDEX}
         step={1}
         value={sliderIndexOf(celsius)}
+        disabled={disabled}
         aria-label={label}
         aria-valuetext={valueTextFor(t, celsius, unit)}
         data-empty={celsius === null ? "true" : undefined}
