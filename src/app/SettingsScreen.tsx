@@ -339,7 +339,11 @@ export function SettingsScreen({
               {t("settings.documentSize")}:{" "}
               {serializeDoc(store.data).length.toLocaleString()} bytes
             </p>
-            <div className="max-h-64 overflow-auto rounded-md border border-line">
+            {/* The viewer draws its own rows edge to edge — it is built to
+                sit in a modal that supplies the inset. In a settings card it
+                has to bring one, or the filter row and every log line print
+                against the border. */}
+            <div className="max-h-64 overflow-auto rounded-md border border-line p-2">
               <LogViewer store={descendingLogStore} />
             </div>
           </>
