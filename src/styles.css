@@ -164,15 +164,40 @@ body {
   flex-direction: column;
 }
 
-/* The notch and the home indicator. The header pads down from the status bar
-   and the nav pads up from the gesture area, so an installed PWA paints edge
-   to edge without putting a control under either. */
-.app-header {
-  padding-top: calc(0.5rem + env(safe-area-inset-top));
+/* Installed iOS PWA edge-to-edge under the home indicator. iOS only extends
+   the page under the home indicator when the *root* element carries a fixed
+   `100vh` height; with `100dvh` the document stops at the letterboxed viewport
+   and iOS paints the remainder as a dead black band below the bottom nav.
+   Force `100vh` in the installed iOS PWA so the shell reaches the screen edge.
+   Scoped to iOS via the `-webkit-touch-callout` probe (no other engine
+   supports it) and to `display-mode: standalone`, so a plain mobile Safari tab
+   — where the collapsing toolbar is the whole reason for `100dvh` — keeps it. */
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: standalone) {
+    html,
+    body,
+    #root {
+      height: 100vh;
+    }
+  }
 }
 
+/* The notch and the home indicator. The header pads down from the status bar,
+   so an installed PWA paints edge to edge without putting the sync glyph — or
+   the rule under it — beneath the Dynamic Island. The inset is the whole of
+   the padding: any constant on top of it pushes the rule visibly below the
+   status bar instead of tucking it under. */
+.app-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* The nav is the last thing above the screen edge, and the app paints under
+   the home indicator (`viewport-fit=cover`), so 10px is all that sits below
+   the labels. Carrying `env(safe-area-inset-bottom)` as well left them 44px
+   clear on a phone — a strip of empty surface as tall as a tab, taken off the
+   page for a home indicator that floats over the bar perfectly happily. */
 .app-bottom-nav {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: 10px;
 }
 
 /* A tab is a thumb target, so give it the platform minimum regardless of how

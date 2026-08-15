@@ -100,19 +100,31 @@ export function App() {
 
   return (
     <div className="flex h-full flex-col bg-page text-fg">
-      <header className="app-header flex shrink-0 items-center justify-between gap-2 border-b border-line bg-surface-3 px-3 py-2">
-        <h1 className="text-sm font-bold tracking-wide text-fg-bright">
-          {t("app.name")}
-        </h1>
+      {/* The status bar's worth of inset, a rule, and nothing else. The app's
+          name used to sit here as a visible title, which is a row of chrome
+          repeating what the icon the user just tapped already said — on a
+          phone that is a tab's worth of height spent on no information. The
+          heading survives as `sr-only` so the document still has one for a
+          screen reader and a crawler.
+
+          `padding-top` is the raw `env(safe-area-inset-top)` (see
+          `styles.css`), so the rule lands immediately under the status bar /
+          Dynamic Island rather than a loose half-rem below it. The bar only
+          takes height beyond the inset when the sync glyph is actually there
+          to occupy it. */}
+      <header className="app-header relative flex shrink-0 items-center justify-end border-b border-line bg-surface-3 px-3">
+        <h1 className="sr-only">{t("app.name")}</h1>
         {sync.backend !== "local" && (
-          <SyncStatus
-            providerName={sync.providerName}
-            status={sync.status}
-            dirty={sync.dirty}
-            offline={sync.offline}
-            onOpenDetails={() => setSyncDetailsOpen(true)}
-            labels={{ syncedTo: (name) => t("sync.syncedTo", { name }) }}
-          />
+          <div className="py-1.5">
+            <SyncStatus
+              providerName={sync.providerName}
+              status={sync.status}
+              dirty={sync.dirty}
+              offline={sync.offline}
+              onOpenDetails={() => setSyncDetailsOpen(true)}
+              labels={{ syncedTo: (name) => t("sync.syncedTo", { name }) }}
+            />
+          </div>
         )}
       </header>
 
@@ -213,7 +225,7 @@ export function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed inset-x-3 bottom-[max(4.5rem,calc(3.5rem+env(safe-area-inset-bottom)))] z-[60] mx-auto flex max-w-md items-center gap-3 rounded-md border border-line bg-surface px-3 py-2.5 text-fg shadow-md"
+          className="fixed inset-x-3 bottom-[4.25rem] z-[60] mx-auto flex max-w-md items-center gap-3 rounded-md border border-line bg-surface px-3 py-2.5 text-fg shadow-md"
         >
           <SpinnerIcon className="h-5 w-5 animate-spin text-accent" />
           <span className="text-sm font-medium">{t("update.reload")}</span>
