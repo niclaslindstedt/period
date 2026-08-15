@@ -125,6 +125,12 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   definitions with textbook-value tests.
 - `src/app/temperature.ts` — °C ⇄ °F, parsing, two-decimal formatting.
 - `src/app/swings.ts` — mood-swing shares bucketed by cycle phase. Also pure.
+- `src/app/bulk.ts` — a day span → the reports it expands to, for the Report
+  screen's range save. Enumeration and nothing else: a bulk report _is_ the
+  reports it writes, so the derivation never learns that spans exist. Pure and
+  clock-free. It is also what keeps each covered day's existing temperature,
+  which is the whole reason that control is disabled over a span rather than
+  merely ignored.
 - `src/app/merge.ts` — the per-day, last-edit-wins document merge that both
   cloud sync and backup restore run through.
 - `src/app/migrations.ts` — parse / normalise / serialize; the only module that
@@ -228,16 +234,17 @@ the tests pin real dates without fake timers.
 
 ## Where new code goes
 
-| Change                             | Goes in                                                                                                                               |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| A new thing to log about a day     | Probably nowhere — see below. If it survives that: `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` step |
-| A new derived number or prediction | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                                                               |
-| A new statistic over mood swings   | `src/app/swings.ts`                                                                                                                   |
-| A new screen                       | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`                                                                         |
-| A new setting                      | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                  |
-| A new storage backend              | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                       |
-| Any user-facing string             | `src/app/i18n/en.ts`, never inline in a component                                                                                     |
-| A shared UI primitive              | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                         |
+| Change                               | Goes in                                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A new thing to log about a day       | Probably nowhere — see below. If it survives that: `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` step |
+| A new derived number or prediction   | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                                                               |
+| A new statistic over mood swings     | `src/app/swings.ts`                                                                                                                   |
+| A change to what a range save writes | `src/app/bulk.ts`, with tests in `tests/bulk_test.ts`                                                                                 |
+| A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`                                                                         |
+| A new setting                        | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                  |
+| A new storage backend                | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                       |
+| Any user-facing string               | `src/app/i18n/en.ts`, never inline in a component                                                                                     |
+| A shared UI primitive                | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                         |
 
 ## Test conventions
 

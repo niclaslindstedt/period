@@ -44,10 +44,25 @@ export const en = {
     pickDate: "Pick a date",
     prevMonth: "Previous month",
     nextMonth: "Next month",
+    // The picker's two modes, and the copy that walks through the second one.
+    // A range is picked with two taps, so the hint has to say which tap the
+    // next one is — a grid that looks identical before and after the first tap
+    // is a grid nobody can tell the state of.
+    modeDay: "One day",
+    modeRange: "Range",
+    modeLabel: "How many days",
+    rangeStartHint: "Tap the first day — up to {count} at a time",
+    rangeEndHint: "Now tap the last day",
+    rangeSpan: "{count} days",
+    rangeLogged: "{logged} of {count} days logged",
     blood: "Blood",
     swings: "Mood swings",
     temperature: "Waking temperature",
     temperatureOptional: "Optional",
+    // A waking temperature is one morning's measurement, so a span can't carry
+    // one. The control says so in place of "Optional" rather than vanishing —
+    // a field that disappears reads as a field that was lost.
+    temperatureRangeOff: "One day only",
     temperatureExact: "Exact waking temperature",
     temperaturePlaceholder: "—",
     temperatureNone: "None",
@@ -55,9 +70,13 @@ export const en = {
     temperatureUnusual: "Unusually low for a waking temperature — check it?",
     saveNew: "Save report",
     saveExisting: "Update report",
+    saveRange: "Save {count} days",
     clear: "Clear this day",
+    clearRange: "Clear these days",
     saved: "Report saved",
+    savedRange: "Saved to {count} days",
     cleared: "Report cleared",
+    clearedRange: "Cleared {count} days",
     logged: "Logged",
     empty: "Nothing logged yet",
   },

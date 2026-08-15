@@ -90,8 +90,16 @@ export type PeriodStore = {
    *  "I checked in, nothing happened" is a claim, and only `deleteEntry`
    *  retracts it. */
   saveEntry: (entry: DayEntry) => void;
+  /** Upsert a whole span of reports as one edit. What the Report screen's
+   *  range save writes — a batch rather than a loop over `saveEntry` so the
+   *  document moves once, the sync engine sees one edit, and a six-day period
+   *  can't be left half-written by a re-render in the middle. */
+  saveEntries: (entries: DayEntry[]) => void;
   /** Remove a day's report. */
   deleteEntry: (day: DayKey) => void;
+  /** Remove a whole span of reports as one edit — `deleteEntry`'s batch form,
+   *  for the same reason `saveEntries` exists. */
+  deleteEntries: (days: DayKey[]) => void;
   /** Replace the whole document — used by the cloud adopt path and by the
    *  Settings import flow. */
   replaceAll: (doc: AppData) => void;
@@ -138,11 +146,32 @@ export function usePeriodStore(
     setEditCount((n) => n + 1);
   }, []);
 
+  const saveEntries = useCallback((entries: DayEntry[]) => {
+    if (entries.length === 0) return;
+    setData((prev) => {
+      const next = { ...prev.entries };
+      for (const entry of entries) next[entry.date] = entry;
+      return { ...prev, entries: next };
+    });
+    setEditCount((n) => n + 1);
+  }, []);
+
   const deleteEntry = useCallback((day: DayKey) => {
     setData((prev) => {
       if (!prev.entries[day]) return prev;
       const entries = { ...prev.entries };
       delete entries[day];
+      return { ...prev, entries };
+    });
+    setEditCount((n) => n + 1);
+  }, []);
+
+  const deleteEntries = useCallback((days: DayKey[]) => {
+    setData((prev) => {
+      const present = days.filter((day) => prev.entries[day]);
+      if (present.length === 0) return prev;
+      const entries = { ...prev.entries };
+      for (const day of present) delete entries[day];
       return { ...prev, entries };
     });
     setEditCount((n) => n + 1);
@@ -157,11 +186,21 @@ export function usePeriodStore(
     () => ({
       data,
       saveEntry,
+      saveEntries,
       deleteEntry,
+      deleteEntries,
       replaceAll,
       editCount,
       loaded: loadedRef.current,
     }),
-    [data, saveEntry, deleteEntry, replaceAll, editCount],
+    [
+      data,
+      saveEntry,
+      saveEntries,
+      deleteEntry,
+      deleteEntries,
+      replaceAll,
+      editCount,
+    ],
   );
 }

@@ -238,10 +238,11 @@ body {
 
 /* ── The cycle calendar ──────────────────────────────────────────────────────
    The Calendar screen paints a day by putting a coloured circle *behind* its
-   number. The framework's `MonthGrid` owns the day cell's markup and renders
-   the app's `renderDay` output after the number, so the circle is drawn as an
+   number, and the Report screen's date picker paints a selected span the same
+   way. The framework's `MonthGrid` owns the day cell's markup and renders the
+   app's `renderDay` output after the number, so the mark is drawn as an
    absolutely positioned sibling at a negative stack level (`-z-10`, see
-   `DayCircle.tsx`) to get underneath it.
+   `DayCircle.tsx` and `ReportScreen.tsx`'s `RangeFill`) to get underneath it.
 
    A negative stack level escapes to the nearest ancestor stacking context, and
    without one here that is the page — the circle would slide behind the cell's

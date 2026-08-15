@@ -34,6 +34,9 @@ type Props = {
   selected?: DayKey | null;
   onSelect?: (day: DayKey) => void;
   max?: DayKey;
+  /** Days this caller won't accept right now — the range picker greys out
+   *  everything past its span cap once a start day is down. */
+  isDisabled?: (day: DayKey) => boolean;
   weekStartsOn: WeekStart;
   renderDay?: (cell: GridCell) => ReactNode;
 };
@@ -43,6 +46,7 @@ export function MonthCalendar({
   selected = null,
   onSelect,
   max,
+  isDisabled,
   weekStartsOn,
   renderDay,
 }: Props) {
@@ -84,6 +88,7 @@ export function MonthCalendar({
         selected={selected}
         onSelect={onSelect}
         max={max}
+        isDisabled={isDisabled}
         today={dayKeyOf(new Date())}
         weekStartsOn={weekStartsOn}
         onMonthNav={step}
