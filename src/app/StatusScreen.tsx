@@ -6,7 +6,7 @@ import {
   type DayKey,
 } from "@niclaslindstedt/oss-framework/calendar";
 
-import { cycleStats, forecast, type CycleOptions } from "./cycle.ts";
+import { forecast, type CycleOptions } from "./cycle.ts";
 import { DayCircle, DayLegend, toneFor } from "./DayCircle.tsx";
 import {
   dayStatus,
@@ -74,8 +74,6 @@ export function StatusScreen({
     () => ({
       data,
       forecast: probabilistic,
-      periodLength:
-        cycleStats(data).averagePeriodLength ?? options.defaultPeriodLength,
       options,
       showFertileWindow,
     }),

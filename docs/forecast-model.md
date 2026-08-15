@@ -195,6 +195,50 @@ off each end. On a calendar this is nearly identical to the highest-density
 region for the shape this model produces, and "10% chance it is earlier, 10%
 chance it is later" is a sentence someone can act on.
 
+## How long an episode lasts
+
+Everything above is about the day the next period **starts**. A calendar paints
+the days a period **covers**, and the two are only the same question if you also
+know how long an episode runs — so a second, much smaller distribution is fitted
+over episode lengths, from the episodes in your history that have finished.
+
+It answers both of the coverage questions the screens ask:
+
+- **How far the next period reaches.** Each candidate start day contributes its
+  own probability times the chance an episode lasts at least that many days. The
+  painted window therefore has a soft trailing edge: the fifth day of a
+  predicted period is less certain than its second, which a fixed "five days
+  from the start" could not express.
+- **How much longer the period running right now will last.** Its start is
+  observed, and so is the fact that it has already reached day _k_ — so the
+  answer is the length distribution conditioned on having got that far.
+
+The second one is why the days after `Cycle day 1` are coloured at all. The
+start-day distribution has nothing to say about them: it is busy describing an
+onset four weeks out.
+
+Three details make it behave:
+
+**The episode in progress is left out of its own fit.** Its length is
+_censored_ — on the first morning of a period it reads as "one day". Averaging
+that in is how a tracker ends up predicting one-day periods on the strength of a
+period that has barely started.
+
+**Observed lengths are smoothed by a day either way.** Four episodes of five
+days would otherwise say a sixth day is impossible, and the calendar would stop
+painting mid-period on the first cycle that runs long.
+
+**Nothing is ruled out entirely.** A flat 2% is spread across the whole support,
+so an episode that outlasts everything on record still has a defined answer to
+"will this continue tomorrow?" rather than a division by zero. In practice it
+keeps its colour a few more days and then fades.
+
+A reported day with no bleeding is excluded outright, on the same rule that
+rules out impossible start days: a logged "no" is a fact, and painting a period
+over it would be the screen contradicting the report it was given. A day with no
+report at all stays possible — not logging is not the same claim as logging a
+no.
+
 ## Confidence, from the interval itself
 
 The label above the forecast is derived from the width of the 80% interval and

@@ -77,13 +77,21 @@ version, kept because it is what `cycleStats()` reports.
 ```
 nextStart   = last period start + typical cycle length
               (rolled forward over cycles that went unlogged)
-nextEnd     = nextStart + average period length − 1
+nextEnd     = nextStart + typical period length − 1
 ovulation   = nextStart − luteal phase length      (default 14 days)
 fertile     = ovulation − 5  …  ovulation + 1
 cycleDay    = days since the current cycle's start + 1
 ```
 
-Two details are worth spelling out.
+Three details are worth spelling out.
+
+**The period you are having does not count toward how long a period lasts.** The
+"typical period length" above averages the episodes that have _finished_. An
+episode in progress is censored — on its first morning it has only lasted one
+day — so counting it would predict a one-day period on the strength of a period
+that has barely started. The History screen's **average period length** is the
+plain average of everything logged, in-progress episode included, because that
+number reports what happened rather than predicting what will.
 
 **Ovulation is counted backwards.** It is estimated from the _next_ period, not
 forward from the last one, because the luteal phase (ovulation → period) varies

@@ -6,7 +6,9 @@ import {
   cycleStats,
   derivePeriods,
   forecast,
+  inProgressPeriod,
   phaseOf,
+  typicalPeriodLength,
   upcomingStarts,
   DEFAULT_CYCLE_OPTIONS,
 } from "../src/app/cycle.ts";
@@ -218,6 +220,73 @@ describe("forecast", () => {
       ...period("2026-05-29", 4), // 28
     });
     expect(forecast(withOutlier, "2026-06-02").cycleLength).toBe(28);
+  });
+});
+
+describe("inProgressPeriod", () => {
+  const periods = derivePeriods(
+    docOf({ ...period("2026-03-01", 5), ...period("2026-03-29", 4) }),
+  );
+
+  it("is the last episode while a bleeding day could still join it", () => {
+    // The run ends 2026-04-01, and `derivePeriods` bridges up to one dry day —
+    // so bleeding on the 3rd would extend it, and the episode is still open.
+    expect(inProgressPeriod(periods, "2026-04-01")?.start).toBe("2026-03-29");
+    expect(inProgressPeriod(periods, "2026-04-03")?.start).toBe("2026-03-29");
+  });
+
+  it("is nothing once no bleeding day could join it any more", () => {
+    expect(inProgressPeriod(periods, "2026-04-04")).toBeNull();
+    expect(inProgressPeriod(periods, "2026-04-20")).toBeNull();
+  });
+
+  it("is nothing when nothing has been logged", () => {
+    expect(inProgressPeriod([], "2026-04-04")).toBeNull();
+  });
+});
+
+describe("typicalPeriodLength", () => {
+  it("averages the episodes that have finished", () => {
+    const periods = derivePeriods(
+      docOf({ ...period("2026-03-01", 6), ...period("2026-03-29", 4) }),
+    );
+    expect(
+      typicalPeriodLength(periods, "2026-04-20", DEFAULT_CYCLE_OPTIONS),
+    ).toBe(5);
+  });
+
+  it("leaves the episode in progress out of its own average", () => {
+    // Six days logged, then a new period one day old. Counting that one day
+    // would say a period lasts three and a half days.
+    const periods = derivePeriods(
+      docOf({ ...period("2026-03-01", 6), ...period("2026-03-29", 1) }),
+    );
+    expect(
+      typicalPeriodLength(periods, "2026-03-29", DEFAULT_CYCLE_OPTIONS),
+    ).toBe(6);
+  });
+
+  it("falls back to the configured default before anything has finished", () => {
+    const periods = derivePeriods(docOf(period("2026-03-01", 1)));
+    expect(
+      typicalPeriodLength(periods, "2026-03-01", DEFAULT_CYCLE_OPTIONS),
+    ).toBe(DEFAULT_CYCLE_OPTIONS.defaultPeriodLength);
+    expect(typicalPeriodLength([], "2026-03-01", DEFAULT_CYCLE_OPTIONS)).toBe(
+      DEFAULT_CYCLE_OPTIONS.defaultPeriodLength,
+    );
+  });
+
+  it("keeps a forecast from predicting a one-day period", () => {
+    // The regression: on the first morning of a new period the predicted span
+    // used to collapse to that morning.
+    const data = docOf({
+      ...period("2026-03-01", 5),
+      ...period("2026-03-29", 5),
+      ...period("2026-04-26", 1),
+    });
+    const f = forecast(data, "2026-04-26", DEFAULT_CYCLE_OPTIONS);
+    expect(f.nextStart).toBe("2026-05-24");
+    expect(f.nextEnd).toBe("2026-05-28");
   });
 });
 

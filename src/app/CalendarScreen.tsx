@@ -8,7 +8,7 @@ import type {
 } from "@niclaslindstedt/oss-framework/calendar";
 import { CalendarIcon } from "@niclaslindstedt/oss-framework/components";
 
-import { cycleStats, type CycleOptions } from "./cycle.ts";
+import type { CycleOptions } from "./cycle.ts";
 import { DayCircle, DayLegend, toneFor } from "./DayCircle.tsx";
 import { dayStatus, type StatusContext } from "./dayStatus.ts";
 import {
@@ -57,8 +57,6 @@ export function CalendarScreen({
     () => ({
       data,
       forecast: probabilisticForecast(data, today, model, options),
-      periodLength:
-        cycleStats(data).averagePeriodLength ?? options.defaultPeriodLength,
       options,
       showFertileWindow,
     }),

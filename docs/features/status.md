@@ -23,8 +23,9 @@ The forecast is a probability distribution over the day your next period starts
 (see [the forecast model](../forecast-model.md)). Both questions this screen
 asks are questions about that same distribution:
 
-- A day is inside the **next period** if the period starts on that day or on one
-  of the few days before it — however long your periods usually run.
+- A day is inside the **next period** if the period starts on or before it and
+  the period runs far enough to reach it — so the last day of a predicted period
+  is less certain than its first.
 - A day is **fertile** if ovulation falls near it, and ovulation is a fixed
   number of days _before_ the next start (the luteal phase). So a day is fertile
   exactly when the next period starts roughly two weeks after it.
@@ -33,6 +34,25 @@ Adding up the probability of the start days that satisfy either condition gives
 the chance that day carries that status. The percentage is that sum. Nothing is
 re-estimated and no second model is fitted, which is why the Status screen can
 never contradict the Forecast screen.
+
+## The period you are having right now
+
+There is a third case, and it is the days-ahead half of the week row on the
+morning it matters most. Once you log the first bleeding day of a period, the
+forecast has already moved on to the _next_ onset four weeks out — so on its own
+it says nothing about tomorrow, and the rest of the period you are currently
+having would read as empty calendar.
+
+So the days after **Cycle day 1** are answered from a different question: given a
+period that started on a known day and has been bleeding for a few days already,
+how likely is it to still be going? That comes from how long your own periods
+have run in the past (see
+[the forecast model](../forecast-model.md#how-long-an-episode-lasts)), and it
+fades out over the following days rather than stopping dead — the fourth day of
+a five-day period is nearly certain, the eighth is not.
+
+A day you reported _without_ bleeding is never painted this way. A logged "no"
+is a fact, and the screen does not argue with a report you gave it.
 
 "Not fertile" quotes the complement — the chance the fertile window does _not_
 cover today.
