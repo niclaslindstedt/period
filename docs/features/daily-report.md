@@ -60,7 +60,9 @@ it.
 So anything above 37.50 °C — the stop, or a number you type — is recorded on the
 day it belongs to and left out of the [forecast's temperature
 channel](../forecast-model.md) and out of the History screen's temperature
-chart. The screen says so underneath rather than leaving you to wonder.
+chart. The Report screen does not explain that at the time: which readings the
+model uses is a fact about the derivation, and the report is a place to answer
+three questions, not to read about how they are used.
 
 The box reads that stop back as the word **Fever**, not as a number. It has to
 store _something_, and what it stores is 38.00 °C — but nobody measured that, and

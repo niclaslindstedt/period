@@ -48,6 +48,36 @@
   }
 }
 
+/* ── Toasts ──────────────────────────────────────────────────────────────────
+   The framework tints a toast by kind: green for success, red for danger. That
+   is the right default for an app whose accent is green — but this one's is
+   rose, and a green card sliding in over a rose-coloured screen reads as a
+   different app's notification rather than as this one confirming a save.
+
+   So both kinds wear red here, and the difference between them is loudness
+   rather than hue: a save is a hairline of accent and a tint you have to look
+   for, an error is a full-strength danger border you cannot miss. Scoped to
+   `.app-toasts` (the viewport in App.tsx) so the `--success` token itself
+   stays the palette's green — the sync glyph still needs a colour that is not
+   the accent to mean "up to date". */
+.app-toasts [data-kind="success"] {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background-color: color-mix(in oklab, var(--accent) 12%, var(--surface-2));
+}
+
+.app-toasts [data-kind="success"] > span[aria-hidden="true"] {
+  background-color: var(--accent);
+}
+
+.app-toasts [data-kind="danger"] {
+  border-color: var(--danger);
+  background-color: color-mix(in oklab, var(--danger) 32%, var(--surface-2));
+}
+
+.app-toasts [data-kind="danger"] > span[aria-hidden="true"] {
+  background-color: var(--danger);
+}
+
 /* ── The waking-temperature slider ───────────────────────────────────────────
    A range input, restyled because the platform's own is drawn for a mouse.
    The thumb is the whole interaction here and has to be findable by a thumb,

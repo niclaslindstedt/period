@@ -251,11 +251,16 @@ export function App() {
           bottom of the screen the card lands squarely on the bottom nav — it
           covers the four tabs for two and a half seconds, right where the
           thumb already is. The header it covers instead is a title and a sync
-          glyph, neither of which anyone is reaching for. */}
+          glyph, neither of which anyone is reaching for.
+
+          `app-toasts` is the hook the stylesheet re-tints these cards through
+          (see styles.css). It is on the viewport rather than the card because
+          the card is the framework's to render — this app only says that
+          inside *its* viewport, a toast wears the app's red. */}
       <ToastViewport
         store={toasts}
         labels={{ dismiss: t("common.close") }}
-        className="pointer-events-none fixed inset-x-0 top-0 z-[70] flex flex-col items-center gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]"
+        className="app-toasts pointer-events-none fixed inset-x-0 top-0 z-[70] flex flex-col items-center gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]"
       />
     </div>
   );

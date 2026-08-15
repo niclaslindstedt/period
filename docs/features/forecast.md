@@ -11,9 +11,9 @@ Where you are in your cycle, and what is coming.
 - **Fertile window** — the days around the projected ovulation, with the
   ovulation date itself named. Turn it off in Settings if you track only your
   period.
-- **Calendar** — logged bleeding days as filled droplets, predicted period days
-  as rings, fertile days as dots, and a small mark on any other day that carries
-  a report.
+- **Forecast calendar** — logged bleeding days as filled droplets, predicted
+  period days as rings, fertile days as dots, and a small mark on any other day
+  that carries a report.
 
 Every forecast carries a **confidence label** — from _No prediction yet_ through
 _Rough estimate_ to _Steady pattern_ — because a date derived from two cycles

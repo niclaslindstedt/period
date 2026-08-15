@@ -50,7 +50,6 @@ export const en = {
     temperaturePlaceholder: "—",
     temperatureNone: "None",
     temperatureFever: "Fever",
-    temperatureFeverHint: "Recorded, but left out of the forecast.",
     temperatureUnusual: "Unusually low for a waking temperature — check it?",
     saveNew: "Save report",
     saveExisting: "Update report",
@@ -63,6 +62,11 @@ export const en = {
 
   forecast: {
     title: "Forecast",
+    // The month grid further down the same screen. It needs a name of its own:
+    // "Forecast" is already the heading of the sentence at the top, and two
+    // sections with one title reads as a repeat rather than as two views of
+    // the same prediction.
+    calendar: "Forecast calendar",
     cycleDay: "Cycle day {day}",
     noHistory: "Log a few bleeding days and the forecast appears here.",
     nextPeriod: "Next period",
