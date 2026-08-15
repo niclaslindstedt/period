@@ -116,7 +116,16 @@ export function App() {
         )}
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto">
+      {/* `relative` is load-bearing, not decoration. Absolutely-positioned
+          descendants resolve against the nearest positioned ancestor, and
+          without one they resolve against the document — so the visually
+          hidden inputs the form controls carry (`sr-only`, which is
+          `position: absolute`) sat at their laid-out offsets *outside* this
+          scroller and stretched the page itself to the height of the settings
+          list. The result was a second scrollbar that moved the whole shell,
+          bottom nav included, off the top of the screen. Positioning the
+          scroller brings them back inside it. */}
+      <main className="relative min-h-0 flex-1 overflow-y-auto">
         {/* `min-h-full` + `flex` so a screen can ask for the leftover height
             — the Report screen centres its card in it rather than stranding
             three controls at the top of an empty phone. */}
@@ -225,7 +234,17 @@ export function App() {
           }}
         />
       )}
-      <ToastViewport store={toasts} labels={{ dismiss: t("common.close") }} />
+      {/* Top, not the framework's default bottom. Every toast this app raises
+          is the answer to a tap on the Report screen's Save button, and at the
+          bottom of the screen the card lands squarely on the bottom nav — it
+          covers the four tabs for two and a half seconds, right where the
+          thumb already is. The header it covers instead is a title and a sync
+          glyph, neither of which anyone is reaching for. */}
+      <ToastViewport
+        store={toasts}
+        labels={{ dismiss: t("common.close") }}
+        className="pointer-events-none fixed inset-x-0 top-0 z-[70] flex flex-col items-center gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]"
+      />
     </div>
   );
 }
