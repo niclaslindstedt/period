@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Generate the PWA install icons and the social-preview image from the same
-// geometry as public/icons/icon.svg — a droplet inside a cycle ring, drawn as
-// a gradient mark on the app's dark surface (the line-art style shared with the
-// sibling notes and contacts apps). Pure Node (zlib + a minimal PNG encoder),
+// geometry as public/icons/icon.svg — a normal curve coming to a point, with a
+// drop of blood hanging from it, drawn as a gradient mark on the app's dark
+// surface. Pure Node (zlib + a minimal PNG encoder),
 // so the pipeline needs no native image dependencies. Rerun with
 // `npm run icons` / `make icons` after changing the mark.
 import { deflateSync } from "node:zlib";
@@ -21,10 +21,12 @@ mkdirSync(iconsDir, { recursive: true });
 const BG = [18, 16, 26]; // #12101a
 const GRAD_TOP = [253, 164, 175]; // #fda4af
 const GRAD_BOT = [225, 29, 72]; // #e11d48
-// The gradient runs top-to-bottom over the mark's vertical extent (unit space),
-// matching the userSpaceOnUse y1=0.25 / y2=0.76 span in the SVG.
-const GRAD_Y0 = 0.25;
-const GRAD_Y1 = 0.76;
+// The gradient runs top-to-bottom over the mark's vertical extent (unit
+// space): the top of the tip down to the underside of the flat, matching the
+// userSpaceOnUse
+// y1=20 / y2=70 span in the SVG.
+const GRAD_Y0 = 0.2;
+const GRAD_Y1 = 0.7;
 
 // The stroke ink at unit-space height `y`, interpolated along the gradient.
 function markInk(y) {
@@ -106,37 +108,116 @@ function encodePng(width, height, rgba) {
 
 // --- the mark ----------------------------------------------------------------
 
-// Half the stroke width in unit space (SVG stroke-width 8 on the 100 viewBox).
+// The mark: one line, flat, that turns up, eases, comes to a point, and turns
+// back down to flat — the top of a drop of blood, drawn the only way a curve
+// read left to right is allowed to draw one.
+//
+// A drop's outline turns back under itself at its widest, and a line with one
+// height per place cannot turn back. So the mark is the half of a drop a
+// distribution can draw: the point, and the flanks flaring out of it into the
+// baseline they rose from.
+//
+// Traced rather than derived. A density function was the obvious way to draw
+// this and it is the wrong one: every distribution with a cusp (Laplace) eases
+// into its tails, and every one that meets its baseline sharply (a gaussian)
+// peaks in a bump. The shape wants both ends sharp with the middle eased, which
+// is four control points and no formula.
+//
+// It stays a *line*. A filled area under the same curve reads as a hill — the
+// drop is in the turn at the top, not in the mass underneath it, and the peak
+// is only ever as sharp as a stroked line can be: the round join at the tip is
+// a semicircle of half the stroke's width, and that blunt spot is the mark's,
+// not a failure of the drawing.
+//
+// The right half, in unit space; the left is its mirror. Everything below is
+// stated once here and mirrored into public/icons/icon.svg by hand — the two
+// files carry the same seven points.
+const TIP = [0.5, 0.24];
+/** The flank: the two sides leave the tip close enough together to read as
+ *  one stroke — that near-parallel run *is* the drop's spire, since a line
+ *  drawing cannot show a narrow point any other way — and separate on the way
+ *  down into the knee. */
+const FLANK_C1 = [0.508, 0.4];
+const FLANK_C2 = [0.57, 0.52];
+/** The knee, where the flank turns out to the baseline. */
+const KNEE = [0.64, 0.62];
+/** The fillet rounding that knee: 0.025 along the tangent either side of it,
+ *  which is a couple of degrees short of a corner. */
+const FILLET_C1 = [0.6543, 0.6405];
+const FILLET_C2 = [0.675, 0.66];
+/** Where the run-out becomes flat, the baseline, and the end of the line. */
+const RUNOUT = [0.7, 0.66];
+const BASE_Y = 0.66;
+const LINE_END = 0.86;
+/** Half the stroke width in unit space (SVG stroke-width 8 on the 100
+ *  viewBox). */
 const STROKE_HALF = 0.04;
 
-// Whether unit-space point (x, y) lands on the mark: a droplet sitting inside
-// an open cycle ring. Mirrors the <path>/<circle> geometry in
-// public/icons/icon.svg.
+/** Mirror a right-half point into the left half. */
+function mirror([x, y]) {
+  return [1 - x, y];
+}
+
+function cubicAt(p0, p1, p2, p3, t) {
+  const u = 1 - t;
+  return [0, 1].map(
+    (i) =>
+      u ** 3 * p0[i] +
+      3 * u * u * t * p1[i] +
+      3 * u * t * t * p2[i] +
+      t ** 3 * p3[i],
+  );
+}
+
+// The line, sampled into points so a pixel's distance to it can be measured
+// rather than estimated — which is what an SVG renderer does anyway, and the
+// reason the .ico and the .svg agree. Round caps and the round join at the tip
+// come for free: the nearest sample to a point beyond either end, or above the
+// peak, is the end point itself.
 //
-// The ring is broken at the top right — the gap is what makes it read as a
-// cycle rather than a plain circle, and it is wide enough (45°) to survive
-// being drawn 16 px across in a browser tab.
+// Emitted left to right, which is also x-sorted, because the whole shape is
+// built around having one height per place. That is what makes the distance
+// test cheap: only samples within a stroke's width in x can be within one in
+// distance, and they are a contiguous slice.
+const SAMPLES = (() => {
+  const pts = [[1 - LINE_END, BASE_Y]];
+  const push = (p) => {
+    if (p[0] > pts[pts.length - 1][0]) pts.push(p);
+  };
+  const curve = (p0, p1, p2, p3, steps) => {
+    for (let i = 1; i <= steps; i++) push(cubicAt(p0, p1, p2, p3, i / steps));
+  };
+  const line = (to, steps) => {
+    const from = pts[pts.length - 1];
+    for (let i = 1; i <= steps; i++) {
+      push([from[0] + ((to[0] - from[0]) * i) / steps, to[1]]);
+    }
+  };
+  line(mirror(RUNOUT), 48);
+  curve(mirror(RUNOUT), mirror(FILLET_C2), mirror(FILLET_C1), mirror(KNEE), 64);
+  curve(mirror(KNEE), mirror(FLANK_C2), mirror(FLANK_C1), TIP, 192);
+  curve(TIP, FLANK_C1, FLANK_C2, KNEE, 192);
+  curve(KNEE, FILLET_C1, FILLET_C2, RUNOUT, 64);
+  line([LINE_END, BASE_Y], 48);
+  return pts;
+})();
+
+/** Whether unit-space point (x, y) lands on the mark. Mirrors the single
+ *  <path> in public/icons/icon.svg. */
 function inStroke(x, y) {
-  const dx = x - 0.5;
-  const dy = y - 0.5;
-  const ring = Math.abs(Math.hypot(dx, dy) - 0.4);
-  if (ring < STROKE_HALF) {
-    // Angle measured clockwise from twelve o'clock, in turns.
-    const turn = (Math.atan2(dx, -dy) / (2 * Math.PI) + 1) % 1;
-    if (turn < 0.02 || turn > 0.145) return true;
+  let lo = 0;
+  let hi = SAMPLES.length;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (SAMPLES[mid][0] <= x - STROKE_HALF) lo = mid;
+    else hi = mid;
   }
-  // The droplet: a disc with a tapering point above it. Filled rather than
-  // stroked — an outline this small closes up into a blob anyway, and the
-  // solid shape is what stays readable at favicon sizes.
-  const R = 0.15;
-  const CY = 0.58;
-  const TIP = 0.3;
-  if (Math.hypot(dx, y - CY) < R) return true;
-  if (y >= TIP && y <= CY) {
-    // Half-width grows from 0 at the tip to the disc's radius at its centre,
-    // eased so the sides meet the disc tangentially instead of creasing.
-    const t = (y - TIP) / (CY - TIP);
-    if (Math.abs(dx) <= R * Math.pow(t, 1.4)) return true;
+  const limit = STROKE_HALF * STROKE_HALF;
+  for (let i = lo; i < SAMPLES.length; i++) {
+    const dx = x - SAMPLES[i][0];
+    if (dx < -STROKE_HALF) break;
+    const dy = y - SAMPLES[i][1];
+    if (dx * dx + dy * dy < limit) return true;
   }
   return false;
 }

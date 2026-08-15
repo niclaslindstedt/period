@@ -1,23 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- The app mark: a droplet inside an open cycle ring, drawn as a
-       top-to-bottom gradient on the app's dark surface — the line-art style
-       shared with the sibling notes and contacts apps, in a distinct rose
-       (they wear green and blue). The gap at the top right is what makes the
-       ring read as a cycle rather than a plain circle. The PNG install icons
-       are generated from the same geometry by scripts/generate-icons.mjs
-       (`npm run icons`). -->
+  <!-- The app mark: one line, flat, that turns up, eases, comes to a point,
+       and turns back down to flat — the top of a drop of blood, drawn the only
+       way a curve read left to right is allowed to draw one.
+
+       A drop's outline turns back under itself at its widest, and a line with
+       one height per place cannot turn back. So this is the half of a drop a
+       distribution can draw: the point, and the flanks flaring out of it into
+       the baseline they rose from. Rose, as the sibling notes and contacts
+       apps are green and blue.
+
+       Traced, not plotted from a density: every distribution with a cusp eases
+       into its tails, and every one that meets its baseline sharply peaks in a
+       bump, and this shape needs both ends sharp with the middle eased. It
+       stays a line — filled, the same curve reads as a hill — so the peak is
+       only ever as sharp as a stroked line can be: `stroke-linejoin="round"`
+       finishes the tip with a semicircle of half the stroke's width. The same
+       points are rasterised into the PNG install icons by
+       scripts/generate-icons.mjs (`npm run icons`). -->
   <defs>
-    <linearGradient id="mark" x1="0" y1="10" x2="0" y2="90" gradientUnits="userSpaceOnUse">
+    <linearGradient id="mark" x1="0" y1="20" x2="0" y2="70" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#fda4af"/>
       <stop offset="100%" stop-color="#e11d48"/>
     </linearGradient>
   </defs>
   <rect width="100" height="100" rx="20" fill="#12101a"/>
-  <!-- The ring, opened between 7° and 52° clockwise from twelve o'clock. -->
-  <path d="M55 10.3 A40 40 0 1 1 81.5 26.1"
-        fill="none" stroke="url(#mark)" stroke-width="8" stroke-linecap="round"/>
-  <!-- The droplet: a disc at (50, 58) r=15 with sides tapering to a point at
-       (50, 30). -->
-  <path d="M50 30 C53 44 65 47 65 58 A15 15 0 1 1 35 58 C35 47 47 44 50 30Z"
-        fill="url(#mark)"/>
+  <!-- Flat to (30, 66); the knee's fillet up to (36, 62); the flank to the tip
+       at (50, 24) — leaving it close enough to its mirror that the two read as
+       one stroke, which is the drop's spire — and mirrored back down. -->
+  <path d="M14 66 L30 66 C32.5 66 34.57 64.05 36 62 C43 52 49.2 40 50 24 C50.8 40 57 52 64 62 C65.43 64.05 67.5 66 70 66 L86 66"
+        fill="none" stroke="url(#mark)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
