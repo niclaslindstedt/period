@@ -3,19 +3,22 @@
 The screen the app opens on. One day, two questions, one optional number, one
 **Save** — and the whole of it on a single phone screen, with nothing to scroll.
 
-- **Blood** — yes or no. Any bleeding counts, spotting included: spotting is how
-  most periods start, and the derivation has no use for a heaviness it never
-  reads.
-- **Mood swings** — yes or no. Whether your mood moved noticeably across the
+- **Blood** — a button. Press it if there was any bleeding at all, spotting
+  included: spotting is how most periods start, and the derivation has no use
+  for a heaviness it never reads.
+- **Mood swings** — a button. Press it if your mood moved noticeably across the
   day.
 - **Waking temperature** — optional. A slider for the reading, and a box for
   the exact one.
 
-`No` is a real answer. It records that you checked and there was nothing, which
-the cycle derivation treats differently from a day you simply didn't log — so a
-day where you answered no to both is still stored, and the line under the date
-tells you which of the two you are looking at (**Logged** or **Nothing logged
-yet**).
+Each button lights up in the app's red when it happened and sits dimmed when it
+did not, so one glance at the pair is the whole answer.
+
+Leaving both dim is a real answer. **Save** is what files the report, so a day
+saved with neither button lit records that you checked and there was nothing —
+which the cycle derivation treats differently from a day you simply didn't log.
+The line under the date tells you which of the two you are looking at (**Logged**
+or **Nothing logged yet**), and a day you never save stays unlogged.
 
 ## Waking temperature
 
@@ -58,6 +61,12 @@ So anything above 37.50 °C — the stop, or a number you type — is recorded o
 day it belongs to and left out of the [forecast's temperature
 channel](../forecast-model.md) and out of the History screen's temperature
 chart. The screen says so underneath rather than leaving you to wonder.
+
+The box reads that stop back as the word **Fever**, not as a number. It has to
+store _something_, and what it stores is 38.00 °C — but nobody measured that, and
+showing it would look like a reading you took. A temperature you did type is
+always shown as the number you typed, right up to the 38.00 °C threshold where
+the word takes over.
 
 A reading below 35.50 °C is flagged instead of refused: the box marks itself and
 asks you to check the digits, and then stores exactly what you entered. It is a

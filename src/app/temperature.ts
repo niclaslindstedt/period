@@ -149,6 +149,24 @@ export function isFever(celsius: number): boolean {
   return celsius > BAND_MAX_CELSIUS;
 }
 
+/**
+ * Whether a reading should be read back as the word "Fever" rather than as a
+ * number.
+ *
+ * The fever stop is a state the user chose, not a temperature they measured —
+ * it stores {@link FEVER_CELSIUS} because the document has nowhere else to put
+ * "febrile", and showing that back as "38.00 °C" would claim a reading nobody
+ * took. So at the clinical threshold and above, the control says the word.
+ *
+ * The threshold rather than {@link isFever}'s band edge, because 37.60 *is* a
+ * number someone read off a thermometer: it is left out of the forecast (the
+ * line under the control says so) but it is still their measurement, and
+ * replacing it with a word would be the mirror of the same mistake.
+ */
+export function readsAsFever(celsius: number): boolean {
+  return celsius >= FEVER_CELSIUS;
+}
+
 /** Stops on the slider: 0 records nothing, 1…`BAND_STOPS` walk the band, and
  *  {@link SLIDER_MAX_INDEX} is the fever stop past the end.
  *
@@ -243,12 +261,14 @@ export function maskCelsius(
   );
 }
 
-/** A stored reading as the box's digits, or "" when the mask cannot hold it —
- *  which in practice means a fever in Fahrenheit, where the leading digit
- *  stops being a 9. The control shows those as a fever rather than as a number
- *  with a digit missing. */
+/** A stored reading as the box's digits, or "" when the box should show a word
+ *  instead of a number: nothing recorded, or a fever (see
+ *  {@link readsAsFever}). "" is also what the mask returns when it cannot hold
+ *  the reading at all — which, now that fevers are spelled out in both units,
+ *  is only reachable from a hand-edited document. */
 export function maskOf(celsius: number | null, unit: TemperatureUnit): string {
   if (celsius === null) return "";
+  if (readsAsFever(celsius)) return "";
   const shown = inUnit(celsius, unit).toFixed(DISPLAY_DECIMALS);
   if (shown.length !== 5 || shown[0] !== maskPrefix(unit)) return "";
   return shown.replace(".", "");

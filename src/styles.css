@@ -48,22 +48,6 @@
   }
 }
 
-/* ── The report's yes/no answers ─────────────────────────────────────────────
-   The two questions on the Report screen are the app's primary controls and
-   are tapped one-handed, so they get the platform's 48px minimum rather than
-   the framework's default segmented-control height, which is sized for a
-   settings row.
-
-   Written as a rule rather than utility classes on the component because the
-   framework sets the type scale on each option button itself — a wrapper
-   utility would lose, and an inline `!important` variant would depend on
-   Tailwind's layer ordering. This rule is unlayered, so it wins
-   deterministically. */
-.yes-no button {
-  min-height: 3rem;
-  font-size: 0.9375rem;
-}
-
 /* ── The waking-temperature slider ───────────────────────────────────────────
    A range input, restyled because the platform's own is drawn for a mouse.
    The thumb is the whole interaction here and has to be findable by a thumb,
