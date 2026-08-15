@@ -170,7 +170,16 @@ export function ReportScreen({
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <Button variant="primary" className="w-full" onClick={save}>
+        {/* Twice the framework Button's own height. Save is the last gesture
+            of the whole screen and the one made one-handed in the dark, so it
+            gets a target sized for a thumb that is not aiming — the rest of
+            the card is already tall enough that the extra rem costs nothing on
+            a 375×667 screen. */}
+        <Button
+          variant="primary"
+          className="h-[4.25rem] w-full text-base font-semibold"
+          onClick={save}
+        >
           {stored ? t("report.saveExisting") : t("report.saveNew")}
         </Button>
         {/* Clearing is rarer than saving and destructive, so it reads as a
@@ -242,11 +251,12 @@ function headlineFor(t: TFn, day: DayKey, today: DayKey): string {
  * point are printed for you, so 6·5·0 is the whole gesture for 36.50.
  * `inputMode="numeric"` puts a keypad under those three taps.
  *
- * The slider's top stop is a fever. It is a reading worth keeping and a
- * reading the forecast cannot use, and the control is the honest place to say
- * both. The box says it in the word rather than in the 38.00 the stop happens
- * to store (see `readsAsFever`) — a number in that field is one somebody
- * measured, and the stop is not that.
+ * The slider's top stop is a fever: a reading worth keeping and a reading the
+ * forecast cannot use. The box says it in the word rather than in the 38.00
+ * the stop happens to store — a number in that field is one somebody measured,
+ * and the stop is not that. What the screen does *not* do is explain the
+ * second half; that the model leaves a fever out is a fact about the
+ * derivation, and the Report screen is not where the derivation is discussed.
  */
 function Temperature({
   unit,
@@ -390,13 +400,13 @@ function Temperature({
         <span>{t("report.temperatureNone")}</span>
         <span>{t("report.temperatureFever")}</span>
       </div>
-      {/* One line, and only when there is something to say. A fever is
-          recorded and explained; a reading nobody wakes up with is queried
-          rather than rejected. */}
-      {(fever || low) && (
-        <p className={`text-xs ${low ? "text-flag" : "text-muted"}`}>
-          {t(low ? "report.temperatureUnusual" : "report.temperatureFeverHint")}
-        </p>
+      {/* One line, and only when there is something to say: a reading nobody
+          wakes up with is queried rather than rejected. A fever says nothing
+          here — that it is recorded and that the model skips it is how the
+          app works, not something the person holding the thermometer has to
+          be told at 07:00. */}
+      {low && (
+        <p className="text-xs text-flag">{t("report.temperatureUnusual")}</p>
       )}
     </div>
   );

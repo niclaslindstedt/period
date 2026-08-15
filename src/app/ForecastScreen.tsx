@@ -37,7 +37,7 @@ import { useT, type TFn } from "./i18n/index.ts";
 import { MonthCalendar } from "./MonthCalendar.tsx";
 import { MoodProfileChart, TemperatureProfileChart } from "./ProfileCharts.tsx";
 import { formatTemperatureDelta, type TemperatureUnit } from "./temperature.ts";
-import type { AppData } from "./types.ts";
+import type { AppData, DayEntry } from "./types.ts";
 
 // The "so what?" screen: where you are in the cycle, when the next period is
 // due, how sure that is, and — unless the user turned it off — the fertile
@@ -180,7 +180,7 @@ export function ForecastScreen({
         </Section>
       )}
 
-      <Section title={t("forecast.title")}>
+      <Section title={t("forecast.calendar")}>
         <MonthCalendar
           anchor={today}
           weekStartsOn={weekStartsOn}
@@ -719,7 +719,15 @@ function Choice({
 
 /** One day cell's markers: a filled droplet for a logged bleeding day, a ring
  *  for a predicted period day, a dot for the fertile window. Non-interactive —
- *  the cell itself is the button. */
+ *  the cell itself is the button.
+ *
+ *  The gap under the day number is owned here rather than left to the glyph.
+ *  The cell is a `flex-col` with no gap of its own, so a mark's spacing came
+ *  from whatever transparent margin its own shape happened to carry: the
+ *  droplet's path stops short of its viewBox and looked spaced, while the
+ *  circles are a bare 8px of solid colour and sat flush against the digits.
+ *  One row of fixed height, one margin, and every mark clears the number by
+ *  the same amount. */
 function DayMarker({
   cell,
   data,
@@ -735,22 +743,45 @@ function DayMarker({
   fertileStart: DayKey | null;
   fertileEnd: DayKey | null;
 }) {
-  const entry = data.entries[cell.key];
+  const mark = markFor(
+    data.entries[cell.key],
+    cell.key,
+    predictedStart,
+    predictedEnd,
+    fertileStart,
+    fertileEnd,
+  );
+  if (!mark) return null;
+  return (
+    <span className="mt-1 flex h-2.5 items-center justify-center">{mark}</span>
+  );
+}
+
+/** Which of the four marks a day carries, in priority order: what actually
+ *  happened outranks what was predicted. */
+function markFor(
+  entry: DayEntry | undefined,
+  key: DayKey,
+  predictedStart: DayKey | null,
+  predictedEnd: DayKey | null,
+  fertileStart: DayKey | null,
+  fertileEnd: DayKey | null,
+): ReactNode {
   if (entry?.bleeding) {
-    return <DropletFilledIcon className="mx-auto h-2.5 w-2.5 text-accent" />;
+    return <DropletFilledIcon className="h-2.5 w-2.5 text-accent" />;
   }
-  if (within(cell.key, predictedStart, predictedEnd)) {
+  if (within(key, predictedStart, predictedEnd)) {
     return (
-      <span className="mx-auto block h-2 w-2 rounded-full border border-accent/70" />
+      <span className="h-2 w-2 shrink-0 rounded-full border border-accent/70" />
     );
   }
-  if (within(cell.key, fertileStart, fertileEnd)) {
-    return <span className="mx-auto block h-2 w-2 rounded-full bg-link/60" />;
+  if (within(key, fertileStart, fertileEnd)) {
+    return <span className="h-2 w-2 shrink-0 rounded-full bg-link/60" />;
   }
   // A reported day with no bleeding still deserves a mark — otherwise "I
   // logged it and felt fine" is indistinguishable from "I forgot".
   if (entry) {
-    return <span className="mx-auto block h-1.5 w-1.5 rounded-full bg-muted" />;
+    return <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted" />;
   }
   return null;
 }
@@ -759,17 +790,21 @@ function Legend({ showFertile }: { showFertile: boolean }) {
   const t = useT();
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+      {/* `shrink-0` on the bare circles: an empty span's min-content width is
+          zero, so on a narrow row they would give up their 8px to the label
+          beside them and collapse against it — the same flush-against-the-text
+          look the calendar cells used to have. */}
       <li className="flex items-center gap-1.5">
-        <DropletFilledIcon className="h-2.5 w-2.5 text-accent" />
+        <DropletFilledIcon className="h-2.5 w-2.5 shrink-0 text-accent" />
         {t("forecast.legend.logged")}
       </li>
       <li className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full border border-accent/70" />
+        <span className="h-2 w-2 shrink-0 rounded-full border border-accent/70" />
         {t("forecast.legend.predicted")}
       </li>
       {showFertile && (
         <li className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-link/60" />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-link/60" />
           {t("forecast.legend.fertile")}
         </li>
       )}
