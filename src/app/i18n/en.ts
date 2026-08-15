@@ -15,7 +15,9 @@ export const en = {
   },
 
   nav: {
+    status: "Status",
     report: "Report",
+    calendar: "Calendar",
     forecast: "Forecast",
     history: "History",
     settings: "Settings",
@@ -60,13 +62,47 @@ export const en = {
     empty: "Nothing logged yet",
   },
 
+  // The first screen: what today is, and how sure that is. Every word here is
+  // a call the posterior in `forecastModel.ts` actually supports — none of it
+  // may sound more certain than the percentage sitting beside it.
+  status: {
+    title: "Status",
+    today: "Today",
+    week: "This week",
+    // The calls a day can carry. `noPeriod` stands in for `notFertile` when
+    // the fertile window is turned off — someone who opted out of a fertility
+    // estimate must not be shown one phrased as its negative.
+    kind: {
+      period: "Period",
+      predictedPeriod: "Period likely",
+      fertile: "Fertile",
+      notFertile: "Not fertile",
+      noPeriod: "No period expected",
+      unknown: "No prediction yet",
+    },
+    certainty: "About {percent} statistically secure",
+    certaintyHint:
+      "The chance your own reports put on this — not a certainty, and it grows as you log more cycles.",
+    fromYourReport: "From your own report for today.",
+    noHistory: "Log a few bleeding days and your status appears here.",
+  },
+
+  // The month view. The colours are the app's whole vocabulary for a day, so
+  // the legend's wording is the definition of each one.
+  calendar: {
+    title: "Calendar",
+    noHistory:
+      "Only the days you have logged are coloured so far. Once a period is in, the predicted and fertile days fill in around them.",
+    legend: {
+      period: "Reported bleeding",
+      predicted: "Predicted period",
+      fertile: "Fertile window",
+      reported: "Reported, no bleeding",
+    },
+  },
+
   forecast: {
     title: "Forecast",
-    // The month grid further down the same screen. It needs a name of its own:
-    // "Forecast" is already the heading of the sentence at the top, and two
-    // sections with one title reads as a repeat rather than as two views of
-    // the same prediction.
-    calendar: "Forecast calendar",
     cycleDay: "Cycle day {day}",
     noHistory: "Log a few bleeding days and the forecast appears here.",
     nextPeriod: "Next period",
@@ -84,11 +120,6 @@ export const en = {
       low: "Rough estimate",
       medium: "Fair estimate",
       high: "Steady pattern",
-    },
-    legend: {
-      logged: "Logged bleeding",
-      predicted: "Predicted period",
-      fertile: "Fertile window",
     },
     disclaimer:
       "An estimate from your own reports — not medical advice, and not contraception.",

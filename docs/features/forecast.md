@@ -11,9 +11,11 @@ Where you are in your cycle, and what is coming.
 - **Fertile window** — the days around the projected ovulation, with the
   ovulation date itself named. Turn it off in Settings if you track only your
   period.
-- **Forecast calendar** — logged bleeding days as filled droplets, predicted
-  period days as rings, fertile days as dots, and a small mark on any other day
-  that carries a report.
+
+The month grid that used to close this screen is now the
+[Calendar](calendar.md) tab, and the one-word "what is today" summary is the
+[Status](status.md) tab. All three read the same fit, so none of them can
+contradict another.
 
 Every forecast carries a **confidence label** — from _No prediction yet_ through
 _Rough estimate_ to _Steady pattern_ — because a date derived from two cycles
@@ -95,5 +97,4 @@ Both controls also live in **Settings → Forecast**.
 
 For the arithmetic behind all of it, see
 [the forecast model](../forecast-model.md); for the period and phase
-derivation the calendar is drawn from, [how the numbers are worked
-out](../cycle.md).
+derivation, [how the numbers are worked out](../cycle.md).

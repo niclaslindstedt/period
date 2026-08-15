@@ -7,7 +7,9 @@ below runs in the browser tab.
 index.html
   └── src/main.tsx            mounts <App> inside the i18n LanguageRoot
        └── src/App.tsx        theme, today, store, sync, tab switch, chrome
+            ├── StatusScreen      reads dayStatus.ts — the opening screen
             ├── ReportScreen      writes day reports
+            ├── CalendarScreen    reads dayStatus.ts over a month grid
             ├── ForecastScreen    reads cycle.ts + forecastModel.ts
             ├── HistoryScreen     reads cycle.ts + swings.ts
             └── SettingsScreen    settings, sync controls, backup, about
@@ -16,6 +18,7 @@ src/app/
   types.ts          the model: DayEntry (two booleans, a temperature, a date)
   cycle.ts          periods → cycle lengths → one date      (pure, clock-free)
   forecastModel.ts  reports → a distribution over days      (pure, clock-free)
+  dayStatus.ts      that distribution → one call per day    (pure, clock-free)
   stats.ts          Student-t, incomplete beta, discrete distributions (pure)
   swings.ts         reports → swing shares per cycle phase  (pure, clock-free)
   temperature.ts    °C ⇄ °F, parsing, two-decimal formatting (pure)
@@ -28,14 +31,22 @@ src/app/
 
   ForecastChart.tsx the probability-per-day chart with its credible bands
   ProfileCharts.tsx the learned mood and temperature patterns
+  DayCircle.tsx     a day's status → its colour, for the two screens that paint days
 ```
 
 `cycle.ts` and `forecastModel.ts` are two answers to the same question at
-different resolutions. `cycle.ts` gives the single date the calendar and the
-fertile window need; `forecastModel.ts` gives the distribution the headline and
-the chart draw, reading mood swings and temperature as well as the gaps. They
-share the anchor and the roll-forward rule so they never disagree by a cycle.
-See [the forecast model](forecast-model.md).
+different resolutions. `cycle.ts` gives the single date the fertile-window
+summary needs; `forecastModel.ts` gives the distribution the headline and the
+chart draw, reading mood swings and temperature as well as the gaps. They share
+the anchor and the roll-forward rule so they never disagree by a cycle. See
+[the forecast model](forecast-model.md).
+
+`dayStatus.ts` sits on top of `forecastModel.ts` and turns that distribution
+into one call per day — _period_, _predicted period_, _fertile_, _not fertile_ —
+with the probability behind it. It fits no model of its own; it only takes mass
+out of the one already fitted, which is what stops the Status word, the Calendar
+colour, and the Forecast date from ever contradicting each other. `DayCircle.tsx`
+is the single status → colour mapping the Status and Calendar screens share.
 
 ## The shape of the data
 
@@ -99,8 +110,8 @@ no sampler, no optimiser, nothing to warm up.
 
 The payoff is that there is no stale state to invalidate. Correct a report from
 three weeks ago and the cycle length, the average, the confidence label, the
-predicted date, and the calendar all move together, because they were never
-anything but functions of the reports.
+predicted date, today's status and the calendar's colours all move together,
+because they were never anything but functions of the reports.
 
 ## Rendering runtime
 

@@ -11,7 +11,7 @@ simple rule whose failure modes are legible beats a clever one whose output
 nobody can check.
 
 > **The prediction has moved on.** The single date this page derives is still
-> what the Forecast screen's calendar and fertile window are drawn from, and it
+> what the Forecast screen's fertile window is drawn from, and it
 > is still the definition of a period, a cycle length and a phase. But the
 > Forecast screen's headline and chart now come from a probabilistic model that
 > reports a _distribution_ over days rather than one of them, and that reads
@@ -103,8 +103,8 @@ egg viability. It is not user-tunable, because it is not a preference.
 
 ## Cycle phases
 
-Each day in a cycle falls in one of four phases, used to colour the calendar
-and to bucket mood swings on the History screen:
+Each day in a cycle falls in one of four phases, used to bucket mood swings on
+the History screen:
 
 | Phase      | Days                                                |
 | ---------- | --------------------------------------------------- |

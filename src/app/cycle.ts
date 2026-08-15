@@ -309,8 +309,9 @@ export function upcomingStarts(
   return out;
 }
 
-/** Where a day sits in its cycle. Used to colour the calendar and to bucket
- *  mood swings by phase in the History screen. */
+/** Where a day sits in its cycle. Used to bucket mood swings by phase in the
+ *  History screen. The Calendar screen's colours do not come from here — they
+ *  are posterior calls, one per day, out of `dayStatus.ts`. */
 export type CyclePhase = "menstrual" | "follicular" | "fertile" | "luteal";
 
 /**

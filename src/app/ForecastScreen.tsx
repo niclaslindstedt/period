@@ -2,11 +2,8 @@
 import { useMemo, type ReactNode } from "react";
 
 import {
-  addDays,
   daysBetween,
   type DayKey,
-  type GridCell,
-  type WeekStart,
 } from "@niclaslindstedt/oss-framework/calendar";
 import {
   SegmentedControl,
@@ -32,16 +29,21 @@ import {
   type ProbabilisticForecast,
 } from "./forecastModel.ts";
 import { formatDay, formatShortDay } from "./format.ts";
-import { DropletFilledIcon, ForecastIcon } from "./icons.tsx";
+import { ForecastIcon } from "./icons.tsx";
 import { useT, type TFn } from "./i18n/index.ts";
-import { MonthCalendar } from "./MonthCalendar.tsx";
 import { MoodProfileChart, TemperatureProfileChart } from "./ProfileCharts.tsx";
 import { formatTemperatureDelta, type TemperatureUnit } from "./temperature.ts";
-import type { AppData, DayEntry } from "./types.ts";
+import type { AppData } from "./types.ts";
 
 // The "so what?" screen: where you are in the cycle, when the next period is
 // due, how sure that is, and — unless the user turned it off — the fertile
 // window around the projected ovulation.
+//
+// The month grid that used to close this screen now *is* a screen (see
+// `CalendarScreen.tsx`). It was the fourth instrument on a page that already
+// had a headline, a probability chart and a track record, and it answers a
+// different kind of question — "which weekend?" rather than "how sure?" — so
+// it was three screens of scrolling away from the tab people reach for it on.
 //
 // There are two views of the same answer. The **simple** one names a date, the
 // range around it, and how likely the week ahead is; the **advanced** one adds
@@ -66,7 +68,6 @@ type Props = {
   today: DayKey;
   options: CycleOptions;
   showFertileWindow: boolean;
-  weekStartsOn: WeekStart;
   detail: "simple" | "advanced";
   model: ForecastModelKind;
   look: ChartLook;
@@ -76,21 +77,11 @@ type Props = {
   onLookChange: (next: Partial<ChartLook>) => void;
 };
 
-/** Whether a day falls inside an inclusive range of `DayKey`s. */
-function within(
-  day: DayKey,
-  start: DayKey | null,
-  end: DayKey | null,
-): boolean {
-  return start !== null && end !== null && day >= start && day <= end;
-}
-
 export function ForecastScreen({
   data,
   today,
   options,
   showFertileWindow,
-  weekStartsOn,
   detail,
   model,
   look,
@@ -129,19 +120,6 @@ export function ForecastScreen({
     );
   }
 
-  // The calendar's predicted span runs from the date the headline names, for
-  // however long a period usually lasts. It is deliberately drawn from the
-  // *model's* date rather than `cycle.ts`'s: the two normally agree, but a day
-  // of disagreement would show up as a calendar contradicting the sentence
-  // above it. The uncertainty around that date is the chart's job — widening
-  // the ring to cover an interval would say "period" about days that are only
-  // candidate *starts*.
-  const predictedStart = probabilistic.expectedDay;
-  const predictedEnd = addDays(
-    predictedStart,
-    f.nextEnd && f.nextStart ? daysBetween(f.nextStart, f.nextEnd) : 0,
-  );
-
   return (
     <div className="flex flex-col gap-3 px-3 py-3">
       <Headline
@@ -179,24 +157,6 @@ export function ForecastScreen({
           </p>
         </Section>
       )}
-
-      <Section title={t("forecast.calendar")}>
-        <MonthCalendar
-          anchor={today}
-          weekStartsOn={weekStartsOn}
-          renderDay={(cell: GridCell) => (
-            <DayMarker
-              cell={cell}
-              data={data}
-              predictedStart={predictedStart}
-              predictedEnd={predictedEnd}
-              fertileStart={showFertileWindow ? f.fertileStart : null}
-              fertileEnd={showFertileWindow ? f.fertileEnd : null}
-            />
-          )}
-        />
-        <Legend showFertile={showFertileWindow} />
-      </Section>
 
       {upcoming.length > 1 && (
         <Section title={t("history.periods")}>
@@ -714,101 +674,6 @@ function Choice({
       />
       <p className="text-[11px] leading-snug text-muted">{hint}</p>
     </div>
-  );
-}
-
-/** One day cell's markers: a filled droplet for a logged bleeding day, a ring
- *  for a predicted period day, a dot for the fertile window. Non-interactive —
- *  the cell itself is the button.
- *
- *  The gap under the day number is owned here rather than left to the glyph.
- *  The cell is a `flex-col` with no gap of its own, so a mark's spacing came
- *  from whatever transparent margin its own shape happened to carry: the
- *  droplet's path stops short of its viewBox and looked spaced, while the
- *  circles are a bare 8px of solid colour and sat flush against the digits.
- *  One row of fixed height, one margin, and every mark clears the number by
- *  the same amount. */
-function DayMarker({
-  cell,
-  data,
-  predictedStart,
-  predictedEnd,
-  fertileStart,
-  fertileEnd,
-}: {
-  cell: GridCell;
-  data: AppData;
-  predictedStart: DayKey | null;
-  predictedEnd: DayKey | null;
-  fertileStart: DayKey | null;
-  fertileEnd: DayKey | null;
-}) {
-  const mark = markFor(
-    data.entries[cell.key],
-    cell.key,
-    predictedStart,
-    predictedEnd,
-    fertileStart,
-    fertileEnd,
-  );
-  if (!mark) return null;
-  return (
-    <span className="mt-1 flex h-2.5 items-center justify-center">{mark}</span>
-  );
-}
-
-/** Which of the four marks a day carries, in priority order: what actually
- *  happened outranks what was predicted. */
-function markFor(
-  entry: DayEntry | undefined,
-  key: DayKey,
-  predictedStart: DayKey | null,
-  predictedEnd: DayKey | null,
-  fertileStart: DayKey | null,
-  fertileEnd: DayKey | null,
-): ReactNode {
-  if (entry?.bleeding) {
-    return <DropletFilledIcon className="h-2.5 w-2.5 text-accent" />;
-  }
-  if (within(key, predictedStart, predictedEnd)) {
-    return (
-      <span className="h-2 w-2 shrink-0 rounded-full border border-accent/70" />
-    );
-  }
-  if (within(key, fertileStart, fertileEnd)) {
-    return <span className="h-2 w-2 shrink-0 rounded-full bg-link/60" />;
-  }
-  // A reported day with no bleeding still deserves a mark — otherwise "I
-  // logged it and felt fine" is indistinguishable from "I forgot".
-  if (entry) {
-    return <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted" />;
-  }
-  return null;
-}
-
-function Legend({ showFertile }: { showFertile: boolean }) {
-  const t = useT();
-  return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-      {/* `shrink-0` on the bare circles: an empty span's min-content width is
-          zero, so on a narrow row they would give up their 8px to the label
-          beside them and collapse against it — the same flush-against-the-text
-          look the calendar cells used to have. */}
-      <li className="flex items-center gap-1.5">
-        <DropletFilledIcon className="h-2.5 w-2.5 shrink-0 text-accent" />
-        {t("forecast.legend.logged")}
-      </li>
-      <li className="flex items-center gap-1.5">
-        <span className="h-2 w-2 shrink-0 rounded-full border border-accent/70" />
-        {t("forecast.legend.predicted")}
-      </li>
-      {showFertile && (
-        <li className="flex items-center gap-1.5">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-link/60" />
-          {t("forecast.legend.fertile")}
-        </li>
-      )}
-    </ul>
   );
 }
 

@@ -16,10 +16,12 @@ import {
 import { useApplyTheme } from "@niclaslindstedt/oss-framework/theme";
 
 import { BottomNav, type Tab } from "./app/BottomNav.tsx";
+import { CalendarScreen } from "./app/CalendarScreen.tsx";
 import { ForecastScreen } from "./app/ForecastScreen.tsx";
 import { HistoryScreen } from "./app/HistoryScreen.tsx";
 import { ReportScreen } from "./app/ReportScreen.tsx";
 import { SettingsScreen } from "./app/SettingsScreen.tsx";
+import { StatusScreen } from "./app/StatusScreen.tsx";
 import { useT } from "./app/i18n/index.ts";
 import { appearanceFor } from "./app/look.ts";
 import { descendingLogStore, logStore } from "./app/log.ts";
@@ -34,7 +36,7 @@ import { useSyncEngine } from "./app/useSyncEngine.ts";
 import { status } from "./output.ts";
 
 // A local-first period tracker built from the framework's shared surface. The
-// app owns the report store, the cycle derivation, and the four screens; the
+// app owns the report store, the cycle derivation, and the six screens; the
 // framework supplies the theme engine, the storage adapters behind sync, the
 // charts, the calendar grid, and the PWA update lifecycle.
 //
@@ -71,7 +73,9 @@ export function App() {
   const options = useMemo(() => cycleOptions(settings), [settings]);
   const look = useMemo(() => chartLook(settings), [settings]);
 
-  const [tab, setTab] = useState<Tab>("report");
+  // Status is where the app opens: it answers the question the app was picked
+  // up to answer, and every other tab is a follow-up to it.
+  const [tab, setTab] = useState<Tab>("status");
   const [syncDetailsOpen, setSyncDetailsOpen] = useState(false);
   // Applying an update (skip-waiting → the new worker takes control → the page
   // reloads) has a visible gap. Flip a flag on the tap so the toast shows a
@@ -142,6 +146,15 @@ export function App() {
             — the Report screen centres its card in it rather than stranding
             three controls at the top of an empty phone. */}
         <div className="mx-auto flex min-h-full max-w-2xl flex-col">
+          {tab === "status" && (
+            <StatusScreen
+              data={store.data}
+              today={today}
+              options={options}
+              showFertileWindow={settings.showFertileWindow}
+              model={settings.forecastModel}
+            />
+          )}
           {tab === "report" && (
             <ReportScreen
               store={store}
@@ -151,13 +164,22 @@ export function App() {
               onSaved={notice}
             />
           )}
+          {tab === "calendar" && (
+            <CalendarScreen
+              data={store.data}
+              today={today}
+              options={options}
+              showFertileWindow={settings.showFertileWindow}
+              weekStartsOn={settings.weekStartsOn}
+              model={settings.forecastModel}
+            />
+          )}
           {tab === "forecast" && (
             <ForecastScreen
               data={store.data}
               today={today}
               options={options}
               showFertileWindow={settings.showFertileWindow}
-              weekStartsOn={settings.weekStartsOn}
               detail={settings.forecastDetail}
               model={settings.forecastModel}
               look={look}
