@@ -5,10 +5,7 @@ import {
   daysBetween,
   type DayKey,
 } from "@niclaslindstedt/oss-framework/calendar";
-import {
-  SegmentedControl,
-  Section,
-} from "@niclaslindstedt/oss-framework/components";
+import { Section } from "@niclaslindstedt/oss-framework/components";
 
 import {
   cycleStats,
@@ -54,9 +51,11 @@ import type { AppData } from "./types.ts";
 // statistician can audit, rather than a simplification they would have to
 // distrust.
 //
-// The chart's appearance controls stay visible in both. Detail governs how much
-// is *said*; the chips govern how it is *drawn*, and nothing behind them
-// changes a number.
+// Which of the two is on screen, and which reports the model may read, are
+// *settings* — they live on the Settings screen and this screen only reads
+// them. The chart's appearance chips stay here, because they change how the
+// chart is drawn rather than what is said, and nothing behind them moves a
+// number.
 //
 // Everything is derived on the fly from the reports, so there is nothing to
 // refresh and nothing that can go stale. The confidence line is not decoration:
@@ -72,8 +71,6 @@ type Props = {
   model: ForecastModelKind;
   look: ChartLook;
   temperatureUnit: TemperatureUnit;
-  onDetailChange: (next: "simple" | "advanced") => void;
-  onModelChange: (next: ForecastModelKind) => void;
   onLookChange: (next: Partial<ChartLook>) => void;
 };
 
@@ -86,8 +83,6 @@ export function ForecastScreen({
   model,
   look,
   temperatureUnit,
-  onDetailChange,
-  onModelChange,
   onLookChange,
 }: Props) {
   const t = useT();
@@ -182,39 +177,6 @@ export function ForecastScreen({
           </ul>
         </Section>
       )}
-
-      {/* The two controls that change what is on screen sit at the bottom, not
-          the top: the answer comes first, and the knobs are for the second
-          visit. */}
-      <div className="flex flex-col gap-2 rounded-md border border-line bg-surface-3 p-3">
-        <Choice
-          label={t("forecast.detail.label")}
-          value={detail}
-          options={[
-            { value: "simple", label: t("forecast.detail.simple") },
-            { value: "advanced", label: t("forecast.detail.advanced") },
-          ]}
-          onChange={(next) => onDetailChange(next as "simple" | "advanced")}
-          hint={t("forecast.detail.sameAnswer")}
-        />
-        <Choice
-          label={t("forecast.evidence.label")}
-          value={model}
-          options={[
-            { value: "univariate", label: t("forecast.evidence.cycles") },
-            {
-              value: "multivariate",
-              label: t("forecast.evidence.cyclesAndReports"),
-            },
-          ]}
-          onChange={(next) => onModelChange(next as ForecastModelKind)}
-          hint={
-            model === "univariate"
-              ? t("forecast.evidence.cyclesHint")
-              : t("forecast.evidence.cyclesAndReportsHint")
-          }
-        />
-      </div>
 
       <p className="px-1 text-xs leading-snug text-muted">
         {t("forecast.disclaimer")}
@@ -642,37 +604,6 @@ function Figure({
       {hint && (
         <p className="mt-1 text-[11px] leading-snug text-muted">{hint}</p>
       )}
-    </div>
-  );
-}
-
-/** A labelled segmented control with the explanation under it. */
-function Choice({
-  label,
-  value,
-  options,
-  onChange,
-  hint,
-}: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (next: string) => void;
-  hint: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-medium tracking-wide text-muted uppercase">
-        {label}
-      </span>
-      <SegmentedControl
-        value={value}
-        options={options}
-        onChange={onChange}
-        ariaLabel={label}
-        fullWidth
-      />
-      <p className="text-[11px] leading-snug text-muted">{hint}</p>
     </div>
   );
 }

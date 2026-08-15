@@ -68,10 +68,9 @@ The confidence label is not decoration. A date from two cycles and a date from
 twelve look the same on a calendar; the label — read straight off the width of
 the range — is what tells them apart.
 
-Switch the **Detail** control at the bottom of the screen to **Advanced** if you
-want to see the model's parameters, the patterns it has learned from you, and
-how well it has scored on your past cycles. It is the same prediction either
-way.
+Switch **Detail** to **Advanced** in Settings → **Forecast** if you want to see
+the model's parameters, the patterns it has learned from you, and how well it
+has scored on your past cycles. It is the same prediction either way.
 
 ## Get it onto your phone
 

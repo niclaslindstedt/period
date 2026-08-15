@@ -128,21 +128,14 @@ export const en = {
     // prediction from the same model — "simple" hides the workings, it does
     // not simplify the arithmetic, and the copy must never suggest otherwise.
     detail: {
-      label: "Detail",
       simple: "Simple",
       advanced: "Advanced",
-      sameAnswer:
-        "Both views show the same prediction. Advanced adds the workings.",
     },
 
     // Which reports the model is allowed to read.
     evidence: {
-      label: "Based on",
       cycles: "Cycles",
       cyclesAndReports: "Cycles + reports",
-      cyclesHint: "Uses the gaps between your periods and nothing else.",
-      cyclesAndReportsHint:
-        "Also reads this cycle's mood swings and waking temperatures. Mood swings cluster in the days before bleeding starts, and temperature steps up after ovulation and falls again as a period arrives.",
       needsMore:
         "Not enough reported days yet to learn your patterns, so this matches the cycles-only forecast.",
       usingMood: "Reading your mood swings",

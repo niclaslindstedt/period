@@ -184,8 +184,6 @@ export function App() {
               model={settings.forecastModel}
               look={look}
               temperatureUnit={settings.temperatureUnit}
-              onDetailChange={(next) => update("forecastDetail", next)}
-              onModelChange={(next) => update("forecastModel", next)}
               onLookChange={(next) => {
                 if (next.mark !== undefined) update("chartMark", next.mark);
                 if (next.view !== undefined) update("chartView", next.view);
