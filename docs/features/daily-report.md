@@ -8,7 +8,8 @@ The screen the app opens on. One day, two questions, one optional number, one
   reads.
 - **Mood swings** — yes or no. Whether your mood moved noticeably across the
   day.
-- **Waking temperature** — optional, to two decimal places.
+- **Waking temperature** — optional. A slider for the reading, and a box for
+  the exact one.
 
 `No` is a real answer. It records that you checked and there was nothing, which
 the cycle derivation treats differently from a day you simply didn't log — so a
@@ -26,27 +27,46 @@ where in the cycle you are, not just where the calendar thinks you are.
 Two decimals is the point. The whole shift is about a third of a degree, so a
 reading rounded to 0.1 °C throws away most of the signal.
 
-The field is genuinely optional and the app never nags for it. Nobody takes
-their temperature every morning, and [the model](../forecast-model.md) is built
-to cope with gaps — a skipped morning is simply a day with no reading, not a
-hole it has to guess at. Leave the box empty and everything else works exactly
-as before.
+### The slider and the box
+
+Two ways in, one number — they write the same field and each shows what the
+other did.
+
+The **slider** spans 35.50 °C to 37.50 °C, which is where a waking temperature
+actually lives. Giving it the whole storable range would bury the third of a
+degree that matters under a fingertip. Its left-hand stop is **None**: the field
+is optional, so its resting position says "nothing recorded" rather than sitting
+on a plausible-looking default, and dragging back to it clears the day's
+reading.
+
+The **box** takes only the digits that carry information. A waking temperature
+is 3x.xx °C (or 9x.xx °F), so the leading digit and the decimal point are filled
+in for you: tap the box, type **6 5 0**, and it reads back 36.50. Typing the
+leading digit anyway also works — 3, 6, 5, 0 is understood as the same reading,
+not as 33.65 — and the box shows the whole number the whole time, so what is on
+screen is always what will be stored. On a phone it opens the number keypad.
+
+### Fever
+
+The slider's right-hand stop is **Fever**, and it is there because a febrile
+morning is a real measurement that is not a _cycle_ measurement. The rise the
+forecast reads is about 0.3 °C; an illness is several times that, and one
+feverish morning left in the evidence would drag a whole cycle's estimate after
+it.
+
+So anything above 37.50 °C — the stop, or a number you type — is recorded on the
+day it belongs to and left out of the [forecast's temperature
+channel](../forecast-model.md) and out of the History screen's temperature
+chart. The screen says so underneath rather than leaving you to wonder.
+
+A reading below 35.50 °C is flagged instead of refused: the box marks itself and
+asks you to check the digits, and then stores exactly what you entered. It is a
+nudge, not a validator — a tracker that argued with what you measured would be
+the wrong kind of confident.
 
 Choose **Celsius** or **Fahrenheit** in **Settings → Forecast**. That is a
 display choice only: reports are always stored the same way, so changing it
-never rewrites a day and two devices set differently stay in sync. A reading far
-outside the plausible range — a decimal point missed on the keypad — is refused
-rather than saved, and **Save** waits until the box is emptied or corrected.
-
-## Picking the day
-
-The report opens on today. Press the date at the top of the card to open a month
-calendar and report for any earlier day; future days can't be selected, since
-there is nothing to report yet.
-
-Nothing is saved until you press **Save report**, so opening the wrong day costs
-nothing. **Clear this day** removes a day's report entirely — which is not the
-same as answering no to both, and is the only way to take a report back.
+never rewrites a day and two devices set differently stay in sync.
 
 ## Why so few fields
 

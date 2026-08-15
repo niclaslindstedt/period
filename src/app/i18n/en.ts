@@ -46,9 +46,12 @@ export const en = {
     swings: "Mood swings",
     temperature: "Waking temperature",
     temperatureOptional: "Optional",
+    temperatureExact: "Exact waking temperature",
     temperaturePlaceholder: "—",
-    temperatureInvalid:
-      "Enter a temperature between {min} and {max}, or leave it blank.",
+    temperatureNone: "None",
+    temperatureFever: "Fever",
+    temperatureFeverHint: "Recorded, but left out of the forecast.",
+    temperatureUnusual: "Unusually low for a waking temperature — check it?",
     saveNew: "Save report",
     saveExisting: "Update report",
     clear: "Clear this day",
@@ -236,7 +239,7 @@ export const en = {
       "Share of the days you reported in each phase that had mood swings.",
     temperatureChart: "Waking temperature",
     temperatureChartDesc:
-      "Your recent waking temperatures. Gaps are mornings with no reading.",
+      "Your recent waking temperatures. Gaps are mornings with no reading, and fevers, which say nothing about a cycle.",
     temperatureReadings:
       "{count} readings, in {unit}. Gaps are days you skipped.",
     phase: {

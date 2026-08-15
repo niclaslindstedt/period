@@ -18,9 +18,16 @@ import { MonthCalendar } from "./MonthCalendar.tsx";
 import { formatDay, formatFullDay } from "./format.ts";
 import { useT, type TFn } from "./i18n/index.ts";
 import {
-  inputBounds,
-  parseTemperature,
-  temperatureInputValue,
+  SLIDER_MAX_INDEX,
+  formatTemperature,
+  isFever,
+  isUnusuallyLow,
+  maskCelsius,
+  maskDigits,
+  maskOf,
+  maskText,
+  sliderCelsiusAt,
+  sliderIndexOf,
   type TemperatureUnit,
 } from "./temperature.ts";
 import { blankEntry, type DayEntry } from "./types.ts";
@@ -74,33 +81,24 @@ export function ReportScreen({
   const [draft, setDraft] = useState<DayEntry>(
     () => stored ?? blankEntry(day, new Date().toISOString()),
   );
-  // The temperature box keeps its own text. A number field cannot hold "36."
-  // on the way to "36.5", so parsing on every keystroke would delete the
-  // decimal point out from under the typist.
-  const [temperatureText, setTemperatureText] = useState(() =>
-    temperatureInputValue(stored?.temperature ?? null, temperatureUnit),
+  // The temperature box keeps the digits that were typed, not the number they
+  // mean. "6" on the way to "6.5" is a complete reading (36.00) and a partial
+  // one at the same time, and only the digits remember which — deriving them
+  // back from the value would renumber the field under the typist.
+  const [temperatureDigits, setTemperatureDigits] = useState(() =>
+    maskOf(stored?.temperature ?? null, temperatureUnit),
   );
 
   useEffect(() => {
     const entry = store.data.entries[day];
     setDraft(entry ?? blankEntry(day, new Date().toISOString()));
-    setTemperatureText(
-      temperatureInputValue(entry?.temperature ?? null, temperatureUnit),
-    );
+    setTemperatureDigits(maskOf(entry?.temperature ?? null, temperatureUnit));
   }, [day, store.data.entries, temperatureUnit]);
-
-  const typedTemperature = temperatureText.trim();
-  const parsedTemperature = parseTemperature(temperatureText, temperatureUnit);
-  // Something was typed that is not a temperature. Saving anyway would drop it
-  // silently, so the button waits instead — clearing the box is one tap.
-  const temperatureInvalid =
-    typedTemperature !== "" && parsedTemperature === null;
 
   const save = () => {
     store.saveEntry({
       ...draft,
       date: day,
-      temperature: parsedTemperature,
       updatedAt: new Date().toISOString(),
     });
     onSaved(t("report.saved"));
@@ -109,7 +107,7 @@ export function ReportScreen({
   const clear = () => {
     store.deleteEntry(day);
     setDraft(blankEntry(day, new Date().toISOString()));
-    setTemperatureText("");
+    setTemperatureDigits("");
     onSaved(t("report.cleared"));
   };
 
@@ -158,19 +156,17 @@ export function ReportScreen({
         />
         <Temperature
           unit={temperatureUnit}
-          value={temperatureText}
-          invalid={temperatureInvalid}
-          onChange={setTemperatureText}
+          celsius={draft.temperature}
+          digits={temperatureDigits}
+          onChange={(temperature, digits) => {
+            setDraft((prev) => ({ ...prev, temperature }));
+            setTemperatureDigits(digits);
+          }}
         />
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <Button
-          variant="primary"
-          className="w-full"
-          onClick={save}
-          disabled={temperatureInvalid}
-        >
+        <Button variant="primary" className="w-full" onClick={save}>
           {stored ? t("report.saveExisting") : t("report.saveNew")}
         </Button>
         {/* Clearing is rarer than saving and destructive, so it reads as a
@@ -229,73 +225,174 @@ function headlineFor(t: TFn, day: DayKey, today: DayKey): string {
 /**
  * The optional third field: this morning's waking temperature.
  *
- * Optional in a way the two questions are not, and the layout says so — an
- * empty box that reads as "skipped" rather than a control sitting on a default.
- * Nobody takes their temperature every day, and the model is built to cope with
- * that (see `forecastModel.ts`), so nagging for it would buy nothing.
+ * Optional in a way the two questions are not, and the control says so — it
+ * opens on "nothing recorded" rather than on a plausible-looking default.
+ * Nobody takes their temperature every day, and the model is built to cope
+ * with that (see `forecastModel.ts`), so nagging for it would buy nothing.
  *
- * `inputMode="decimal"` rather than a plain number type: it summons the keypad
- * with the decimal point on it, which is the whole interaction. The step and
- * bounds still come from the unit, so a browser that offers spinners offers
- * hundredths.
+ * Two ways in, one value. The slider is the thumb-sized one: it spans the band
+ * a waking temperature actually lives in, so the third of a degree the whole
+ * signal consists of is worth a real amount of travel. The box is for the
+ * mornings the exact reading matters, and it asks only for the digits that
+ * carry information — the leading 3 (or 9, reading Fahrenheit) and the decimal
+ * point are printed for you, so 6·5·0 is the whole gesture for 36.50.
+ * `inputMode="numeric"` puts a keypad under those three taps.
+ *
+ * The slider's top stop is a fever. It is a reading worth keeping and a
+ * reading the forecast cannot use, and the control is the honest place to say
+ * both.
  */
 function Temperature({
   unit,
-  value,
-  invalid,
+  celsius,
+  digits,
   onChange,
 }: {
   unit: TemperatureUnit;
-  value: string;
-  invalid: boolean;
-  onChange: (next: string) => void;
+  celsius: number | null;
+  digits: string;
+  onChange: (celsius: number | null, digits: string) => void;
 }) {
   const t = useT();
-  const bounds = inputBounds(unit);
   const label = t("report.temperature");
+  const fever = celsius !== null && isFever(celsius);
+  const low = celsius !== null && isUnusuallyLow(celsius);
+  // Whether the next digit starts a reading or continues one. A box that only
+  // ever appended would be full after three digits and stuck; a box that
+  // always restarted could not be corrected one digit at a time. Reaching for
+  // the box is the line between them, which is also where the user draws it:
+  // tapping in starts this morning's reading, and everything typed after that
+  // belongs to it.
+  const [fresh, setFresh] = useState(false);
+  const commit = (next: string) => {
+    setFresh(false);
+    onChange(maskCelsius(next, unit), next);
+  };
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="flex items-center justify-between gap-2 text-sm font-medium text-fg">
-        <span className="flex items-center gap-1.5">
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-fg">
           <span className="text-muted">
             <ThermometerIcon className="h-4 w-4" />
           </span>
-          {label}
+          <span className="truncate">{label}</span>
+          <span className="shrink-0 text-xs font-normal text-muted">
+            {t("report.temperatureOptional")}
+          </span>
         </span>
-        <span className="text-xs font-normal text-muted">
-          {t("report.temperatureOptional")}
-        </span>
-      </span>
-      <div className="relative">
-        <input
-          type="number"
-          inputMode="decimal"
-          value={value}
-          min={bounds.min}
-          max={bounds.max}
-          step={bounds.step}
-          placeholder={t("report.temperaturePlaceholder")}
-          aria-label={label}
-          aria-invalid={invalid}
-          onChange={(e) => onChange(e.currentTarget.value)}
-          className={`h-12 w-full rounded-md border bg-surface-3 px-3 pr-12 text-base text-fg-bright tabular-nums outline-none focus:border-accent ${
-            invalid ? "border-danger" : "border-line"
-          }`}
-        />
-        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted">
-          {unit === "f" ? "°F" : "°C"}
-        </span>
+        {/* The whole number lives in the field — the leading digit is filled
+            in on the first keystroke rather than printed beside the box, so
+            what is on screen is always exactly what will be stored, and
+            someone who types the 3 out of habit is not fighting it. */}
+        <label
+          data-flag={low ? "low" : undefined}
+          className="temperature-box flex h-11 shrink-0 items-center gap-1 rounded-md border border-line bg-surface-3 px-2.5 focus-within:border-accent"
+        >
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={maskText(digits)}
+            placeholder={
+              fever
+                ? t("report.temperatureFever")
+                : t("report.temperaturePlaceholder")
+            }
+            aria-label={t("report.temperatureExact")}
+            // The field is a keypad, not a text box: every edit is applied to
+            // the digits by hand and the default one is cancelled. Tapping in
+            // and typing three digits has to mean "this morning's reading"
+            // wherever the caret happened to land, and a masked value edited
+            // through the caret cannot promise that — insert a digit in the
+            // middle of 36.50 and the number that comes out is a different
+            // plausible reading rather than an obvious mistake.
+            //
+            // `beforeinput` rather than `keydown` because that is the event a
+            // phone keyboard reliably fires; `onChange` is left as the net
+            // underneath, so an insertion no browser let us cancel still ends
+            // up as digits rather than as a desynced field.
+            onFocus={() => setFresh(true)}
+            // A tap as well as a focus: coming back to a box that is already
+            // focused and already holding four digits would otherwise leave
+            // nowhere for a new reading to go.
+            onPointerDown={() => setFresh(true)}
+            onBeforeInput={(e) => {
+              const input = e as unknown as InputEvent;
+              const type = input.inputType;
+              if (type.startsWith("insert")) {
+                e.preventDefault();
+                const typed = (input.data ?? "").replace(/\D/g, "");
+                if (typed === "") return;
+                commit(maskDigits((fresh ? "" : digits) + typed, unit));
+              } else if (type.startsWith("delete")) {
+                e.preventDefault();
+                commit(digits.slice(0, -1));
+              }
+            }}
+            onChange={(e) => commit(maskDigits(e.currentTarget.value, unit))}
+            // Leaving the box settles what is in it: a reading half typed
+            // reads back as the two decimals it was stored with, and one
+            // abandoned after the leading digit — which is not a reading —
+            // reads back as the blank it amounts to.
+            onBlur={() => commit(maskOf(celsius, unit))}
+            className="w-[3.25rem] bg-transparent text-right text-base text-fg-bright tabular-nums outline-none placeholder:text-xs placeholder:text-muted"
+          />
+          <span
+            aria-hidden="true"
+            className={`text-sm text-muted ${digits === "" ? "opacity-0" : ""}`}
+          >
+            {unit === "f" ? "°F" : "°C"}
+          </span>
+        </label>
       </div>
-      {invalid && (
-        <p className="text-xs text-danger">
-          {t("report.temperatureInvalid", {
-            min: String(bounds.min),
-            max: String(bounds.max),
-          })}
+      {/* Index space, not degrees: the stops are "nothing recorded", the band
+          in twentieths of a degree, and a fever at the far end. */}
+      <input
+        type="range"
+        min={0}
+        max={SLIDER_MAX_INDEX}
+        step={1}
+        value={sliderIndexOf(celsius)}
+        aria-label={label}
+        aria-valuetext={valueTextFor(t, celsius, unit)}
+        data-empty={celsius === null ? "true" : undefined}
+        onInput={(e) => {
+          const next = sliderCelsiusAt(Number(e.currentTarget.value));
+          setFresh(false);
+          onChange(next, maskOf(next, unit));
+        }}
+        className="temperature-slider"
+      />
+      {/* The two stops that are states rather than temperatures. Everything
+          between them is a number, and the box is already showing it — so
+          these are the only two the scale has to spell out. */}
+      <div className="-mt-1 flex justify-between text-[0.65rem] text-muted">
+        <span>{t("report.temperatureNone")}</span>
+        <span>{t("report.temperatureFever")}</span>
+      </div>
+      {/* One line, and only when there is something to say. A fever is
+          recorded and explained; a reading nobody wakes up with is queried
+          rather than rejected. */}
+      {(fever || low) && (
+        <p className={`text-xs ${low ? "text-flag" : "text-muted"}`}>
+          {t(low ? "report.temperatureUnusual" : "report.temperatureFeverHint")}
         </p>
       )}
     </div>
   );
+}
+
+/** What a screen reader hears as the slider moves. The two ends are states
+ *  rather than numbers, and reading them as 35.50 and 38.00 would lose exactly
+ *  the thing that makes them different from the stops next to them. */
+function valueTextFor(
+  t: TFn,
+  celsius: number | null,
+  unit: TemperatureUnit,
+): string {
+  if (celsius === null) return t("report.temperatureNone");
+  if (isFever(celsius)) return t("report.temperatureFever");
+  return formatTemperature(celsius, unit);
 }
 
 /** One yes/no question: a labelled row over a full-width two-option control.

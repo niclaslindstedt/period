@@ -7,6 +7,9 @@ What the reports add up to.
 - **Cycle length over time** — one point per completed cycle, so a drift or a
   one-off outlier is visible rather than buried in an average.
 - **Waking temperature** — your recent readings, in whichever unit you read.
+  Gaps are mornings you skipped, and so are fevers: one 38.6 morning rescales
+  the axis until every cycle on it is a flat line, and it was never a cycle
+  measurement anyway (see [fever](daily-report.md#fever)).
   Appears once there are a few. Gaps in the line are mornings you skipped, left
   as gaps rather than joined across: a line drawn through a fortnight nobody
   measured is a trend nobody measured.

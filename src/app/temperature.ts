@@ -84,16 +84,6 @@ export function parseTemperature(
   return roundTo(celsius, STORED_DECIMALS);
 }
 
-/** The value for a number input, in the display unit, at two decimals. Empty
- *  string for "nothing recorded", which is what an empty input means. */
-export function temperatureInputValue(
-  celsius: number | null,
-  unit: TemperatureUnit,
-): string {
-  if (celsius === null) return "";
-  return inUnit(celsius, unit).toFixed(DISPLAY_DECIMALS);
-}
-
 /** "36.50 °C" / "97.70 °F" — the read-only form. */
 export function formatTemperature(
   celsius: number,
@@ -116,21 +106,167 @@ export function formatTemperatureDelta(
   return `${sign}${Math.abs(scaled).toFixed(DISPLAY_DECIMALS)} ${symbol}`;
 }
 
-/** Step and bounds for the number input, in the display unit. Fahrenheit gets
- *  the same two-decimal step, which is finer than its Celsius equivalent — the
- *  point is that the box accepts what a thermometer shows. */
-export function inputBounds(unit: TemperatureUnit): {
-  min: number;
-  max: number;
-  step: number;
-} {
-  return unit === "f"
-    ? {
-        min: roundTo(toFahrenheit(MIN_CELSIUS), 2),
-        max: roundTo(toFahrenheit(MAX_CELSIUS), 2),
-        step: 0.01,
-      }
-    : { min: MIN_CELSIUS, max: MAX_CELSIUS, step: 0.01 };
+// --- The control on the Report screen ---------------------------------------
+//
+// Two ways into the same number, because they are good at different things: a
+// slider you can move with the thumb that is already on the screen, and a box
+// for the mornings you want the exact reading in. Neither is a mode — they
+// write the same field and each shows what the other did.
+
+/**
+ * The band the slider spans, in Celsius.
+ *
+ * Narrower than {@link MIN_CELSIUS}/{@link MAX_CELSIUS} on purpose: those
+ * bound what the document will *store* (a guard against a mis-keyed decimal
+ * point), while these bound what a waking temperature actually does. The whole
+ * cyclic signal is a step of about 0.3 °C somewhere between 36 and 37.3, and a
+ * slider given fifteen degrees to cover would bury that step under a
+ * fingertip.
+ */
+export const BAND_MIN_CELSIUS = 35.5;
+export const BAND_MAX_CELSIUS = 37.5;
+
+/** The slider's resolution inside the band — coarser than the two decimals the
+ *  field stores, because a thumb cannot place a hundredth of a degree. The box
+ *  beside it is how an exact 36.52 gets in. */
+export const BAND_STEP_CELSIUS = 0.05;
+
+/**
+ * What the slider's top stop records: a fever.
+ *
+ * A febrile morning is a real measurement and worth keeping — it is just not a
+ * *cycle* measurement, and it cannot be quietly averaged in with ones that
+ * are. The post-ovulatory rise the model reads is a third of a degree; an
+ * illness is several times that, so one fever left in the evidence would drag
+ * a whole cycle's estimate after it. The stop stores the clinical threshold,
+ * and `forecastModel.ts` leaves everything above the band out of the
+ * temperature channel (see {@link isFever}).
+ */
+export const FEVER_CELSIUS = 38;
+
+/** Whether a reading is too high to say anything about a cycle. */
+export function isFever(celsius: number): boolean {
+  return celsius > BAND_MAX_CELSIUS;
+}
+
+/** Stops on the slider: 0 records nothing, 1…`BAND_STOPS` walk the band, and
+ *  {@link SLIDER_MAX_INDEX} is the fever stop past the end.
+ *
+ *  Index space rather than degrees because a range input steps in whole
+ *  numbers reliably and in hundredths of a degree only approximately — and
+ *  because "nothing recorded" is a position on this control, not a
+ *  temperature. Skipping the field is the common case, so it has to be
+ *  reachable by dragging back rather than only by emptying the box. */
+const BAND_STOPS =
+  Math.round((BAND_MAX_CELSIUS - BAND_MIN_CELSIUS) / BAND_STEP_CELSIUS) + 1;
+export const SLIDER_MAX_INDEX = BAND_STOPS + 1;
+
+/** Where a reading sits on the slider. Anything below the band pins to its
+ *  bottom stop — the box still shows the reading itself, so the thumb is the
+ *  only thing that rounds. */
+export function sliderIndexOf(celsius: number | null): number {
+  if (celsius === null) return 0;
+  if (isFever(celsius)) return SLIDER_MAX_INDEX;
+  const step = Math.round((celsius - BAND_MIN_CELSIUS) / BAND_STEP_CELSIUS);
+  return Math.min(BAND_STOPS, Math.max(1, step + 1));
+}
+
+/** The reading a slider stop records, or null for "nothing recorded". */
+export function sliderCelsiusAt(index: number): number | null {
+  if (index <= 0) return null;
+  if (index >= SLIDER_MAX_INDEX) return FEVER_CELSIUS;
+  return roundTo(BAND_MIN_CELSIUS + (index - 1) * BAND_STEP_CELSIUS, 2);
+}
+
+/**
+ * The digits the box actually asks for.
+ *
+ * A waking temperature is 3x.xx °C or 9x.xx °F. The leading digit never
+ * carries information and the decimal point never moves, so the box fills both
+ * in: type 6, 5, 0 and it reads back 36.50, which is three keystrokes instead
+ * of five and no hunting for a decimal point on a phone keypad.
+ *
+ * Typing the leading digit anyway has to work, because half the people who
+ * pick the app up will. So the first digit is *matched* rather than counted —
+ * a leading 3 is understood as the one already on screen, and anything else is
+ * understood as the digit after it. Both routes converge on the same four
+ * digits, and the field shows the whole number the whole time, so there is
+ * never a moment where what is displayed is not what will be stored.
+ *
+ * The mask therefore reaches 30.00–39.99 °C / 90.00–99.99 °F. Everything the
+ * band cares about is inside that, and above it the slider's fever stop
+ * records a fever without anyone typing a digit.
+ */
+const MASK_DIGITS = 4;
+
+/** The digit the box fills in for the user. */
+export function maskPrefix(unit: TemperatureUnit): string {
+  return unit === "f" ? "9" : "3";
+}
+
+/**
+ * The digits of a reading, as the box holds them: the leading digit first,
+ * then up to three that were actually chosen.
+ *
+ * Everything that is not a digit is dropped, so a stray separator from a
+ * keypad — or a pasted "36.50" — lands in the right slots either way.
+ */
+export function maskDigits(input: string, unit: TemperatureUnit): string {
+  const typed = input.replace(/\D/g, "");
+  if (typed === "") return "";
+  const prefix = maskPrefix(unit);
+  const full = typed[0] === prefix ? typed : prefix + typed;
+  return full.slice(0, MASK_DIGITS);
+}
+
+/** The digits with the decimal point where it belongs: "36.50". A half-typed
+ *  reading renders as far as it goes, so the point appears under the finger at
+ *  the moment it becomes true. */
+export function maskText(digits: string): string {
+  return digits.length <= 2
+    ? digits
+    : `${digits.slice(0, 2)}.${digits.slice(2)}`;
+}
+
+/** What the digits mean, in stored Celsius. Missing trailing digits read as
+ *  zeros — 36 is 36.00, complete the moment it is unambiguous — while the
+ *  leading digit on its own is not a reading yet. */
+export function maskCelsius(
+  digits: string,
+  unit: TemperatureUnit,
+): number | null {
+  const d = maskDigits(digits, unit);
+  if (d.length < 2) return null;
+  return parseTemperature(
+    `${d.slice(0, 2)}.${d.slice(2).padEnd(2, "0")}`,
+    unit,
+  );
+}
+
+/** A stored reading as the box's digits, or "" when the mask cannot hold it —
+ *  which in practice means a fever in Fahrenheit, where the leading digit
+ *  stops being a 9. The control shows those as a fever rather than as a number
+ *  with a digit missing. */
+export function maskOf(celsius: number | null, unit: TemperatureUnit): string {
+  if (celsius === null) return "";
+  const shown = inUnit(celsius, unit).toFixed(DISPLAY_DECIMALS);
+  if (shown.length !== 5 || shown[0] !== maskPrefix(unit)) return "";
+  return shown.replace(".", "");
+}
+
+/**
+ * A reading the box should query rather than accept quietly.
+ *
+ * The second digit of a waking temperature is a 5, a 6 or a 7 (a 9 through a 9
+ * in Fahrenheit); below that is a reading nobody wakes up with, and by far its
+ * likeliest cause is a finger landing one key over. The field still takes it —
+ * this is a nudge, not a validator, and a tracker that argued with what
+ * someone measured would be the wrong kind of confident. Above the band is a
+ * fever, which is a different thing and gets its own answer (see
+ * {@link isFever}).
+ */
+export function isUnusuallyLow(celsius: number): boolean {
+  return celsius < BAND_MIN_CELSIUS;
 }
 
 /** Coerce an arbitrary stored value into a temperature, or null. The only

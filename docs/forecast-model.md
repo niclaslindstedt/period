@@ -133,7 +133,14 @@ roughly 0.3 °C after ovulation, holds through the luteal phase, and falls again
 as a period arrives. Knowing whether that step has happened pins down where in
 the cycle you are.
 
-Readings are used as **deviations from a rolling median** over ±45 days, never
+Readings above 37.50 °C are dropped before any of this — see
+[fever](features/daily-report.md#fever). A febrile morning is several times the
+size of the step this channel exists to read, so one of them left in would both
+fake a shift on its own day and drag the rolling median every reading around it
+is measured against. It stays in the document and on the Report screen; it is
+simply not evidence about a cycle.
+
+The rest are used as **deviations from a rolling median** over ±45 days, never
 as absolute temperatures. Absolute readings differ by person, by thermometer and
 by how warm the bedroom was in February; centring leaves only the within-person
 contrast the model is looking for, and a new thermometer that reads a degree

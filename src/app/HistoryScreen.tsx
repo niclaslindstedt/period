@@ -10,8 +10,8 @@ import { ChartIcon } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
 import { phaseLabel } from "./labels.ts";
 import { swingsByPhase } from "./swings.ts";
-import { inUnit, type TemperatureUnit } from "./temperature.ts";
-import { sortedEntries, type AppData } from "./types.ts";
+import { inUnit, isFever, type TemperatureUnit } from "./temperature.ts";
+import { sortedEntries, type AppData, type DayEntry } from "./types.ts";
 
 // What the reports add up to: the four numbers worth knowing, the shape of the
 // cycle lengths over time, whether the mood swings cluster in a phase, and the
@@ -40,14 +40,22 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
   // The recent temperature series, in the unit being read. Gaps stay gaps —
   // a `null` is a morning the reading was skipped, and joining across it would
   // draw a trend nobody measured.
+  //
+  // A fever is a gap too. The chart exists to show a step of about a third of
+  // a degree; one 38.6 morning rescales the axis until every cycle on it is a
+  // flat line, and the reading it drew that for was never a cycle measurement
+  // (see `isFever`). It stays on the Report screen for the day it belongs to.
   const temperatures = useMemo(() => {
     const recent = sortedEntries(data).slice(-TEMPERATURE_WINDOW);
-    const readings = recent.filter((e) => e.temperature !== null);
+    const reading = (e: DayEntry) =>
+      e.temperature === null || isFever(e.temperature) ? null : e.temperature;
+    const readings = recent.filter((e) => reading(e) !== null);
     if (readings.length < 5) return null;
     return {
-      values: recent.map((e) =>
-        e.temperature === null ? null : inUnit(e.temperature, temperatureUnit),
-      ),
+      values: recent.map((e) => {
+        const value = reading(e);
+        return value === null ? null : inUnit(value, temperatureUnit);
+      }),
       labels: recent.map((e) => formatShortDay(e.date)),
       count: readings.length,
     };
