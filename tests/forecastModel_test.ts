@@ -652,9 +652,12 @@ describe("centredTemperatures", () => {
       cycleLengths: Array.from({ length: 8 }, () => 28),
       temperatureShift: 0.3,
     });
-    // A new thermometer that reads a whole degree high, from the start.
+    // A new thermometer that reads half a degree high, from the start. Half
+    // rather than a whole degree because a whole one would push the luteal
+    // days past the fever line, and above that the app has no way to tell a
+    // miscalibrated thermometer from an actual fever — it drops both.
     for (const entry of Object.values(shifted.data.entries)) {
-      if (entry.temperature !== null) entry.temperature += 1;
+      if (entry.temperature !== null) entry.temperature += 0.5;
     }
     const a = centredTemperatures(base.data, DEFAULT_MODEL_OPTIONS);
     const b = centredTemperatures(shifted.data, DEFAULT_MODEL_OPTIONS);
@@ -666,6 +669,40 @@ describe("centredTemperatures", () => {
   it("has nothing to centre when no readings were taken", () => {
     const { data } = steady();
     expect(centredTemperatures(data, DEFAULT_MODEL_OPTIONS)).toEqual([]);
+  });
+
+  it("leaves a fever out of the channel entirely", () => {
+    const { data } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: Array.from({ length: 8 }, () => 28),
+      temperatureShift: 0.3,
+    });
+    const clean = centredTemperatures(data, DEFAULT_MODEL_OPTIONS);
+    // Three mornings in the middle of a follicular phase, where a rise is the
+    // last thing the model expects.
+    const ill = ["2025-08-08", "2025-08-09", "2025-08-10"];
+
+    // Just under the fever line the readings are ordinary evidence — and this
+    // is the damage the line exists to prevent: each one lands in the channel
+    // carrying three times the deviation the whole biphasic shift amounts to.
+    for (const date of ill) data.entries[date]!.temperature = 37.4;
+    const spiky = centredTemperatures(data, DEFAULT_MODEL_OPTIONS);
+    expect(spiky.length).toBe(clean.length);
+    expect(spiky.find((r) => r.date === ill[0])!.deviation).toBeGreaterThan(
+      0.8,
+    );
+
+    // Over it, and they are not evidence about a cycle at all.
+    for (const date of ill) data.entries[date]!.temperature = 38.6;
+    const withFever = centredTemperatures(data, DEFAULT_MODEL_OPTIONS);
+    expect(withFever.length).toBe(clean.length - ill.length);
+    expect(withFever.map((r) => r.date)).not.toContain(ill[0]);
+    // And the mornings on either side are left where they were: three
+    // readings out of a rolling window move its median by a hundredth, which
+    // is the point of centring on a median rather than on a mean.
+    expect(
+      withFever.find((r) => r.date === "2025-08-07")!.deviation,
+    ).toBeCloseTo(clean.find((r) => r.date === "2025-08-07")!.deviation, 1);
   });
 });
 

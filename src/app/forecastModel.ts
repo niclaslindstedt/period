@@ -95,6 +95,7 @@ import {
   type Pmf,
   type Weighted,
 } from "./stats.ts";
+import { isFever } from "./temperature.ts";
 import { sortedEntries, type AppData, type DayEntry } from "./types.ts";
 
 /** Which evidence the forecast is allowed to use. Both run the same cycle-length
@@ -625,8 +626,16 @@ export function centredTemperatures(
   data: AppData,
   options: ModelOptions,
 ): CentredReading[] {
+  // Fevers are dropped rather than centred. A febrile morning is several
+  // times the size of the post-ovulatory step this channel exists to read, so
+  // one of them left in would both fake a shift on its own day and drag the
+  // neighbourhood median that every reading around it is measured against.
+  // Dropping it is not the same as ignoring the day: the reading is still in
+  // the document and still on the Report screen — it just is not evidence
+  // about a cycle. See `isFever` in `temperature.ts`.
   const readings = sortedEntries(data).filter(
-    (e): e is DayEntry & { temperature: number } => e.temperature !== null,
+    (e): e is DayEntry & { temperature: number } =>
+      e.temperature !== null && !isFever(e.temperature),
   );
 
   // Readings are in date order, so the neighbourhood is a sliding window: both
