@@ -14,9 +14,10 @@ import { useT } from "./i18n/index.ts";
 // fifteen seconds. Four thumb-reachable targets beat a drawer that has to be
 // opened first.
 //
-// The bar sits above the iOS home indicator via `env(safe-area-inset-bottom)`
-// (see `styles.css`), so an installed PWA never puts a tab under the gesture
-// area.
+// The bar is the last thing above the screen edge and clears the iOS home
+// indicator with a flat 10px (see `styles.css`) rather than the full
+// `env(safe-area-inset-bottom)` — the indicator floats over the bar happily,
+// and the inset spent a tab's worth of height on empty surface.
 
 export type Tab = "report" | "forecast" | "history" | "settings";
 
