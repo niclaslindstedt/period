@@ -36,7 +36,7 @@ src/app/
 
   ForecastChart.tsx the probability-per-day chart with its credible bands
   ProfileCharts.tsx the learned mood and temperature patterns
-  DayCircle.tsx     a day's status → its colour, for the two screens that paint days
+  DayMark.tsx       a day's status → its mark, for the two screens that paint days
 ```
 
 `cycle.ts` and `forecastModel.ts` are two answers to the same question at
@@ -50,8 +50,10 @@ the anchor and the roll-forward rule so they never disagree by a cycle. See
 into one call per day — _period_, _predicted period_, _fertile_, _not fertile_ —
 with the probability behind it. It fits no model of its own; it only takes mass
 out of the one already fitted, which is what stops the Status word, the Calendar
-colour, and the Forecast date from ever contradicting each other. `DayCircle.tsx`
-is the single status → colour mapping the Status and Calendar screens share.
+colour, and the Forecast date from ever contradicting each other. `DayMark.tsx`
+is the single status → mark mapping the Status and Calendar screens share — the
+colour and the shape both, so a period reads as one stroke across the days it
+covers on either screen and a lone report reads as a dot on both.
 
 ## The shape of the data
 

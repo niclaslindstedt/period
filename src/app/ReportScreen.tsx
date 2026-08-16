@@ -444,12 +444,16 @@ function headlineFor(t: TFn, span: DayRange, today: DayKey): string {
 }
 
 /** The tint behind a day that falls inside the span being picked. Drawn the
- *  way `DayCircle` is — an absolutely positioned sibling at a negative stack
- *  level, so it sits behind the day number rather than over it — but as a
- *  continuous band rather than a circle, because a span is continuous and a
- *  row of separate circles reads as separate days. The half-cell bleed either
- *  side is what closes the grid's 2px cell padding so the band joins up; the
- *  two ends are the only ones rounded. */
+ *  way `DayMark` is — an absolutely positioned sibling at a negative stack
+ *  level, so it sits behind the day number rather than over it, as a continuous
+ *  band because a span is continuous and a row of separate circles reads as
+ *  separate days. The half-cell bleed either side is what closes the grid's 2px
+ *  cell padding so the band joins up; the two ends are the only ones rounded.
+ *
+ *  Squared-off corners rather than the calendar's round caps, because this band
+ *  is a selection being dragged out and not a period: the rounded stroke means
+ *  "this is a stretch of cycle", and a picker highlight borrowing it would say
+ *  the same thing about days you are only pointing at. */
 function RangeFill({ first, last }: { first: boolean; last: boolean }) {
   return (
     <span

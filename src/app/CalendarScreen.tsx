@@ -9,7 +9,13 @@ import type {
 import { CalendarIcon } from "@niclaslindstedt/oss-framework/components";
 
 import type { CycleOptions } from "./cycle.ts";
-import { DayCircle, DayLegend, toneFor } from "./DayCircle.tsx";
+import {
+  DayLegend,
+  DayMark,
+  markFor,
+  toneFor,
+  type DayTone,
+} from "./DayMark.tsx";
 import { dayStatus, type StatusContext } from "./dayStatus.ts";
 import {
   probabilisticForecast,
@@ -29,10 +35,17 @@ import type { AppData } from "./types.ts";
 // on the current month, and pages either way.
 //
 // The colouring is the app's, the grid is the framework's. Every cell asks
-// `dayStatus` what its day is and paints the answer as a circle behind the
-// number — so a day's colour here and the same day's colour in the Status
-// screen's week row cannot come apart, and neither can disagree with the
-// Forecast screen, since all three read one posterior.
+// `dayStatus` what its day is and paints the answer behind the number — so a
+// day's colour here and the same day's colour in the Status screen's week row
+// cannot come apart, and neither can disagree with the Forecast screen, since
+// all three read one posterior.
+//
+// A cell also asks about the two days either side of it, because a period and a
+// fertile window are spans and are drawn as one stroke across the days they
+// cover (see `DayMark.tsx`). The grid hands over one cell at a time and nothing
+// else, so the run's ends are found by looking at the neighbours rather than by
+// assembling spans — which also means a run reaching past the edge of the month
+// on display is drawn open-ended without this screen having to notice.
 
 type Props = {
   data: AppData;
@@ -63,17 +76,24 @@ export function CalendarScreen({
     [data, today, model, options, showFertileWindow],
   );
 
+  // Asked for three days per cell — the day and both its neighbours — so a
+  // month costs three times the status calls it draws. Left uncached anyway:
+  // `dayStatus` only sums mass out of the posterior that was already fitted
+  // above, so a month of it is a few thousand additions, and a cache keyed by
+  // day would be one more thing that can hold a stale answer after an edit.
+  const toneAt = (day: DayKey): DayTone => toneFor(dayStatus(day, ctx));
+
   return (
     <div className="flex flex-col gap-3 px-3 py-3">
       {/* `app-cycle-calendar` is the stylesheet hook that gives each day cell a
-          stacking context of its own, so the circle `DayCircle` renders can sit
+          stacking context of its own, so the mark `DayMark` renders can sit
           under the day number instead of over it. See styles.css. */}
       <div className="app-cycle-calendar rounded-md border border-line bg-surface-3 p-3">
         <MonthCalendar
           anchor={today}
           weekStartsOn={weekStartsOn}
           renderDay={(cell: GridCell) => (
-            <DayCircle tone={toneFor(dayStatus(cell.key, ctx))} />
+            <DayMark {...markFor(cell.key, toneAt)} />
           )}
         />
         <DayLegend showFertile={showFertileWindow} />

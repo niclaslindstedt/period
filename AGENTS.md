@@ -153,9 +153,13 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
 - `src/app/StatusScreen.tsx`, `ReportScreen.tsx`, `CalendarScreen.tsx`,
   `ForecastScreen.tsx`, `HistoryScreen.tsx`, `SettingsScreen.tsx` — the six
   screens, one per bottom-nav tab.
-- `src/app/DayCircle.tsx` — a day's status as a colour, plus the legend built
-  from the same table. The only place that mapping exists, so the Status week
-  row and the Calendar month grid cannot paint one day two ways.
+- `src/app/DayMark.tsx` — a day's status as a mark, plus the legend built from
+  the same table. The only place that mapping exists, so the Status week row and
+  the Calendar month grid cannot paint one day two ways. Shape carries meaning
+  alongside colour: a period or a fertile window is a _span_, drawn as one
+  capped stroke across the days it covers (a reported period and the predicted
+  rest of it are one run, so the fill hands over to the outline mid-stroke),
+  while a report with no bleeding is a single day and stays a dot.
 - `src/app/ForecastChart.tsx`, `ProfileCharts.tsx` — the forecast's own charts.
   Built from the framework's chart _primitives_ (`bandScale`, `linePath`,
   `barPath`, `linearScale`), not from its finished chart components.

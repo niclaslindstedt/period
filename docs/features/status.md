@@ -12,7 +12,10 @@ that word attached to it.
 - **Cycle day and next period** — the same two lines the
   [Forecast](forecast.md) screen leads with, from the same fit.
 - **This week** — three days back, today, and three days ahead, each painted the
-  colour its status earns. The same colours the [Calendar](calendar.md) uses.
+  colour its status earns. The same colours and the same shapes the
+  [Calendar](calendar.md) uses: a period or a fertile window is one stroke
+  across the days it covers, capped at its ends and cut straight where it
+  carries on past the edge of the week; a day you reported nothing on is a dot.
 
 It is an estimate from your own reports — not medical advice, and not
 contraception.
