@@ -575,6 +575,16 @@ export type ProbabilisticForecast = {
   anchorStart: DayKey;
   /** The last period start actually observed in the reports. */
   lastObservedStart: DayKey;
+  /**
+   * Every period start observed in the reports, oldest first — the days the
+   * derivation actually saw bleeding begin on.
+   *
+   * Not a forecast, which is the point of exposing it: a fertile window is
+   * dated backwards from an onset, so the ones behind these starts are anchored
+   * to something that happened, while the ones behind {@link upcomingStarts}
+   * are anchored to something predicted. `dayStatus.ts` draws the difference.
+   */
+  observedStarts: DayKey[];
   /** The per-day distribution, oldest day first. */
   days: ForecastDay[];
   /**
@@ -2152,6 +2162,7 @@ export function probabilisticForecast(
     model,
     anchorStart,
     lastObservedStart: last.start,
+    observedStarts: periods.map((p) => p.start),
     days,
     onsets: projection.days,
     upcomingStarts: projection.starts,

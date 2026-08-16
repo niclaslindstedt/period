@@ -175,7 +175,11 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   alongside colour: a period or a fertile window is a _span_, drawn as one
   capped stroke across the days it covers (a reported period and the predicted
   rest of it are one run, so the fill hands over to the outline mid-stroke),
-  while a report with no bleeding is a single day and stays a dot.
+  while a report with no bleeding is a single day and stays a dot. Hue says
+  _what_ and fill says _whether it has happened_, so both spans come as a pair —
+  rose filled / rose hollow, blue filled / blue hollow. A fertile window in front
+  of a predicted period is as provisional as that period, and is drawn hollow for
+  exactly that reason.
 - `src/app/ForecastChart.tsx`, `ProfileCharts.tsx` — the forecast's own charts.
   Built from the framework's chart _primitives_ (`bandScale`, `linePath`,
   `barPath`, `linearScale`), not from its finished chart components.

@@ -37,9 +37,10 @@ import type { DayStatus } from "./dayStatus.ts";
 import { useT } from "./i18n/index.ts";
 
 /** How a day is painted. `none` draws nothing at all — an unreported day in a
- *  quiet part of the cycle should look like empty calendar, not like a fifth
+ *  quiet part of the cycle should look like empty calendar, not like a further
  *  category. */
-export type DayTone = "period" | "predicted" | "fertile" | "reported" | "none";
+export type DayTone =
+  "period" | "predicted" | "fertile" | "predictedFertile" | "reported" | "none";
 
 /** What a run of days *is*, which is not the same question as how a day is
  *  painted. A period that has been bled through and a period still to come are
@@ -66,17 +67,30 @@ type ToneStyle = {
  *  or the accent on today), and a tint keeps all of them legible in both themes
  *  without this module having to reach in and restyle text it does not own.
  *
- *  `predicted` is the exception and carries no fill at all. It is the one tone
- *  that is not a fact, and an outline is how a drawing says "this is where it
- *  will be" without claiming the day the way a filled stroke does. Running it
- *  in the same `period` run as the reported days is what makes that read as one
- *  period whose far end has not happened yet: the fill stops where the reports
- *  stop, the outline carries on to where the period is expected to end, and the
- *  seam between them is straight because nothing ends there. */
+ *  Hue says *what*, fill says *whether it has happened*. So each of the two
+ *  things a cycle is made of comes in a pair: rose filled for the bleeding you
+ *  reported and rose hollow for a period still expected, blue filled for the
+ *  fertile window of a period that started and blue hollow for the window of one
+ *  that has not. An outline is how a drawing says "this is where it will be"
+ *  without claiming the day the way a filled stroke does — and a fertile window
+ *  in front of a predicted period is exactly as provisional as the period it is
+ *  counted back from, which a filled stroke there would quietly deny.
+ *
+ *  Running `predicted` in the same `period` run as the reported days is what
+ *  makes those two read as one period whose far end has not happened yet: the
+ *  fill stops where the reports stop, the outline carries on to where the period
+ *  is expected to end, and the seam between them is straight because nothing
+ *  ends there. The two fertile tones share a run for the same reason, though in
+ *  practice they never meet — the windows they mark are a cycle apart. */
 const TONE: Record<Exclude<DayTone, "none">, ToneStyle> = {
   period: { paint: "bg-accent/45", run: "period" },
   predicted: { paint: "border-accent/70", run: "period", outlined: true },
   fertile: { paint: "bg-link/30", run: "fertile" },
+  predictedFertile: {
+    paint: "border-link/70",
+    run: "fertile",
+    outlined: true,
+  },
   reported: { paint: "bg-muted/20", run: null },
 };
 
@@ -113,7 +127,15 @@ export function toneFor(status: DayStatus): DayTone {
   if (status.kind === "predictedPeriod" || status.expectedPeriod) {
     return "predicted";
   }
-  if (status.kind === "fertile" || status.expectedFertile) return "fertile";
+  // The filled fertile window comes first because it is the one anchored to a
+  // day that actually happened. The two only ever compete where a projected
+  // onset lands a cycle away from a logged one, and there the logged one is the
+  // better claim — the same reason a reported bleeding day outranks everything
+  // above.
+  if (status.observedFertile) return "fertile";
+  if (status.kind === "fertile" || status.expectedFertile) {
+    return "predictedFertile";
+  }
   if (status.reported) return "reported";
   return "none";
 }
@@ -195,7 +217,7 @@ export function DayMark({ tone, first, last }: DayMarkShape) {
 export function DayLegend({ showFertile }: { showFertile: boolean }) {
   const t = useT();
   const tones: Exclude<DayTone, "none">[] = showFertile
-    ? ["period", "predicted", "fertile", "reported"]
+    ? ["period", "predicted", "fertile", "predictedFertile", "reported"]
     : ["period", "predicted", "reported"];
   return (
     <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">

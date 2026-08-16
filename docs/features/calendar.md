@@ -6,13 +6,28 @@ right anywhere on the screen to move to the next or previous tab.
 
 Each day's number sits on a coloured mark that says what kind of day it is:
 
-| Mark               | Meaning                                                      |
-| ------------------ | ------------------------------------------------------------ |
-| Filled rose stroke | **Reported bleeding** — the days you logged                  |
-| Rose outline       | **Predicted period** — where the period is expected to reach |
-| Filled blue stroke | **Fertile window** — the days around projected ovulation     |
-| Faint grey dot     | **Reported, no bleeding** — you checked in, nothing happened |
-| Nothing            | Nothing logged, and nothing predicted                        |
+| Mark               | Meaning                                                                       |
+| ------------------ | ----------------------------------------------------------------------------- |
+| Filled rose stroke | **Reported bleeding** — the days you logged                                   |
+| Rose outline       | **Predicted period** — where a period still to come is expected to reach      |
+| Filled blue stroke | **Fertile window** — the days around ovulation, before a period you logged    |
+| Blue outline       | **Predicted fertile window** — the same, before a period that has not started |
+| Faint grey dot     | **Reported, no bleeding** — you checked in, nothing happened                  |
+| Nothing            | Nothing logged, and nothing predicted                                         |
+
+Colour says _what_, and fill says _whether it has happened yet_. Each of the two
+things a cycle is made of therefore comes as a pair: rose filled for bleeding you
+reported and rose hollow for a period still expected, blue filled for the fertile
+window in front of a period that started and blue hollow for the window in front
+of one that has not. A hollow mark is the drawing saying "this is where it will
+be" without claiming the day.
+
+That matters most for the blue. A fertile window is counted backwards from an
+onset — ovulation is a luteal phase before a period starts — so a window in front
+of a _predicted_ period is exactly as provisional as that prediction, and drawing
+it filled beside the hollow period it belongs to would quietly claim more about
+the fortnight before a period than about the period itself. Behind an onset you
+actually logged, the same window rests on a day that happened, and fills in.
 
 The shape says as much as the colour. A period and a fertile window are
 stretches of days, so they are drawn as one stroke running from the first day to
@@ -39,7 +54,8 @@ A day cannot be a different colour on the two screens, and neither can disagree
 with the date the [Forecast](forecast.md) screen names.
 
 What actually happened outranks what was predicted: a day you reported bleeding
-on is filled rose even if the model expected it elsewhere.
+on is filled rose even if the model expected it elsewhere, and a fertile window
+behind a logged period fills in even where a projection lands on the same days.
 
 "Predicted period" covers three things: the days the next period is likely to
 reach, the periods after that one (below), and — while a period is under way —

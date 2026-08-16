@@ -343,10 +343,29 @@ describe("the cycles after the next one", () => {
     expect(dayStatus(addDays(second, -12), ctx).expectedFertile).toBe(false);
   });
 
+  it("fills the fertile window behind a period that did start", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    // The last logged onset is 2026-05-21, so ovulation was 2026-05-07 and the
+    // window ran 2026-05-02 — 2026-05-08. It rests on a day bleeding was
+    // actually reported to have begun, which is what fills it in.
+    const logged = dayStatus("2026-05-05", ctx);
+    expect(logged.observedFertile).toBe(true);
+    expect(logged.expectedFertile).toBe(false);
+    expect(toneFor(logged)).toBe("fertile");
+
+    // The window in front of the next period rests on a predicted onset, and
+    // is drawn hollow for exactly that reason.
+    const coming = dayStatus("2026-06-02", ctx);
+    expect(coming.observedFertile).toBe(false);
+    expect(coming.expectedFertile).toBe(true);
+    expect(toneFor(coming)).toBe("predictedFertile");
+  });
+
   it("says nothing about the fertile window when it is turned off", () => {
     const ctx = contextFor(steadyDoc(), "2026-06-01", false);
     const second = ctx.forecast!.upcomingStarts[1]!;
     expect(dayStatus(addDays(second, -14), ctx).expectedFertile).toBe(false);
+    expect(dayStatus("2026-05-05", ctx).observedFertile).toBe(false);
     expect(dayStatus(addDays(second, 1), ctx).expectedPeriod).toBe(true);
   });
 
@@ -379,6 +398,7 @@ describe("the cycles after the next one", () => {
     const past = addDays(starts[starts.length - 1]!, 60);
     expect(dayStatus(past, ctx).expectedPeriod).toBe(false);
     expect(dayStatus(past, ctx).expectedFertile).toBe(false);
+    expect(dayStatus(past, ctx).observedFertile).toBe(false);
   });
 });
 

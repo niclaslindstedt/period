@@ -31,6 +31,7 @@ function status(
     periodProbability: 0,
     expectedPeriod: false,
     expectedFertile: false,
+    observedFertile: false,
     ...fields,
   };
 }
@@ -45,8 +46,13 @@ describe("toneFor", () => {
   });
 
   it("keeps a fertile day fertile even when it carries a report", () => {
+    expect(
+      toneFor(
+        status({ kind: "fertile", observedFertile: true, reported: true }),
+      ),
+    ).toBe("fertile");
     expect(toneFor(status({ kind: "fertile", reported: true }))).toBe(
-      "fertile",
+      "predictedFertile",
     );
   });
 
@@ -55,9 +61,6 @@ describe("toneFor", () => {
     // span the model expects them in, and the outline is what says "expected".
     expect(toneFor(status({ kind: "notFertile", expectedPeriod: true }))).toBe(
       "predicted",
-    );
-    expect(toneFor(status({ kind: "notFertile", expectedFertile: true }))).toBe(
-      "fertile",
     );
     // A reported bleeding day is still what actually happened.
     expect(toneFor(status({ kind: "period", expectedFertile: true }))).toBe(
