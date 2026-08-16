@@ -1,7 +1,9 @@
 # Status
 
-The screen the app opens on: what today is, in one word, with the number behind
-that word attached to it.
+The screen the app opens on once there is anything to say: what today is, in
+one word, with the number behind that word attached to it. Before the first
+report is saved there is nothing to derive, so the app opens on
+[Daily report](daily-report.md) instead.
 
 - **The call** — _Fertile_, _Not fertile_, _Period_, or _Period likely_. A day
   you reported bleeding on is a **Period** whatever the model thought; every

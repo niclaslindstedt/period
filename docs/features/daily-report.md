@@ -1,7 +1,10 @@
 # Daily report
 
-The screen the app opens on. One day, four taps, two optional measurements, one
-**Save** — and the whole of it on a single phone screen, with nothing to scroll.
+The screen a fresh install opens on — every other screen is derived from what
+this one records, so until there is a first report it is the only one with
+anything to do. One day, four taps, two optional measurements, one **Save** —
+and the whole of it on a single phone screen, with nothing to scroll. Once a
+day has been reported the app opens on [Status](status.md) instead.
 
 - **Blood** — a button. Press it if there was any bleeding at all, spotting
   included: spotting is how most periods start, and the derivation has no use

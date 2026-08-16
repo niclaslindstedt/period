@@ -15,7 +15,7 @@ import {
 } from "@niclaslindstedt/oss-framework/sync";
 import { useApplyTheme } from "@niclaslindstedt/oss-framework/theme";
 
-import { BottomNav, type Tab } from "./app/BottomNav.tsx";
+import { BottomNav, initialTab, type Tab } from "./app/BottomNav.tsx";
 import { CalendarScreen } from "./app/CalendarScreen.tsx";
 import { demoBackendModule, useDemoData } from "./app/dev/useDemoData.ts";
 import { ForecastScreen } from "./app/ForecastScreen.tsx";
@@ -88,8 +88,12 @@ export function App() {
   const look = useMemo(() => chartLook(settings), [settings]);
 
   // Status is where the app opens: it answers the question the app was picked
-  // up to answer, and every other tab is a follow-up to it.
-  const [tab, setTab] = useState<Tab>("status");
+  // up to answer, and every other tab is a follow-up to it. On a document with
+  // no reports in it there is nothing to answer with, so a first run opens on
+  // Report instead (see `initialTab`). Decided once, from the document this
+  // render started with — the store reads localStorage synchronously, so it is
+  // the real one and not a placeholder.
+  const [tab, setTab] = useState<Tab>(() => initialTab(store.data));
   const [syncDetailsOpen, setSyncDetailsOpen] = useState(false);
   // Applying an update (skip-waiting → the new worker takes control → the page
   // reloads) has a visible gap. Flip a flag on the tap so the toast shows a
