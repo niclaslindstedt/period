@@ -78,6 +78,41 @@
   background-color: var(--danger);
 }
 
+/* ── Pointer affordance ──────────────────────────────────────────────────────
+   Tailwind v4's preflight stopped restoring `cursor: pointer` on buttons, and
+   the user-agent default for a <button> is the plain arrow — so under a mouse
+   a nav tab, a yes/no answer and a Save button all looked as inert as the
+   text beside them. It costs a touch device nothing and it is the only
+   hover-time signal a desktop reader gets that a control is a control.
+
+   A stylesheet rule rather than a `cursor-pointer` utility per call site:
+   most of the buttons on screen are the framework's to render (the modals,
+   the segmented control, the settings rows), so a class in this app could
+   only ever reach half of them. <label> is deliberately not on the list — the
+   one around the temperature box wraps a text field and wants a caret. */
+button,
+summary,
+select,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"] {
+  cursor: pointer;
+}
+
+/* A control that cannot be used says so instead of going on inviting the
+   click it will ignore — which is the state the temperature pair and the
+   fertility test are in while the Report screen covers a date range. The
+   `aria-disabled` half is for the ones that stay focusable: the flag is
+   already on the wrapper there, so the buttons inside it are covered too. */
+button:disabled,
+select:disabled,
+input:disabled,
+[aria-disabled="true"],
+[aria-disabled="true"] button {
+  cursor: not-allowed;
+}
+
 /* ── The waking-temperature slider ───────────────────────────────────────────
    A range input, restyled because the platform's own is drawn for a mouse.
    The thumb is the whole interaction here and has to be findable by a thumb,
