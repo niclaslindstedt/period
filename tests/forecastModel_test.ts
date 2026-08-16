@@ -24,6 +24,7 @@ import {
   predictivePmf,
   MAX_PERIOD_LENGTH,
   probabilisticForecast,
+  projectOnsets,
   repairSkippedCycles,
   symptomLogLikelihoodRatio,
   symptomProfile,
@@ -36,7 +37,7 @@ import {
   type CycleObservation,
 } from "../src/app/forecastModel.ts";
 import { derivePeriods } from "../src/app/cycle.ts";
-import { pmfMode, pmfQuantile } from "../src/app/stats.ts";
+import { pmfMode, pmfQuantile, type Pmf } from "../src/app/stats.ts";
 import { emptyDoc, type AppData } from "../src/app/types.ts";
 
 // The forecast model is the one place in the app where a wrong number looks
@@ -1857,5 +1858,124 @@ describe("the thermal-shift anchor", () => {
     const width80 = (f: typeof multi) =>
       f.intervals.find((i) => i.mass === 0.8)!.widthDays;
     expect(width80(multi)).toBeLessThan(width80(uni));
+  });
+});
+
+// The projection: the same posterior applied again, so a calendar paged past
+// the next period still has something true to paint. Everything here is a
+// consequence of the fit rather than a new estimate, and these pin that — most
+// of all that the first projected start is the date the app already names.
+describe("projectOnsets", () => {
+  const gap: Pmf = { offset: 27, probabilities: [0.25, 0.5, 0.25] };
+  const next: Pmf = { offset: 10, probabilities: [0.25, 0.5, 0.25] };
+
+  it("names each cycle by its median and spaces them a cycle apart", () => {
+    const { starts } = projectOnsets(next, gap, "2026-01-01", 28, {
+      ...DEFAULT_MODEL_OPTIONS,
+      projectedCycles: 3,
+    });
+    expect(starts).toEqual(["2026-01-12", "2026-02-09", "2026-03-09"]);
+    for (let i = 1; i < starts.length; i++) {
+      expect(daysBetween(starts[i - 1]!, starts[i]!)).toBe(28);
+    }
+  });
+
+  it("merges the cycles' masses onto the days they share", () => {
+    const { days } = projectOnsets(next, gap, "2026-01-01", 28, {
+      ...DEFAULT_MODEL_OPTIONS,
+      projectedCycles: 2,
+    });
+    // Two cycles, each a whole distribution, so the total is two onsets' worth.
+    expect(days.reduce((t, d) => t + d.probability, 0)).toBeCloseTo(2, 12);
+    // Sorted, which `dayStatus` relies on to stop its walk early.
+    expect([...days].sort((a, b) => (a.day < b.day ? -1 : 1))).toEqual(days);
+    // The next onset's own days are untouched by the projection behind them.
+    expect(days.find((d) => d.day === "2026-01-12")?.probability).toBeCloseTo(
+      0.5,
+      12,
+    );
+  });
+
+  it("stops once a cycle is no longer located to within half a cycle", () => {
+    // Each convolution adds the gap's variance, so the 80% band widens without
+    // bound; the cap is what turns that into a horizon rather than a year of
+    // increasingly meaningless strokes.
+    const wide: Pmf = {
+      offset: 20,
+      probabilities: Array.from({ length: 17 }, () => 1 / 17),
+    };
+    const { starts } = projectOnsets(wide, wide, "2026-01-01", 28, {
+      ...DEFAULT_MODEL_OPTIONS,
+      projectedCycles: 12,
+    });
+    expect(starts.length).toBeLessThan(12);
+    // The next period is always carried, however wide it is — the rest of the
+    // app is built on it.
+    expect(starts.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("probabilisticForecast: the cycles after the next one", () => {
+  const steady = build({
+    firstStart: "2025-06-04",
+    cycleLengths: [28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28],
+    logEveryDay: false,
+  });
+
+  it("starts the projection on the very day the headline names", () => {
+    const f = probabilisticForecast(steady.data, "2026-06-01", "univariate")!;
+    expect(f.upcomingStarts[0]).toBe(f.expectedDay);
+  });
+
+  it("projects past the next period on a steady history", () => {
+    const f = probabilisticForecast(steady.data, "2026-06-01", "univariate")!;
+    expect(f.upcomingStarts.length).toBeGreaterThan(1);
+    for (let i = 1; i < f.upcomingStarts.length; i++) {
+      const gapDays = daysBetween(
+        f.upcomingStarts[i - 1]!,
+        f.upcomingStarts[i]!,
+      );
+      expect(gapDays).toBeGreaterThanOrEqual(26);
+      expect(gapDays).toBeLessThanOrEqual(30);
+    }
+  });
+
+  it("projects less far when the history says less", () => {
+    const erratic = build({
+      firstStart: "2025-06-04",
+      cycleLengths: [21, 38, 24, 35, 26, 40, 22, 33, 29, 20, 37, 25],
+      logEveryDay: false,
+    });
+    const wobbly = probabilisticForecast(
+      erratic.data,
+      addDays(erratic.starts[erratic.starts.length - 1]!, 10),
+      "univariate",
+    )!;
+    const firm = probabilisticForecast(
+      steady.data,
+      "2026-06-01",
+      "univariate",
+    )!;
+    expect(wobbly.upcomingStarts.length).toBeLessThan(
+      firm.upcomingStarts.length,
+    );
+  });
+
+  it("draws the projection behind the forecast rather than over it", () => {
+    // Every day the chart draws keeps at least the probability the chart drew
+    // — the later cycles are added to the next one, never substituted for it.
+    const f = probabilisticForecast(steady.data, "2026-06-01", "univariate")!;
+    for (const day of f.days) {
+      const onset = f.onsets.find((o) => o.day === day.day);
+      expect(onset?.probability).toBeGreaterThanOrEqual(day.probability);
+    }
+    // And around the date the app names, they add nothing worth a decimal
+    // place: the cycle after next is a month away from it.
+    for (let offset = -5; offset <= 5; offset++) {
+      const day = addDays(f.expectedDay, offset);
+      const drawn = f.days.find((d) => d.day === day)!.probability;
+      const projected = f.onsets.find((o) => o.day === day)!.probability;
+      expect(projected - drawn).toBeLessThan(0.005);
+    }
   });
 });

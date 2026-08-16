@@ -251,12 +251,17 @@ body {
 }
 
 /* The notch and the home indicator. The header pads down from the status bar,
-   so an installed PWA paints edge to edge without putting the sync glyph — or
-   the rule under it — beneath the Dynamic Island. The inset is the whole of
-   the padding: any constant on top of it pushes the rule visibly below the
-   status bar instead of tucking it under. */
+   so an installed PWA paints edge to edge without putting the buttons — or the
+   rule under them — beneath the Dynamic Island.
+
+   The larger of the row's own padding and the inset, rather than one on top of
+   the other: stacking them would push the bar visibly below the status bar
+   instead of tucking it under, and the bare inset is nothing at all in a
+   browser tab, where the bar would then have a top edge and no top padding.
+   The same expression the sibling `notes` header uses, so the two apps' bars
+   land at the same height on the same phone. */
 .app-header {
-  padding-top: env(safe-area-inset-top);
+  padding-top: max(0.75rem, env(safe-area-inset-top));
 }
 
 /* The nav is the last thing above the screen edge, and the app paints under

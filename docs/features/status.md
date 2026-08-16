@@ -18,6 +18,9 @@ report is saved there is nothing to derive, so the app opens on
   [Calendar](calendar.md) uses: a period or a fertile window is one stroke
   across the days it covers, capped at its ends and cut straight where it
   carries on past the edge of the week; a day you reported nothing on is a dot.
+  Filled means the cycle it belongs to has begun, hollow means the cycle is
+  itself still a prediction — so everything up to the next expected period is
+  solid and everything past it is outlined.
 
 It is an estimate from your own reports — not medical advice, and not
 contraception.
@@ -28,12 +31,17 @@ The forecast is a probability distribution over the day your next period starts
 (see [the forecast model](../forecast-model.md)). Both questions this screen
 asks are questions about that same distribution:
 
-- A day is inside the **next period** if the period starts on or before it and
-  the period runs far enough to reach it — so the last day of a predicted period
-  is less certain than its first.
+- A day is inside a **period** if a period starts on or before it and runs far
+  enough to reach it — so the last day of a predicted period is less certain
+  than its first.
 - A day is **fertile** if ovulation falls near it, and ovulation is a fixed
-  number of days _before_ the next start (the luteal phase). So a day is fertile
-  exactly when the next period starts roughly two weeks after it.
+  number of days _before_ a start (the luteal phase). So a day is fertile
+  exactly when a period starts roughly two weeks after it.
+
+"A period" rather than "the next period", because the model projects the cycles
+after it too (see
+[the forecast model](../forecast-model.md#the-cycles-after-the-next-one)) — which
+is what lets the [Calendar](calendar.md) paint the months after next.
 
 Adding up the probability of the start days that satisfy either condition gives
 the chance that day carries that status. The percentage is that sum. Nothing is
@@ -70,6 +78,28 @@ is a fact, and the screen does not argue with a report you gave it.
 
 "Not fertile" quotes the complement — the chance the fertile window does _not_
 cover today.
+
+## The mark and the word
+
+They answer different questions, and a few cycles out they part company.
+
+The **word** — and the percentage under it — is a call about today: it says
+_Period likely_ only when a period is more likely than not to cover the day.
+That is the only threshold worth using for a sentence, because below it the
+opposite sentence would be the truer one.
+
+The **mark** says where a period is expected to fall. Those are not the same
+claim, and far enough ahead only the second one can be made: by the third cycle
+out the estimate is spread wider than a period is long, so no single day clears
+a half even though the period is certainly coming. A calendar that painted
+nothing there would be saying "no period expected", which is worse than saying
+roughly when.
+
+So the outline — which has always meant _expected_ rather than _reported_ —
+follows the projected periods, and the wording stays exactly as cautious as it
+was. Nothing else changes: the percentage beside a projected day is still the
+real one, and a day you reported without bleeding is never painted as a period
+however confident the projection is.
 
 ## With the fertile window turned off
 

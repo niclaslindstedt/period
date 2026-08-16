@@ -220,9 +220,14 @@ export function ForecastChart({
           active ? cursor! : Math.max(0, expectedIndex),
         )}
       />
+      {/* `data-swipe-ignore`: dragging sideways across the plot reads a day out
+          of it (`trackPointer` below), which is the same motion the shell uses
+          to change tabs — so the chart claims its own horizontal axis and the
+          swipe stays off it. See `useSwipeNav.ts`. */}
       <div
         tabIndex={0}
         role="group"
+        data-swipe-ignore
         aria-label={t("forecast.chart.keyboardHint")}
         className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
         onKeyDown={(e) => {

@@ -140,4 +140,4 @@ with every share for the same reason.
 
 If the predicted date looks wrong, the History screen's period list is the
 place to check: it is exactly the input the averages were computed from, so a
-mistyped day is visible there and fixable on the Report tab.
+mistyped day is visible there and fixable from the **+** button.

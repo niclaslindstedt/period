@@ -7,12 +7,14 @@ below runs in the browser tab.
 index.html
   └── src/main.tsx            mounts <App> inside the i18n LanguageRoot
        └── src/App.tsx        theme, today, store, sync, tab switch, chrome
+            ├── TopBar            wordmark, sync glyph, + (report), cog
             ├── StatusScreen      reads dayStatus.ts — the opening screen
             ├── ReportScreen      writes day reports
             ├── CalendarScreen    reads dayStatus.ts over a month grid
             ├── ForecastScreen    reads cycle.ts + forecastModel.ts
             ├── HistoryScreen     reads cycle.ts + swings.ts
-            └── SettingsScreen    settings, sync controls, backup, about
+            ├── SettingsScreen    settings, sync controls, backup, about
+            └── BottomNav         the four destinations
 
 src/app/
   types.ts          the model: DayEntry (four booleans, two measurements)
@@ -28,6 +30,7 @@ src/app/
   useDocStore.ts    the document in state, persisted to localStorage
   useSyncEngine.ts  the cloud copy: pull on open, debounced push on edit
   useAppSettings.ts the settings blob
+  useSwipeNav.ts    touch swipe → one tab along the bottom bar
   backup.ts         export / restore a JSON file
 
   dev/demoData.ts    a year of invented reports, relative to today (pure)
@@ -46,11 +49,20 @@ chart draw, reading mood swings and temperature as well as the gaps. They share
 the anchor and the roll-forward rule so they never disagree by a cycle. See
 [the forecast model](forecast-model.md).
 
+`forecastModel.ts` also projects the cycles _after_ the next one, by convolving
+its own posterior with its own cycle-length predictive — no second fit, and each
+one wider than the last until the projection stops being a date (see
+[the forecast model](forecast-model.md#the-cycles-after-the-next-one)). That is
+what fills in the calendar's later months.
+
 `dayStatus.ts` sits on top of `forecastModel.ts` and turns that distribution
 into one call per day — _period_, _predicted period_, _fertile_, _not fertile_ —
 with the probability behind it. It fits no model of its own; it only takes mass
 out of the one already fitted, which is what stops the Status word, the Calendar
-colour, and the Forecast date from ever contradicting each other. `DayMark.tsx`
+colour, and the Forecast date from ever contradicting each other. It also says
+whether a day falls in the _span_ an upcoming period is expected to cover, which
+is a weaker claim than the call and the one the paint follows a few cycles out —
+the wording keeps the stricter rule. `DayMark.tsx`
 is the single status → mark mapping the Status and Calendar screens share — the
 colour and the shape both, so a period reads as one stroke across the days it
 covers on either screen and a lone report reads as a dot on both.

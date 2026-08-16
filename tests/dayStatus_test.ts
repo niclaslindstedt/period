@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 import { describe, expect, it } from "vitest";
 
-import { addDays } from "@niclaslindstedt/oss-framework/calendar";
+import { addDays, daysBetween } from "@niclaslindstedt/oss-framework/calendar";
 
 import { DEFAULT_CYCLE_OPTIONS } from "../src/app/cycle.ts";
+import { toneFor } from "../src/app/DayMark.tsx";
 import {
   dayStatus,
   fertileProbability,
@@ -302,6 +303,123 @@ describe("the period already running", () => {
     expect(first.periodLength.observedEpisodes).toBe(5);
     expect(first.periodLength.typicalLength).toBe(5);
     expect(whole.periodLength.typicalLength).toBe(5);
+  });
+});
+
+// The months after next. The half rule cannot reach them — a few cycles out no
+// single day is more likely than not a period day — so the *mark* follows the
+// projected spans while the *word* and the percentage stay on the rule they
+// always were. These pin both halves of that split.
+describe("the cycles after the next one", () => {
+  it("expects the second period a cycle after the first", () => {
+    const f = contextFor(steadyDoc(), "2026-06-01").forecast!;
+    expect(f.upcomingStarts.length).toBeGreaterThan(1);
+    expect(f.upcomingStarts[0]).toBe(f.expectedDay);
+    expect(daysBetween(f.upcomingStarts[0]!, f.upcomingStarts[1]!)).toBe(28);
+  });
+
+  it("marks the second period's days without calling them period days", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    const second = ctx.forecast!.upcomingStarts[1]!;
+    const status = dayStatus(addDays(second, 1), ctx);
+
+    expect(status.expectedPeriod).toBe(true);
+    expect(toneFor(status)).toBe("predicted");
+    // …and the honest number underneath is still the honest number: that far
+    // out the spread is wider than a period is long, so no day clears a half.
+    expect(status.kind).not.toBe("predictedPeriod");
+    expect(status.periodProbability).toBeLessThan(0.5);
+  });
+
+  it("puts a fertile window a luteal phase before each projected period", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    const second = ctx.forecast!.upcomingStarts[1]!;
+    // Ovulation fourteen days before the onset, the window from five days
+    // before that through one day after.
+    for (let lag = 19; lag >= 13; lag--) {
+      expect(dayStatus(addDays(second, -lag), ctx).expectedFertile).toBe(true);
+    }
+    expect(dayStatus(addDays(second, -20), ctx).expectedFertile).toBe(false);
+    expect(dayStatus(addDays(second, -12), ctx).expectedFertile).toBe(false);
+  });
+
+  it("fills the fertile window of the cycle that is under way", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    // The cycle running now opened with the period logged on 2026-05-21 and
+    // will close with the one expected on 2026-06-18, putting ovulation on
+    // 2026-06-04 and the window at 2026-05-30 — 2026-06-05. The onset it points
+    // at has not arrived, but the cycle carrying it is dated by a report — so
+    // it is filled.
+    const current = dayStatus("2026-06-02", ctx);
+    expect(current.startedFertile).toBe(true);
+    expect(current.expectedFertile).toBe(false);
+    expect(toneFor(current)).toBe("fertile");
+
+    // The window one cycle further on sits in a cycle only a projected onset
+    // opens, and is drawn hollow for exactly that reason.
+    const later = dayStatus("2026-06-30", ctx);
+    expect(later.startedFertile).toBe(false);
+    expect(later.expectedFertile).toBe(true);
+    expect(toneFor(later)).toBe("predictedFertile");
+  });
+
+  it("fills the windows of cycles already behind it", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    // The cycle that opened 2026-04-23 closed with the period on 2026-05-21,
+    // so its window ran 2026-05-02 — 2026-05-08. Both ends happened.
+    const past = dayStatus("2026-05-05", ctx);
+    expect(past.startedFertile).toBe(true);
+    expect(toneFor(past)).toBe("fertile");
+  });
+
+  it("says nothing about a window before the first period ever logged", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    // A fortnight before 2026-01-01 is a cycle the app never saw open, so it
+    // gets neither mark rather than a guess about a month it has no report for.
+    const before = dayStatus("2025-12-15", ctx);
+    expect(before.startedFertile).toBe(false);
+    expect(before.expectedFertile).toBe(false);
+    expect(toneFor(before)).toBe("none");
+  });
+
+  it("says nothing about the fertile window when it is turned off", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01", false);
+    const second = ctx.forecast!.upcomingStarts[1]!;
+    expect(dayStatus(addDays(second, -14), ctx).expectedFertile).toBe(false);
+    expect(dayStatus("2026-05-05", ctx).startedFertile).toBe(false);
+    expect(dayStatus(addDays(second, 1), ctx).expectedPeriod).toBe(true);
+  });
+
+  it("lets a logged day of no bleeding outrank the span it falls in", () => {
+    // A report is a fact, and it outranks a projection the same way it rules a
+    // candidate start day out of the forecast.
+    const inside = addDays(
+      contextFor(steadyDoc(), "2026-06-01").forecast!.upcomingStarts[1]!,
+      1,
+    );
+    const data = steadyDoc();
+    data.entries[inside] = {
+      date: inside,
+      bleeding: false,
+      moodSwings: false,
+      lust: false,
+      sex: false,
+      temperature: null,
+      fertilityTest: null,
+      updatedAt: STAMP,
+    };
+    const ctx = contextFor(data, "2026-06-01");
+    expect(dayStatus(inside, ctx).expectedPeriod).toBe(false);
+    expect(dayStatus(addDays(inside, 1), ctx).expectedPeriod).toBe(true);
+  });
+
+  it("stops where the projection does", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    const starts = ctx.forecast!.upcomingStarts;
+    const past = addDays(starts[starts.length - 1]!, 60);
+    expect(dayStatus(past, ctx).expectedPeriod).toBe(false);
+    expect(dayStatus(past, ctx).expectedFertile).toBe(false);
+    expect(dayStatus(past, ctx).startedFertile).toBe(false);
   });
 });
 

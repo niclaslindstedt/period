@@ -135,6 +135,16 @@
 // distribution alone has nothing to say about: it is busy describing a period
 // four weeks out.
 //
+// ## The cycles after the next one
+//
+// A calendar is paged, so it asks about months the "next period" is not in. The
+// answer is the same distribution applied again: the second onset is the first
+// plus another cycle length, which is a convolution of two things already
+// fitted here. No second model, and no stamping the typical length forward from
+// the predicted date — a projection has to carry the uncertainty it was built
+// from, and each cycle out is correspondingly wider until the screens stop
+// having anything to paint.
+//
 // Everything here is pure and clock-free, like `cycle.ts`: `today` is always a
 // parameter, so `tests/forecastModel_test.ts` pins real dates without touching
 // the clock.
@@ -152,6 +162,7 @@ import {
   type PeriodSpan,
 } from "./cycle.ts";
 import {
+  convolve,
   credibleInterval,
   median,
   normalize,
@@ -273,6 +284,33 @@ export type ModelOptions = {
    *  year wide. */
   maxLeadDays: number;
   /**
+   * How many onsets ahead the calendar is projected — the next period, then the
+   * one after it, and so on (see {@link projectOnsets}).
+   *
+   * Twelve is about a year, and it is a ceiling rather than a target: the
+   * projection stops on its own as soon as a cycle is too spread out to say
+   * anything (see {@link projectionMassFloor}), which for most histories
+   * happens long before the twelfth. It exists so a freakishly regular history
+   * cannot ask for a decade of arithmetic.
+   */
+  projectedCycles: number;
+  /**
+   * How wide a projected onset's 80% interval may get, as a share of a typical
+   * cycle, before the projection stops.
+   *
+   * This is where a projection stops being a date and becomes a shrug, and the
+   * line is drawn by comparing the estimate to the thing it is estimating. Half
+   * a cycle is the last point at which "the period is around here" says more
+   * than "some time that month": at a whole cycle the intervals of consecutive
+   * onsets touch, and a calendar drawing them would be shading a stripe of
+   * uncertainty rather than marking a period.
+   *
+   * It is a rule about the *history*, not the horizon — a steady one is located
+   * to within a few days for months, an erratic one loses the thread after the
+   * next period, and each is projected exactly as far as it earns.
+   */
+  projectionMaxSpreadShare: number;
+  /**
    * How much wider the *nonstandard* cycle component is than the standard one,
    * on the log scale. Cycle length is a mixture (Harlow & Zeger): a symmetric
    * cluster of ordinary cycles plus an occasional stretched one — an
@@ -326,6 +364,8 @@ export const DEFAULT_MODEL_OPTIONS: ModelOptions = {
   temperatureMinSd: 0.06,
   temperatureMinDays: 12,
   maxLeadDays: 90,
+  projectedCycles: 12,
+  projectionMaxSpreadShare: 0.5,
   outlierScale: 4,
   outlierPriorShare: 0.075,
   outlierPriorStrength: 12,
@@ -535,8 +575,47 @@ export type ProbabilisticForecast = {
   anchorStart: DayKey;
   /** The last period start actually observed in the reports. */
   lastObservedStart: DayKey;
+  /**
+   * Every period start observed in the reports, oldest first — the days the
+   * derivation actually saw bleeding begin on.
+   *
+   * Not a forecast, which is the point of exposing it. An onset is where one
+   * cycle ends and the next begins, so these are the cycle boundaries that
+   * *happened*, and {@link upcomingStarts} are the ones that have not. Which
+   * side of the last real one a day falls on is what tells `dayStatus.ts`
+   * whether the cycle that day belongs to has begun.
+   *
+   * Every entry is before every entry of `upcomingStarts`: the posterior is
+   * measured forward from an anchor at or after the last of these.
+   */
+  observedStarts: DayKey[];
   /** The per-day distribution, oldest day first. */
   days: ForecastDay[];
+  /**
+   * The same question asked of every cycle ahead, not only the next one: the
+   * probability that *a* period starts on each day, oldest day first.
+   *
+   * Its first cycle's worth of days carries exactly the probabilities in
+   * `days` — this is that distribution with the later onsets projected on
+   * behind it (see {@link projectOnsets}), never a second estimate of it. The
+   * Calendar screen paints from this, which is how it fills in the months after
+   * next without the Status and Forecast screens' answers moving a day.
+   */
+  onsets: OnsetDay[];
+  /**
+   * The day each projected cycle is expected to start on, oldest first, and the
+   * first of them is {@link expectedDay}.
+   *
+   * The distribution above says how likely each day is; this says which day
+   * each period is *named* by, and the calendar needs both. Far enough ahead no
+   * single day is more likely than not a period day — the spread has grown past
+   * the width of a period — and a calendar painting only the days that clear a
+   * half would answer "when is my period in September?" with an empty month,
+   * which is a worse answer than the honest one. So the span each of these
+   * starts is drawn, in the outline that means *predicted*, and the percentage
+   * beside it on the Status screen stays the real one.
+   */
+  upcomingStarts: DayKey[];
   /** How long an episode lasts, and where the one running now has got to.
    *  Turns the start-day distribution above into a statement about the days a
    *  period *covers*, which is what the Status and Calendar screens paint. */
@@ -1717,6 +1796,120 @@ export function periodLengthSurvival(
   return model.survival[n] ?? 0;
 }
 
+// --- Cycles further ahead -------------------------------------------------
+//
+// Everything above describes *the next* onset. A calendar is paged, and a
+// calendar paged three months forward that paints nothing is not saying "your
+// cycle stops in June" — it is saying the model was only ever asked one
+// question. So the same model is asked it again.
+//
+// The second onset is the first one plus another cycle length; the third is the
+// second plus another; and so on. Both terms are distributions this module has
+// already fitted — the conditioned posterior over the next start, and the
+// predictive over cycle length — so each further onset is their convolution and
+// nothing new is estimated. That is the point of doing it this way rather than
+// stamping the typical length forward from the predicted date: a projection has
+// to inherit the uncertainty it is built from, and adding two uncertain
+// quantities is what widens it.
+//
+// The widening is the honest half of the feature. Each cycle out is spread by
+// one more cycle's worth of variation, so a steady history paints three or four
+// periods ahead and an erratic one paints one — and past that the days fall
+// below the threshold the screens paint at, and the calendar simply says
+// nothing rather than drawing a confident guess about November.
+
+/** One candidate onset day. The next period and every one after it are
+ *  described in these terms, because a calendar asks the same question of every
+ *  day it paints: how likely is it that *a* period starts here. */
+export type OnsetDay = {
+  day: DayKey;
+  /** Posterior probability that a period — the next one, or a later one —
+   *  starts on this day. Two different onsets can never fall on the same day,
+   *  so overlapping projections add rather than double-count. */
+  probability: number;
+};
+
+/** The projection, in the two forms the screens ask for it in. */
+export type OnsetProjection = {
+  /**
+   * Every projected onset day, oldest first, with the cycles' masses merged.
+   *
+   * Days shared by two cycles' distributions have their masses summed, which is
+   * exactly right: the events are disjoint, so the chance *a* period starts on
+   * a day is the chance the second one does plus the chance the third one does.
+   *
+   * Sorted, and callers rely on it: `dayStatus.ts` walks the list and stops as
+   * soon as it is past the day it is asking about.
+   */
+  days: OnsetDay[];
+  /**
+   * The median start day of each projected cycle, oldest first — the date each
+   * one is *named* by, as opposed to the mass around it.
+   *
+   * The first entry is the day the Forecast screen's headline quotes, from the
+   * identical statistic (`pmfQuantile(posterior, 0.5)`), so the first stroke the
+   * calendar draws cannot begin on a different day from the one the app says
+   * out loud.
+   */
+  starts: DayKey[];
+};
+
+/**
+ * Project the onsets ahead: the fitted posterior over the next start, then that
+ * convolved with one more cycle length, and again, for as long as the result is
+ * still a date rather than a shrug (see
+ * {@link ModelOptions.projectionMaxSpreadShare}) and at most
+ * {@link ModelOptions.projectedCycles} times.
+ *
+ * `posterior` and `gap` are both measured in days from the anchor start —
+ * `posterior` because that is how the forecast is built, `gap` because a cycle
+ * length is a number of days either way.
+ */
+export function projectOnsets(
+  posterior: Pmf,
+  gap: Pmf,
+  anchorStart: DayKey,
+  typicalLength: number,
+  options: ModelOptions,
+): OnsetProjection {
+  const mass = new Map<number, number>();
+  const starts: DayKey[] = [];
+  const maxWidth = Math.max(
+    1,
+    typicalLength * options.projectionMaxSpreadShare,
+  );
+  let cycle = posterior;
+
+  for (let n = 0; n < Math.max(1, options.projectedCycles); n++) {
+    // The next onset is carried however wide it is: it is the forecast the rest
+    // of the app is built on, and a history too erratic to project still has a
+    // period coming. Every cycle after it has to earn its place, and since each
+    // is wider than the last, the first one that fails ends the projection.
+    if (n > 0) {
+      const { lower, upper } = credibleInterval(cycle, 0.8);
+      if (upper - lower + 1 > maxWidth) break;
+    }
+    for (let i = 0; i < cycle.probabilities.length; i++) {
+      const p = cycle.probabilities[i]!;
+      if (p <= 0) continue;
+      const offset = cycle.offset + i;
+      mass.set(offset, (mass.get(offset) ?? 0) + p);
+    }
+    starts.push(addDays(anchorStart, pmfQuantile(cycle, 0.5)));
+    cycle = convolve(cycle, gap);
+  }
+
+  return {
+    days: [...mass.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([offset, probability]) => ({
+        day: addDays(anchorStart, offset),
+        probability,
+      })),
+    starts,
+  };
+}
+
 // --- Putting it together --------------------------------------------------
 
 /** What the within-cycle channels have to work with at prediction time. */
@@ -1929,6 +2122,17 @@ export function probabilisticForecast(
   const medianOffset = pmfQuantile(posterior, 0.5);
   const expectedDay = addDays(anchorStart, medianOffset);
 
+  // The cycle-length predictive is the gap between one onset and the next, so
+  // the same `prior` the next onset was built from is what carries the
+  // projection forward. Nothing here is fitted twice.
+  const projection = projectOnsets(
+    posterior,
+    prior,
+    anchorStart,
+    params.typicalLength,
+    modelOptions,
+  );
+
   const intervals: ForecastInterval[] = INTERVAL_MASSES.map((mass) => {
     const { lower, upper } = credibleInterval(posterior, mass);
     return {
@@ -1962,7 +2166,10 @@ export function probabilisticForecast(
     model,
     anchorStart,
     lastObservedStart: last.start,
+    observedStarts: periods.map((p) => p.start),
     days,
+    onsets: projection.days,
+    upcomingStarts: projection.starts,
     periodLength: periodLengthModel(periods, today, cycle),
     expectedDay,
     peakDay: addDays(anchorStart, pmfMode(posterior)),

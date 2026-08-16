@@ -29,6 +29,9 @@ function status(
     reported: false,
     fertileProbability: 0,
     periodProbability: 0,
+    expectedPeriod: false,
+    startedFertile: false,
+    expectedFertile: false,
     ...fields,
   };
 }
@@ -43,8 +46,44 @@ describe("toneFor", () => {
   });
 
   it("keeps a fertile day fertile even when it carries a report", () => {
-    expect(toneFor(status({ kind: "fertile", reported: true }))).toBe(
+    expect(
+      toneFor(
+        status({ kind: "fertile", startedFertile: true, reported: true }),
+      ),
+    ).toBe("fertile");
+  });
+
+  it("paints a projected period in the predicted outline", () => {
+    // Cycles far enough ahead that no single day clears a half still have a
+    // span the model expects them in, and the outline is what says "expected".
+    expect(toneFor(status({ kind: "notFertile", expectedPeriod: true }))).toBe(
+      "predicted",
+    );
+    // A reported bleeding day is still what actually happened.
+    expect(toneFor(status({ kind: "period", expectedFertile: true }))).toBe(
+      "period",
+    );
+  });
+
+  it("hollows out the fertile window of a cycle that has not begun", () => {
+    // Both ends of it are predictions — the onset that would open the cycle,
+    // and the one it points at — so a filled stroke would claim too much.
+    expect(toneFor(status({ kind: "notFertile", expectedFertile: true }))).toBe(
+      "predictedFertile",
+    );
+    // Inside a cycle a real period opened it fills in, even where the onset it
+    // points at has not arrived and no single day clears a half.
+    expect(toneFor(status({ kind: "notFertile", startedFertile: true }))).toBe(
       "fertile",
+    );
+  });
+
+  it("takes the blue from the span rather than from the call", () => {
+    // `kind` cannot say which cycle a window belongs to, and reading it as well
+    // would let one window come out part filled and part hollow.
+    expect(toneFor(status({ kind: "fertile" }))).toBe("none");
+    expect(toneFor(status({ kind: "fertile", reported: true }))).toBe(
+      "reported",
     );
   });
 

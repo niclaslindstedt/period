@@ -386,6 +386,39 @@ over it would be the screen contradicting the report it was given. A day with no
 report at all stays possible — not logging is not the same claim as logging a
 no.
 
+## The cycles after the next one
+
+The [calendar](features/calendar.md) is paged, so it asks about months the next
+period is not in. The answer is the same model asked again: the second onset is
+the first plus another cycle length, the third is the second plus another, and
+both terms are distributions already fitted above. Each further onset is their
+**convolution** — the distribution of a sum of independent quantities — so
+nothing new is estimated.
+
+That is the point of doing it this way rather than stamping the typical length
+forward from the predicted date. Adding an uncertain length to an uncertain date
+gives a date that is less certain than either, and the variances add: a
+projection inherits the uncertainty it was built from instead of repeating the
+first prediction at full confidence.
+
+The widening is also what ends it. The projection stops at the first onset whose
+80% interval is wider than half a typical cycle, because that is where "around
+here" stops saying more than "some time that month" — at a whole cycle the
+intervals of consecutive onsets would touch, and the calendar would be shading a
+stripe of uncertainty rather than marking a period. A steady history therefore
+projects three or four cycles out and an erratic one projects none past the next
+period, which is the right answer in both cases and not a setting either way.
+
+Two summaries come out of it, and the screens use both. The merged per-day
+distribution — the chance that _a_ period starts on a given day — is what the
+percentages are read from, so a fertile day two cycles out quotes a real number.
+And each cycle's **median start** is the day that period is named by, the first
+of them being the date the headline quotes. Far enough ahead no single day is
+more likely than not a period day, and a calendar painting only the days that
+clear a half would answer "when is my period in September?" with an empty month.
+So the mark follows the medians and the wording keeps the stricter rule — see
+[the Status screen](features/status.md#the-mark-and-the-word).
+
 ## Confidence, from the interval itself
 
 The label above the forecast is derived from the width of the 80% interval and

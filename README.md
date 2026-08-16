@@ -32,6 +32,12 @@ fitted parameters, the patterns it learned, and how well it has done on your pas
 cycles. Both read the same posterior, so they are equally accurate — advanced
 just shows the workings.
 
+The calendar reads that same posterior for the months after next, too: each
+further cycle is the forecast with one more cycle length added to it, so it
+widens as it goes and the app stops drawing periods at the point it can no
+longer say which week. How far ahead you can see is a fact about your own
+history rather than a setting.
+
 Six fields is the whole report on purpose, and each one feeds a number you can
 see: a heaviness scale, a mood roster and a free-text note were fields asked
 every evening that nothing ever read.
@@ -84,9 +90,9 @@ works fully offline.
 npm run dev
 ```
 
-Open the printed URL. The app boots on the **Report** tab with today selected:
+Open the printed URL. The app boots on the daily report with today selected:
 press whichever of the four buttons applies, then press **Save report**. Log a few days of a period and the **Forecast** tab starts predicting;
-log a second period and **History** starts drawing.
+log a second period and **History** starts drawing. From then on the report is the **+** in the top right.
 
 To try the production build the way it deploys:
 
@@ -96,16 +102,21 @@ npm run build && npm run preview
 
 ## Usage
 
-Six tabs, on a bottom bar:
+Four tabs, on a bottom bar — swipe left or right to move between them:
 
-| Tab          | What it does                                                                                                                                                                                                                                                                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**   | What today is, in a word — _Fertile_, _Not fertile_, _Period_ — with how sure that is as a percentage, the cycle day, the next period, and a week of days either side of today in the same colours the calendar uses.                                                                                                                                         |
-| **Report**   | A button each for blood, mood swings, lust and sex — lit when it happened — plus an optional fertility-test result and an optional waking temperature, on a slider across the range one actually lands in or three digits in the box beside it. Press the date to reach any past day, or to pick a **range** and file a whole period of bleeding in one Save. |
-| **Calendar** | A month at a time. Periods and fertile windows are drawn as one stroke across the days they cover — filled where you reported bleeding, outlined where a period is still expected — and a day you reported nothing on is a single dot. Pages either way.                                                                                                      |
-| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, and the optional fertile window. Switch between **simple** and **advanced** detail.                                                                                                                                    |
-| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                                                                                                                                                   |
-| **Settings** | Theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync, backup / restore / delete, and the build's version.                                                                                                                                                                                                                   |
+| Tab          | What it does                                                                                                                                                                                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**   | What today is, in a word — _Fertile_, _Not fertile_, _Period_ — with how sure that is as a percentage, the cycle day, the next period, and a week of days either side of today in the same colours the calendar uses.                                                                                         |
+| **Calendar** | A month at a time. Periods and fertile windows are drawn as one stroke across the days they cover — solid up to the next expected period, outlined past it, so what rests on a prediction looks like one. It projects past the next period too, as far ahead as your history can place one. Pages either way. |
+| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, and the optional fertile window. Switch between **simple** and **advanced** detail.                                                                                    |
+| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                                                                                                   |
+
+…and two buttons on the top bar, for the two screens you visit and leave:
+
+| Button | What it does                                                                                                                                                                                                                                                                                                                                                                    |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **+**  | The daily report: a button each for blood, mood swings, lust and sex — lit when it happened — plus an optional fertility-test result and an optional waking temperature, on a slider across the range one actually lands in or three digits in the box beside it. Press the date to reach any past day, or to pick a **range** and file a whole period of bleeding in one Save. |
+| **⚙**  | Settings: theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync, backup / restore / delete, and the build's version.                                                                                                                                                                                                                           |
 
 ## Configuration
 
@@ -176,12 +187,12 @@ in — nothing here reads the clock. See
 
 ## Troubleshooting
 
-| Symptom                                     | Fix                                                                                                                              |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `npm install` fails with `401 Unauthorized` | The framework comes from GitHub Packages — see Prerequisites.                                                                    |
-| The forecast says "Not enough data yet"     | It needs two period starts to measure a cycle. Log a period, then the next one.                                                  |
-| The predicted date looks wrong              | Check **History** → Periods: the averages come from that list, so a mistyped day is visible there and fixable on the Report tab. |
-| Cloud sync shows "Reconnect needed"         | The provider's session lapsed. Tap the sync glyph → Reconnect.                                                                   |
+| Symptom                                     | Fix                                                                                                                                  |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm install` fails with `401 Unauthorized` | The framework comes from GitHub Packages — see Prerequisites.                                                                        |
+| The forecast says "Not enough data yet"     | It needs two period starts to measure a cycle. Log a period, then the next one.                                                      |
+| The predicted date looks wrong              | Check **History** → Periods: the averages come from that list, so a mistyped day is visible there and fixable from the **+** button. |
+| Cloud sync shows "Reconnect needed"         | The provider's session lapsed. Tap the sync glyph → Reconnect.                                                                       |
 
 More in [`docs/troubleshooting.md`](docs/troubleshooting.md).
 

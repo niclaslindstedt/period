@@ -21,6 +21,10 @@ export const en = {
     forecast: "Forecast",
     history: "History",
     settings: "Settings",
+    // The top bar's `+`. It is a glyph with no label beside it, so the name it
+    // is announced and hovered by has to carry the whole of what it does —
+    // "Report" alone would read as a place rather than as filing one.
+    newReport: "New report",
   },
 
   common: {
@@ -126,10 +130,14 @@ export const en = {
     title: "Calendar",
     noHistory:
       "Only the days you have logged are coloured so far. Once a period is in, the predicted and fertile days fill in around them.",
+    // Filled means it happened, hollow means it is expected — so each of the
+    // two things a cycle is made of names both states, and the four read as two
+    // pairs rather than four unrelated colours.
     legend: {
       period: "Reported bleeding",
       predicted: "Predicted period",
       fertile: "Fertile window",
+      predictedFertile: "Predicted fertile window",
       reported: "Reported, no bleeding",
     },
   },

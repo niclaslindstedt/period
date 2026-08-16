@@ -37,9 +37,10 @@ import type { DayStatus } from "./dayStatus.ts";
 import { useT } from "./i18n/index.ts";
 
 /** How a day is painted. `none` draws nothing at all — an unreported day in a
- *  quiet part of the cycle should look like empty calendar, not like a fifth
+ *  quiet part of the cycle should look like empty calendar, not like a further
  *  category. */
-export type DayTone = "period" | "predicted" | "fertile" | "reported" | "none";
+export type DayTone =
+  "period" | "predicted" | "fertile" | "predictedFertile" | "reported" | "none";
 
 /** What a run of days *is*, which is not the same question as how a day is
  *  painted. A period that has been bled through and a period still to come are
@@ -66,17 +67,31 @@ type ToneStyle = {
  *  or the accent on today), and a tint keeps all of them legible in both themes
  *  without this module having to reach in and restyle text it does not own.
  *
- *  `predicted` is the exception and carries no fill at all. It is the one tone
- *  that is not a fact, and an outline is how a drawing says "this is where it
- *  will be" without claiming the day the way a filled stroke does. Running it
- *  in the same `period` run as the reported days is what makes that read as one
- *  period whose far end has not happened yet: the fill stops where the reports
- *  stop, the outline carries on to where the period is expected to end, and the
- *  seam between them is straight because nothing ends there. */
+ *  Hue says *what*, fill says *whether the cycle it belongs to has happened*. So
+ *  each of the two things a cycle is made of comes in a pair: rose filled for
+ *  the bleeding you reported and rose hollow for a period still expected, blue
+ *  filled for the fertile window of a cycle a real period opened and blue hollow
+ *  for the window of a cycle no period has opened yet. An outline is how a
+ *  drawing says "this is where it will be" without claiming the day the way a
+ *  filled stroke does — and a window in a cycle that only a projected onset
+ *  starts is a guess resting on a guess, which a filled stroke there would
+ *  quietly deny.
+ *
+ *  Running `predicted` in the same `period` run as the reported days is what
+ *  makes those two read as one period whose far end has not happened yet: the
+ *  fill stops where the reports stop, the outline carries on to where the period
+ *  is expected to end, and the seam between them is straight because nothing
+ *  ends there. The two fertile tones share a run for the same reason, though in
+ *  practice they never meet — the windows they mark are a cycle apart. */
 const TONE: Record<Exclude<DayTone, "none">, ToneStyle> = {
   period: { paint: "bg-accent/45", run: "period" },
   predicted: { paint: "border-accent/70", run: "period", outlined: true },
   fertile: { paint: "bg-link/30", run: "fertile" },
+  predictedFertile: {
+    paint: "border-link/70",
+    run: "fertile",
+    outlined: true,
+  },
   reported: { paint: "bg-muted/20", run: null },
 };
 
@@ -94,12 +109,35 @@ function continues(here: RunKind, there: DayTone): boolean {
   return here !== null && runOf(there) === here;
 }
 
-/** Which tone a status wears. Reported-but-quiet days come last so a logged
- *  fertile day still reads as fertile. */
+/**
+ * Which tone a status wears. Reported-but-quiet days come last so a logged
+ * fertile day still reads as fertile.
+ *
+ * `expectedPeriod` and the two fertile flags sit alongside the calls they echo
+ * rather than below them, and they are what puts the months after next on the
+ * calendar at all. A day is *called* a period day when it is more likely than
+ * not one, which stops being true of any single day a few cycles out — but the
+ * model still has a perfectly good opinion about where that period falls, and
+ * the outline that has always meant "expected, not observed" is exactly the
+ * mark for it (see `expectedPeriod` in `dayStatus.ts`). The word and the
+ * percentage on the Status screen keep the stricter rule; only the paint reads
+ * these.
+ *
+ * The blue is decided by the flags alone, without consulting `kind`. They are
+ * the same window seen twice — the flags place it around each projected
+ * ovulation, `kind` asks whether a given day clears a half — and only the flags
+ * can say which cycle it belongs to, which is what chooses between the two
+ * blues. Reading both would let one window come out part filled and part
+ * hollow, and a stroke that changes fill halfway means something here (see the
+ * period pair above); it must not happen by accident.
+ */
 export function toneFor(status: DayStatus): DayTone {
   if (status.kind === "period") return "period";
-  if (status.kind === "predictedPeriod") return "predicted";
-  if (status.kind === "fertile") return "fertile";
+  if (status.kind === "predictedPeriod" || status.expectedPeriod) {
+    return "predicted";
+  }
+  if (status.startedFertile) return "fertile";
+  if (status.expectedFertile) return "predictedFertile";
   if (status.reported) return "reported";
   return "none";
 }
@@ -181,7 +219,7 @@ export function DayMark({ tone, first, last }: DayMarkShape) {
 export function DayLegend({ showFertile }: { showFertile: boolean }) {
   const t = useT();
   const tones: Exclude<DayTone, "none">[] = showFertile
-    ? ["period", "predicted", "fertile", "reported"]
+    ? ["period", "predicted", "fertile", "predictedFertile", "reported"]
     : ["period", "predicted", "reported"];
   return (
     <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
