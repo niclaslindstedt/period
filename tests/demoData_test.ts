@@ -84,9 +84,9 @@ describe("buildDemoData", () => {
 
   it("derives a full year of ordinary cycles", () => {
     const stats = cycleStats(buildDemoData(TODAY));
-    // Twelve periods in the window, so eleven observed cycle lengths.
-    expect(stats.periods.length).toBe(12);
-    expect(stats.cycleLengths.length).toBe(11);
+    // Thirteen periods in the window, so twelve observed cycle lengths.
+    expect(stats.periods.length).toBe(13);
+    expect(stats.cycleLengths.length).toBe(12);
     for (const length of stats.cycleLengths) {
       expect(length).toBeGreaterThanOrEqual(26);
       expect(length).toBeLessThanOrEqual(32);
@@ -104,10 +104,12 @@ describe("buildDemoData", () => {
     for (let i = 1; i < starts.length; i++) {
       expect(daysBetween(starts[i - 1]!, starts[i]!)).toBeLessThanOrEqual(32);
     }
-    // And the current cycle is still running normally, not overdue by months.
+    // And the current cycle is still running normally, not overdue by months:
+    // the period ended two days ago, and the fertile window is ahead.
     const f = forecast(buildDemoData(TODAY), TODAY);
-    expect(f.cycleDay).toBe(27);
-    expect(f.daysUntilNext).toBe(3);
+    expect(f.cycleDay).toBe(7);
+    expect(f.daysUntilNext).toBe(23);
+    expect(daysBetween(TODAY, f.fertileStart!)).toBeGreaterThan(0);
   });
 
   it("turns her mood in the week before a period", () => {

@@ -38,11 +38,12 @@ import {
  *  gives its backtest something to score. */
 export const DEMO_DAYS = 365;
 
-/** Where the demo's "today" sits in the cycle in progress — day 27 of an
- *  expected 29, so the app opens three days from the next period. That is the
- *  state worth demonstrating: the forecast is at its sharpest, the mood-swing
- *  channel is lit, and a full cycle sits behind it on every other screen. */
-const CURRENT_CYCLE_DAY = 27;
+/** Where the demo's "today" sits in the cycle in progress — day 7 of an
+ *  expected 29. The period ended two days ago and the fertile window is a week
+ *  out, which is the state with the most on screen at once: a period just
+ *  logged, a forecast with a fortnight to run, and the fertile days it is
+ *  counting towards still ahead. */
+const CURRENT_CYCLE_DAY = 7;
 
 /** The length the in-progress cycle is heading for. Only used to place its
  *  ovulation and its premenstrual week — the day it predicts is never logged. */
@@ -173,7 +174,12 @@ export function demoCycles(): DemoCycle[] {
   const cycles: DemoCycle[] = [];
   let start = CURRENT_CYCLE_DAY - 1;
   let nextStart = start - EXPECTED_CURRENT_CYCLE;
-  for (let i = 0; start <= DEMO_DAYS; i++) {
+  // One cycle past the far end of the window, so the oldest logged days sit
+  // inside a modelled cycle rather than falling off the back of the list. Only
+  // its most recent days are ever logged — its own period began before the
+  // year did, which is what a year of logging that started mid-cycle looks
+  // like.
+  for (let i = 0; ; i++) {
     cycles.push({
       index: i,
       start,
@@ -182,10 +188,10 @@ export function demoCycles(): DemoCycle[] {
       ovulation: nextStart + LUTEAL_LENGTHS[i % LUTEAL_LENGTHS.length]!,
       moodWindow: MOOD_WINDOWS[i % MOOD_WINDOWS.length]!,
     });
+    if (start > DEMO_DAYS) return cycles;
     nextStart = start;
     start += CYCLE_LENGTHS[i % CYCLE_LENGTHS.length]!;
   }
-  return cycles;
 }
 
 /** The cycle a day belongs to. Offsets descend within a cycle, so the first

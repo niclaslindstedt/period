@@ -35,6 +35,15 @@ the chance that day carries that status. The percentage is that sum. Nothing is
 re-estimated and no second model is fitted, which is why the Status screen can
 never contradict the Forecast screen.
 
+The figure is a **whole percent, floored, and never past 99%**. Whole because a
+decimal would claim a resolution a fit over a few dozen cycles does not have —
+the tenth of a point would move if one report from last spring were corrected.
+Floored so the number is one the arithmetic can back: 63% means at least 63,
+and the figure can only ever understate. Capped at 99% because flooring leaves
+exactly one way to overstate — a genuine 99.6% would print as a flat "100%",
+and the app claiming certainty is the one thing this line exists to avoid. The
+same rule governs every percentage the [Forecast](forecast.md) screen quotes.
+
 ## The period you are having right now
 
 There is a third case, and it is the days-ahead half of the week row on the
