@@ -11,6 +11,7 @@ import {
   HeartIcon,
   InfoIcon,
   Section,
+  SegmentedControl,
   SlidersIcon,
   SparklesIcon,
 } from "@niclaslindstedt/oss-framework/components";
@@ -167,7 +168,7 @@ export function ForecastScreen({
         icon={<ForecastIcon className="h-3.5 w-3.5" />}
       >
         <ForecastChart forecast={probabilistic} today={today} look={look} />
-        <ChartChips look={look} onChange={onLookChange} />
+        <ChartControls look={look} onChange={onLookChange} />
       </Section>
 
       {advanced && (
@@ -396,10 +397,24 @@ function DateSpan({
   );
 }
 
-/** The chart's appearance controls. Chips rather than a settings panel: they
- *  are one tap, they show their own state, and they sit next to the thing they
- *  change. */
-function ChartChips({
+/** The chart's appearance controls. Two rows, because there are two kinds of
+ *  control here and conflating them is what made the old row confusing.
+ *
+ *  The first row is the two either/or choices — what the marks are, and what
+ *  they measure. Each is a segmented control with *both* options on screen and
+ *  the current one selected. They used to be single chips that showed the state
+ *  the chart was in, so the chip read "Columns" while drawing columns and you
+ *  had to guess that tapping it produced a curve — a chip that names where you
+ *  are cannot also say where tapping takes you, and swapping its own label out
+ *  from under the tap made the two readings impossible to tell apart. A
+ *  segmented control has no such ambiguity: everything you can pick is visible,
+ *  the highlight means "this is the one", and nothing renames itself.
+ *
+ *  The second row is the two genuine on/off overlays, which stay chips —
+ *  pressed-or-not is exactly what a chip says well, and there is no second
+ *  option to show. Keeping them off the first row is the point: a control that
+ *  toggles and a control that chooses should not look alike. */
+function ChartControls({
   look,
   onChange,
 }: {
@@ -408,54 +423,99 @@ function ChartChips({
 }) {
   const t = useT();
   return (
-    <div className="mt-2 flex flex-wrap gap-1.5">
-      {/* Each chip's glyph names the state the chart is *in*, not the one the
-          tap switches to — same rule its label already follows, so the mark
-          and the word never describe two different charts. */}
-      <Chip
-        active={look.mark === "curve"}
-        icon={look.mark === "bars" ? <ColumnsIcon /> : <CurveIcon />}
-        onClick={() =>
-          onChange({
-            mark: (look.mark === "bars" ? "curve" : "bars") as ChartMark,
-          })
-        }
-      >
-        {look.mark === "bars"
-          ? t("forecast.chart.marksBars")
-          : t("forecast.chart.marksCurve")}
-      </Chip>
-      <Chip
-        active={look.view === "cumulative"}
-        icon={look.view === "daily" ? <PerDayIcon /> : <CumulativeIcon />}
-        onClick={() =>
-          onChange({
-            view: (look.view === "daily" ? "cumulative" : "daily") as ChartView,
-          })
-        }
-      >
-        {look.view === "daily"
-          ? t("forecast.chart.viewDaily")
-          : t("forecast.chart.viewCumulative")}
-      </Chip>
-      <Chip
-        active={look.showBands}
-        icon={<BandsIcon />}
-        onClick={() => onChange({ showBands: !look.showBands })}
-      >
-        {t("forecast.chart.bands")}
-      </Chip>
-      <Chip
-        active={look.showPrior}
-        icon={<CompareIcon />}
-        onClick={() => onChange({ showPrior: !look.showPrior })}
-      >
-        {t("forecast.chart.compare")}
-      </Chip>
+    <div className="mt-2 flex flex-col gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
+        <SegmentedControl<ChartMark>
+          value={look.mark}
+          options={[
+            {
+              value: "bars",
+              label: (
+                <SegmentLabel icon={<ColumnsIcon />}>
+                  {t("forecast.chart.marksBars")}
+                </SegmentLabel>
+              ),
+            },
+            {
+              value: "curve",
+              label: (
+                <SegmentLabel icon={<CurveIcon />}>
+                  {t("forecast.chart.marksCurve")}
+                </SegmentLabel>
+              ),
+            },
+          ]}
+          onChange={(mark) => onChange({ mark })}
+          ariaLabel={t("forecast.chart.marksLabel")}
+        />
+        <SegmentedControl<ChartView>
+          value={look.view}
+          options={[
+            {
+              value: "daily",
+              label: (
+                <SegmentLabel icon={<PerDayIcon />}>
+                  {t("forecast.chart.viewDaily")}
+                </SegmentLabel>
+              ),
+            },
+            {
+              value: "cumulative",
+              label: (
+                <SegmentLabel icon={<CumulativeIcon />}>
+                  {t("forecast.chart.viewCumulative")}
+                </SegmentLabel>
+              ),
+            },
+          ]}
+          onChange={(view) => onChange({ view })}
+          ariaLabel={t("forecast.chart.viewLabel")}
+        />
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        <Chip
+          active={look.showBands}
+          icon={<BandsIcon />}
+          onClick={() => onChange({ showBands: !look.showBands })}
+        >
+          {t("forecast.chart.bands")}
+        </Chip>
+        <Chip
+          active={look.showPrior}
+          icon={<CompareIcon />}
+          onClick={() => onChange({ showPrior: !look.showPrior })}
+        >
+          {t("forecast.chart.compare")}
+        </Chip>
+      </div>
     </div>
   );
 }
 
+/** One segment's contents. The framework's `SegmentedControl` already lays the
+ *  label out as a flex row, so this only has to hide the glyph from the
+ *  accessible name and size it — the same job, and the same sizing, the chips'
+ *  own glyph wrapper does. */
+function SegmentLabel({
+  icon,
+  children,
+}: {
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <span aria-hidden="true" className="[&>svg]:h-3.5 [&>svg]:w-3.5">
+        {icon}
+      </span>
+      {children}
+    </>
+  );
+}
+
+/** One overlay, on or off. `aria-pressed` rather than a segment's
+ *  `aria-checked`: these are independent switches, not one choice out of a
+ *  set. */
 function Chip({
   active,
   icon,
@@ -463,9 +523,9 @@ function Chip({
   children,
 }: {
   active: boolean;
-  /** The mark for the state the chip is in. Decorative — the label beside it
-   *  is the accessible name — so it is sized here rather than at each call
-   *  site, and every chip's glyph lands on the same line. */
+  /** The overlay's own mark. Decorative — the label beside it is the accessible
+   *  name — so it is sized here rather than at each call site, and every chip's
+   *  glyph lands on the same line. */
   icon: ReactNode;
   onClick: () => void;
   children: ReactNode;

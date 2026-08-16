@@ -77,6 +77,16 @@ type ToneStyle = {
  *  starts is a guess resting on a guess, which a filled stroke there would
  *  quietly deny.
  *
+ *  The two members of a pair carry the *same* alpha, so a predicted period is
+ *  the colour a reported one is and the only difference between them is that
+ *  one is hollow. That is the whole point of the arrangement above: if hollow
+ *  also meant "brighter", the legend would be showing four colours where the
+ *  grammar only has two, and a reader would reasonably take the brighter rose
+ *  for a different claim rather than the same claim not yet observed. The
+ *  outline is drawn two pixels wide instead (see `DayMark`) — a hairline at the
+ *  fill's alpha has too little ink to see, and weight is the one dimension left
+ *  that is free to compensate.
+ *
  *  Running `predicted` in the same `period` run as the reported days is what
  *  makes those two read as one period whose far end has not happened yet: the
  *  fill stops where the reports stop, the outline carries on to where the period
@@ -85,10 +95,10 @@ type ToneStyle = {
  *  practice they never meet — the windows they mark are a cycle apart. */
 const TONE: Record<Exclude<DayTone, "none">, ToneStyle> = {
   period: { paint: "bg-accent/45", run: "period" },
-  predicted: { paint: "border-accent/70", run: "period", outlined: true },
+  predicted: { paint: "border-accent/45", run: "period", outlined: true },
   fertile: { paint: "bg-link/30", run: "fertile" },
   predictedFertile: {
-    paint: "border-link/70",
+    paint: "border-link/30",
     run: "fertile",
     outlined: true,
   },
@@ -194,12 +204,12 @@ export function markFor(
 export function DayMark({ tone, first, last }: DayMarkShape) {
   if (tone === "none") return null;
   const style = TONE[tone];
-  const outline = style.outlined ? "border-y" : "";
+  const outline = style.outlined ? "border-y-2" : "";
   const left = first
-    ? `left-1 rounded-l-full ${style.outlined ? "border-l" : ""}`
+    ? `left-1 rounded-l-full ${style.outlined ? "border-l-2" : ""}`
     : "-left-0.5";
   const right = last
-    ? `right-1 rounded-r-full ${style.outlined ? "border-r" : ""}`
+    ? `right-1 rounded-r-full ${style.outlined ? "border-r-2" : ""}`
     : "-right-0.5";
   return (
     <span
@@ -231,7 +241,7 @@ export function DayLegend({ showFertile }: { showFertile: boolean }) {
                 narrow row it would give up its swatch to the label beside it. */}
             <span
               className={`h-3 shrink-0 rounded-full ${style.run !== null ? "w-6" : "w-3"} ${
-                style.outlined ? "border" : ""
+                style.outlined ? "border-2" : ""
               } ${style.paint}`}
             />
             {t(`calendar.legend.${tone}` as const)}
