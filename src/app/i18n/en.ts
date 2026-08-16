@@ -289,6 +289,16 @@ export const en = {
       none: "No temperatures reported yet. Adding them is the single biggest thing you can do for this forecast — the rise after ovulation is what pins down when the next period is due.",
     },
 
+    // The thermal-shift anchor. Almost all of a cycle's variability sits
+    // before ovulation, so the day the temperature steps up dates the next
+    // period more sharply than any pattern read after it — the copy says what
+    // was detected and what it implies, and nothing stronger.
+    thermalShift: {
+      detected:
+        "Your temperature stepped up around {date}. A period follows that rise by about {count} days, so this one is expected near {onset}.",
+      none: "No sustained temperature rise detected this cycle yet. When one appears, it dates the next period more sharply than anything else here.",
+    },
+
     // What this cycle's own reports did to the date.
     shift: {
       earlier: "This cycle's reports moved the forecast {count} days earlier.",
@@ -322,6 +332,8 @@ export const en = {
       imputed: "split from a longer gap",
       imputedHint:
         "A gap close to a whole number of cycles is read as one you did not log, and counted at half weight.",
+      outlierHint:
+        "Read as an irregular cycle, so it counts for very little — it informs how often your cycles run long instead of stretching every prediction.",
     },
   },
 

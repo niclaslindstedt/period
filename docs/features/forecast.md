@@ -65,7 +65,10 @@ week. That is what the screen is for, and most people never need more.
 - **The model** — the typical cycle length it fitted, the predictive spread, the
   effective sample size (older cycles count for less), the degrees of freedom,
   all three credible intervals as dates, and every cycle length the fit was made
-  from with its weight.
+  from with the weight it actually carried. A cycle far outside your own pattern
+  is shown dashed and near-weightless: the fit reads it as an irregular one and
+  lets it inform how often your cycles run long, instead of stretching every
+  prediction.
 - **Your mood pattern** — how often you reported mood swings at each number of
   days before a period started, against the rate for the rest of the cycle.
 - **Your lust pattern** and **Your sex pattern** — the same chart for the two
@@ -79,7 +82,10 @@ week. That is what the screen is for, and most people never need more.
   from your own positives or from the luteal phase in Settings.
 - **Your temperature pattern** — how far above the rest of your cycle your
   waking temperature sat at each of those lags, and the size of the rise after
-  ovulation.
+  ovulation. Underneath it, whether a **sustained rise** has been detected this
+  cycle: nearly all of a cycle's variability sits before ovulation, so the day
+  your temperature steps up dates the next period more sharply than any pattern
+  read after it — the line names the day it was seen and the date it points at.
 - **Track record** — each of your past cycles re-predicted from only the cycles
   before it, reporting the average miss (next to what a plain average would have
   missed by) and how often the 80% and 95% bands actually held.
