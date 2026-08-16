@@ -84,11 +84,16 @@ export function CalendarScreen({
   const toneAt = (day: DayKey): DayTone => toneFor(dayStatus(day, ctx));
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-3">
+    // Centred in the leftover height rather than parked at the top. A month
+    // grid is a fixed six rows and this screen is only ever that grid, its
+    // legend and one line of small print — on a tall phone the difference is
+    // 150px of dead surface under the card versus half of it above and half
+    // below, with the grid under the thumb either way.
+    <div className="flex flex-1 flex-col justify-center gap-3 px-3 py-3">
       {/* `app-cycle-calendar` is the stylesheet hook that gives each day cell a
           stacking context of its own, so the mark `DayMark` renders can sit
           under the day number instead of over it. See styles.css. */}
-      <div className="app-cycle-calendar rounded-md border border-line bg-surface-3 p-3">
+      <div className="app-cycle-calendar rounded-2xl border border-line bg-surface-3 p-3">
         <MonthCalendar
           anchor={today}
           weekStartsOn={weekStartsOn}
@@ -100,7 +105,7 @@ export function CalendarScreen({
       </div>
 
       {ctx.forecast === null && (
-        <div className="rounded-md border border-line bg-surface-3 p-6 text-center">
+        <div className="rounded-2xl border border-line bg-surface-3 p-6 text-center">
           <CalendarIcon className="mx-auto h-8 w-8 text-muted" />
           <p className="mt-3 text-sm text-muted">{t("calendar.noHistory")}</p>
         </div>

@@ -66,7 +66,7 @@ export function MonthCalendar({
           type="button"
           onClick={() => step(-1)}
           aria-label={t("report.prevMonth")}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-fg"
         >
           <ChevronLeftIcon className="h-4 w-4" />
         </button>
@@ -77,7 +77,7 @@ export function MonthCalendar({
           type="button"
           onClick={() => step(1)}
           aria-label={t("report.nextMonth")}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-fg"
         >
           <ChevronRightIcon className="h-4 w-4" />
         </button>

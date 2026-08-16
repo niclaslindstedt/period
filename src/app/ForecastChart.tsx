@@ -12,7 +12,7 @@ import {
 } from "@niclaslindstedt/oss-framework/charts";
 import { useMeasuredSize } from "@niclaslindstedt/oss-framework/hooks";
 
-import { formatDay, formatShortDay, probabilityPercent } from "./format.ts";
+import { formatDay, probabilityPercent } from "./format.ts";
 import type { ForecastDay, ProbabilisticForecast } from "./forecastModel.ts";
 import { useT } from "./i18n/index.ts";
 
@@ -184,10 +184,8 @@ export function ForecastChart({
   ]);
 
   const describe = t("forecast.chart.description", {
-    from: formatShortDay(visible[0]?.day ?? forecast.expectedDay),
-    to: formatShortDay(
-      visible[visible.length - 1]?.day ?? forecast.expectedDay,
-    ),
+    from: formatDay(visible[0]?.day ?? forecast.expectedDay),
+    to: formatDay(visible[visible.length - 1]?.day ?? forecast.expectedDay),
     day: formatDay(forecast.expectedDay),
   });
 
@@ -349,6 +347,38 @@ export function ForecastChart({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />,
+                // One circle per day, on the curve. The curve is drawn through
+                // the days rather than sampled from a continuous thing, and a
+                // bare line hides that: it invites reading a value off the
+                // slope halfway between two dates, which the model does not
+                // have. A dot at each day is where the numbers actually are —
+                // the same days the columns draw, marked rather than filled —
+                // and it doubles as the target the readout is quoting, so the
+                // cursor has something to land on. A ruled-out day gets no
+                // dot: its mark is the stop on the baseline, and a circle at
+                // zero would read as a measurement of zero rather than as a
+                // day removed from the distribution.
+                <g key="points">
+                  {visible.map((day, i) =>
+                    day.excluded ? null : (
+                      <circle
+                        key={day.day}
+                        className="forecast-marker"
+                        cx={centreOf(i)}
+                        cy={y(valueOf(day))}
+                        r={cursor === i ? 4 : 2.6}
+                        fill="var(--color-accent)"
+                        stroke="var(--color-page-bg)"
+                        strokeWidth={1.5}
+                        opacity={cursor === null || cursor === i ? 1 : 0.5}
+                        style={{
+                          animationDelay: `${260 + i * 14}ms`,
+                          transition: "opacity 120ms ease-out",
+                        }}
+                      />
+                    ),
+                  )}
+                </g>,
               ]}
 
           {/* Days already logged without bleeding: they carry no probability,
@@ -420,7 +450,7 @@ export function ForecastChart({
                 textAnchor="middle"
                 className="fill-fg-bright text-[10px] font-bold"
               >
-                {formatShortDay(forecast.expectedDay)}
+                {formatDay(forecast.expectedDay)}
               </text>
             </g>
           )}
@@ -433,7 +463,7 @@ export function ForecastChart({
               textAnchor="middle"
               className="fill-muted text-[10px]"
             >
-              {formatShortDay(visible[i]!.day)}
+              {formatDay(visible[i]!.day)}
             </text>
           ))}
 
@@ -534,7 +564,7 @@ function Readout({
           hovering ? "text-fg-bright" : "text-accent"
         }`}
       >
-        {formatShortDay(day.day)}
+        {formatDay(day.day)}
       </span>
       {day.excluded ? (
         <span className="text-xs text-muted">

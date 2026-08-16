@@ -4,6 +4,11 @@ The month view — the whole cycle at a glance, past and ahead. Page either way
 with the arrows, or with `PageUp` / `PageDown` from the keyboard. Swipe left or
 right anywhere on the screen to move to the next or previous tab.
 
+The grid is a fixed six rows and it is the only thing on the screen, so it sits
+centred in the height rather than at the top of it — on a tall phone that is the
+difference between the month being under your thumb and it being under the
+status bar.
+
 Each day's number sits on a coloured mark that says what kind of day it is:
 
 | Mark               | Meaning                                                                       |

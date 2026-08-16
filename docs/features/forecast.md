@@ -24,10 +24,22 @@ and one derived from twelve look identical otherwise.
 It is an estimate from your own reports — not medical advice, and not
 contraception.
 
+Every date on the screen is set in a **pill** — the predicted day filled in the
+app's red, the ends of a range and the periods further out outlined — so the
+dates can be picked out of the sentences that qualify them without reading the
+sentences first. Each line carries the mark of what it is about: a droplet for
+the next period, arrows for the range it might fall in, an ovum for ovulation.
+
+Dates are written the same way everywhere in the app: an abbreviated month, as
+in **8 Sep**. There is no second, longer form to meet it halfway down a card.
+
 ## Reading the chart
 
 Each column is one day, and its height is the chance the next period starts on
-that day. The shaded bands behind them are the ranges the period falls in with
+that day. Switched to **Curve**, the same numbers are drawn as the shape they
+trace with a circle on each day, so it stays visible that the model has one
+figure per day rather than a continuous line you could read a value off between
+two dates. The shaded bands behind them are the ranges the period falls in with
 50%, 80% and 95% probability — the darkest band is the narrowest and the least
 certain to contain the answer, the palest is the widest and the most certain.
 

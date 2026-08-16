@@ -17,6 +17,31 @@
 
 @source "../node_modules/@niclaslindstedt/oss-framework/dist";
 
+/* ── Corners ─────────────────────────────────────────────────────────────────
+   The app is round-cornered, and the radius is a scale rather than a number
+   chosen per box. Most of that scale is the theme engine's: `look.ts` picks the
+   framework's largest radius preset, and the engine writes `--radius-sm` /
+   `--radius-md` / `--radius-lg` onto <html> as inline styles at paint time —
+   6px, 10px and 20px — which every `rounded-sm|md|lg` in this app and in the
+   framework's components then resolves against.
+
+   The engine does not write the rest of Tailwind's ramp, so those are set here
+   to continue it. Without this block `rounded-xl` (0.75rem) would be *tighter*
+   than `rounded-lg` (20px) and a card asking for a rounder corner would get a
+   squarer one. `--radius` is the bare `rounded`, which is what the framework's
+   `Section` card uses; it is matched to `--radius-md` so a framework panel and
+   an app panel sitting next to each other cut the same corner.
+
+   Inline styles beat a `@theme` value, which is why sm/md/lg are the engine's
+   to set and are deliberately not repeated here. */
+@theme {
+  --radius: 0.625rem;
+  --radius-xs: 0.25rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.75rem;
+  --radius-3xl: 2rem;
+}
+
 /* ── Accent ──────────────────────────────────────────────────────────────────
    The framework's GitHub palettes carry a green accent; this app wears rose in
    the UI. The install mark is green (see public/icons/icon.svg) and stays that

@@ -12,9 +12,18 @@ import type { ThemeChoice } from "./useAppSettings.ts";
 // nothing from a theme gallery, and every extra palette is another surface to
 // keep legible.
 //
-// Everything else (font family, scale, radius, density, elevation) stays at
-// the framework defaults, except the sans font: the report screen is prose and
-// numbers, not code.
+// Everything else (font family, scale, density, elevation) stays at the
+// framework defaults, except two: the sans font, because the report screen is
+// prose and numbers rather than code, and the corner radius.
+//
+// The radius is the framework's largest preset. It is projected onto
+// `--radius-sm` / `--radius-md` / `--radius-lg` on <html> at paint time, which
+// is what every `rounded-*` utility in this app *and* in the framework's own
+// components resolves against — so one line here rounds the buttons, the
+// cards, the modals and the segmented controls together, and nothing can drift
+// apart later by being styled one corner at a time. The two ends of the scale
+// the engine does not write (`rounded` and `rounded-xl` upwards) are matched to
+// it in `styles.css`, so the ramp stays in order.
 
 /** The framework preset behind each of the three choices. */
 const PRESET = {
@@ -29,6 +38,7 @@ export function appearanceFor(choice: ThemeChoice): ThemeAppearance {
     ...DEFAULT_THEME_APPEARANCE,
     theme: PRESET[choice],
     fontFamily: "sans",
+    ui: { ...DEFAULT_THEME_APPEARANCE.ui, radius: "lg" },
   };
 }
 

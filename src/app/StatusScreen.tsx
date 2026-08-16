@@ -107,7 +107,7 @@ export function StatusScreen({
   if (!probabilistic) {
     return (
       <div className="flex flex-col gap-3 px-3 py-3">
-        <div className="rounded-md border border-line bg-surface-3 p-6 text-center">
+        <div className="rounded-2xl border border-line bg-surface-3 p-6 text-center">
           <HeartIcon className="mx-auto h-8 w-8 text-muted" />
           <p className="mt-3 text-sm text-muted">{t("status.noHistory")}</p>
         </div>
@@ -117,7 +117,7 @@ export function StatusScreen({
 
   return (
     <div className="flex flex-col gap-3 px-3 py-3">
-      <div className="rounded-md border border-accent/40 bg-accent/10 p-4">
+      <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4">
         <p className="text-xs font-bold tracking-wide text-accent uppercase">
           {t("status.today")}
         </p>
@@ -152,7 +152,7 @@ export function StatusScreen({
         </p>
       </div>
 
-      <div className="rounded-md border border-line bg-surface-3 p-3">
+      <div className="rounded-2xl border border-line bg-surface-3 p-3">
         <p className="text-xs font-medium tracking-wide text-muted uppercase">
           {t("status.week")}
         </p>
