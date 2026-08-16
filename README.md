@@ -18,12 +18,15 @@ length has moved over time, and which phase your mood swings cluster in.
 
 The forecast is not a single date. It is a probability for each day ahead, drawn
 with its 50/80/95% credible bands, from a Bayesian model fitted to your own
-history — log-normal cycle lengths under a conjugate prior, recent cycles
-weighted more heavily, days you already reported without bleeding ruled out, and
+history — log-normal cycle lengths under a conjugate prior, fitted as a mixture
+so one irregular cycle cannot stretch every prediction, recent cycles weighted
+more heavily, days you already reported without bleeding ruled out, and
 your own reports read as evidence about _this_ cycle. Mood swings and
 temperature speak about the days before a period; lust, sex and a positive
 ovulation test speak about ovulation, a fortnight earlier, so the two halves of
-the cycle both have something to say. A
+the cycle both have something to say — and once your waking temperature shows a
+sustained rise, the day it stepped up anchors the next period a luteal phase
+later, which is the steadiest span in the whole cycle. A
 **simple** view names the date and the range; an **advanced** view shows the
 fitted parameters, the patterns it learned, and how well it has done on your past
 cycles. Both read the same posterior, so they are equally accurate — advanced

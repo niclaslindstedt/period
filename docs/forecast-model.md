@@ -83,6 +83,39 @@ not an observation.
 45 days does not split — one long cycle explains it at least as well, and
 inventing two 22-day cycles would corrupt both the centre and the spread.
 
+### One odd cycle is not a new pattern
+
+Cycle length is not one distribution. The epidemiology literature has modelled
+it since Harlow & Zeger (1991) as a **mixture**: a symmetric cluster of
+ordinary ovulatory cycles, plus a long-tailed minority of stretched ones — a
+cycle where ovulation came late or not at all. A single-component fit pays for
+ignoring that in one specific way: one 45-day cycle inflates the fitted spread,
+and every forecast for the next year is wider than the actual pattern deserves.
+
+So the fit is a small EM over exactly that mixture. Each observed cycle gets a
+_responsibility_ — the probability it belongs to the standard component, judged
+under the current fit — and the conjugate update is re-run with each weight
+multiplied by it, five closed-form passes in all. An ordinary cycle keeps its
+weight. A stretched one keeps a sliver, and what it mostly informs is the
+**share** of nonstandard cycles, which the predictive keeps as a wide second
+component. The odd cycle is not thrown away; it is filed where it belongs, and
+the chance of _another_ one stays priced into the tail of every interval.
+
+Two properties make this safe rather than merely aggressive:
+
+- **A genuinely erratic history downweights nothing.** When every cycle
+  disagrees, the fitted spread is wide, no single cycle stands out against it,
+  and every responsibility stays near one — the intervals stay honestly wide.
+  Robustness only engages when there is a tight pattern for an outlier to stand
+  out from, which is exactly when protecting the pattern matters.
+- **The wide component survives into the predictive.** The 80% band barely
+  notices it; the 95% band keeps a fatter right tail than the cleaned spread
+  alone would draw, which is the honest reading of a history that has already
+  produced one stretched cycle.
+
+The advanced view marks a downweighted cycle the same way it marks an imputed
+one, with the weight the fit actually used.
+
 ### Days you already ruled out
 
 Each candidate day is a hypothesis, and a day you reported _with no bleeding_
@@ -173,6 +206,43 @@ two Normals sharing that spread collapses to a difference of squares:
 ln LR = Σ [ (dev − baseline)² − (dev − mean[lag])² ] / 2σ²
 ```
 
+### The thermal shift as an anchor
+
+The profile above reads the _plateau_ — a run of warm mornings favours
+candidates that put those mornings in the fortnight before an onset. It cannot
+date the event the plateau begins with, and that event is worth dating more
+than anything else in the cycle.
+
+The reason is where a cycle's variability lives. In the largest real-world
+dataset published (612,000 ovulatory cycles from the Natural Cycles app), the
+follicular phase spans 10–30 days across its 95% interval while the luteal
+phase spans 7–17: nearly all of the uncertainty about the next onset is
+uncertainty about **when ovulation happens**, and almost none about what
+follows it. The day the temperature steps up is the end of the variable half of
+the cycle, observed directly, this cycle.
+
+So the model runs the classic charting rule — **three over six** — on the
+centred readings of the current cycle: the coolest of three consecutive
+readings must clear the warmest of the six before them by 0.15 °C, with the
+three highs within four days of each other. When a qualifying rise is found,
+its first morning anchors the onset one lead away, as a Gaussian
+log-likelihood ratio over the gap: positive within the band a luteal phase
+plausibly spans, negative beyond it, and firmly against any candidate on or
+before the shift day itself — bleeding does not precede the plateau that ends
+in it.
+
+The lead is learned exactly the way the fertility test's is: it starts at the
+luteal phase from **Settings → Cycle** less a day (the first high morning
+follows ovulation by about one) and is pulled toward the gaps the reader's own
+detected shifts were actually followed by, at two shifts' worth of inertia.
+That is what lets the anchor work in the very first cycle it is possible to
+detect a shift in — a learned profile would need a season first.
+
+Like every channel it is tempered and clamped, for a reason specific to it: the
+same mornings also feed the plateau profile, and the two must not count the
+same evidence twice at full strength. The shared ceiling on the combined
+evidence is what keeps the overlap honest.
+
 ### Lust and sex
 
 Sex drive rises toward ovulation. Both channels are Bernoulli rates per lag —
@@ -223,12 +293,13 @@ than pretend otherwise, each channel's log-likelihood ratio is **tempered** by a
 fixed exponent and **clamped** to ±3. Channels are clamped before they are
 summed, and the total is clamped again at ±4.5.
 
-| Channel        | Temper | Why                                                         |
-| -------------- | ------ | ----------------------------------------------------------- |
-| Mood swings    | 0.5    | A rough stretch is one episode reported many times          |
-| Lust, sex      | 0.35   | Correlated within themselves _and_ with each other          |
-| Fertility test | 0.8    | One measurement of one event; little left to double-count   |
-| Temperature    | 0.35   | A luteal plateau is one state producing a fortnight of data |
+| Channel             | Temper | Why                                                             |
+| ------------------- | ------ | --------------------------------------------------------------- |
+| Mood swings         | 0.5    | A rough stretch is one episode reported many times              |
+| Lust, sex           | 0.35   | Correlated within themselves _and_ with each other              |
+| Fertility test      | 0.8    | One measurement of one event; little left to double-count       |
+| Temperature plateau | 0.35   | A luteal plateau is one state producing a fortnight of data     |
+| Thermal shift       | 0.8    | One dated event — but read off the same mornings as the plateau |
 
 The result: this cycle's reports can move the date by a few days, and can never
 overrule the cycle history. Five channels that all agree still cannot break the
@@ -242,9 +313,11 @@ it is used at all — 20 for mood, lust and sex, 12 for temperature. Below that,
 per-lag rates are shrunk almost entirely back to the overall rate by a
 pseudo-count, the profile comes out flat, and a flat profile changes nothing.
 
-The fertility test is the exception, and only because its profile is not
-estimated from a sample: it needs a test to read, not a history to learn from.
-Until one is logged the channel is absent entirely.
+The fertility test and the thermal shift are the exceptions, and only because
+their profiles are not estimated from a sample: each needs an event to read — a
+strip taken, a rise sustained — not a history to learn from. Until one is
+logged the channel is absent entirely, and the advanced view says whether this
+cycle's rise has been seen yet.
 
 **With too little history, the multivariate model reduces exactly to the
 univariate one**, which is why it is the default: there is no early-days penalty
@@ -346,11 +419,39 @@ Two numbers come out, and the second matters more:
   manages 40% is drawing confident nonsense, and this is the only place that
   would show up.
 
+## Where this sits in the literature
+
+The model is a deliberately closed-form assembly of the pieces the cycle
+literature agrees on, chosen so the whole fit runs in microseconds on a phone
+with no sampler and no optimiser:
+
+- **The mixture** is Harlow & Zeger's (1991) standard / nonstandard split, the
+  same structure later Bayesian work (Guo et al. 2006; the hierarchical
+  changepoint models of Huang et al.) builds on.
+- **The recency weighting** is the cheap stand-in for the state-space drift of
+  Bortot et al. (2010) — cycles change with age and life, and the six-cycle
+  half-life is what lets the level move without a latent process to filter.
+- **The luteal anchor** rests on the largest real-world dataset published (Bull
+  et al. 2019, 612k cycles): cycle variability is follicular, so dating the
+  thermal shift — the classic three-over-six rule, as in BBT-based forecasting
+  work (Fukaya et al. 2017) — converts a variable-cycle problem into a
+  steady-luteal one for the remainder of the cycle.
+- **Skipped-cycle repair** addresses the self-tracking artifact that Li,
+  Urteaga et al. (2022) model hierarchically: a doubled gap is more likely an
+  unlogged cycle than a doubled cycle.
+
+What the app deliberately does not import from that literature is **population
+pooling**: the hierarchical models above share strength across users, which
+needs a server and other people's cycles. Here every parameter beyond the
+textbook priors is learned from the reader's own reports, on the reader's own
+device.
+
 ## What it still does not do
 
-- It does not detect ovulation. The temperature channel reads _whether the shift
-  has happened_; the "ovulation" date on the Forecast screen is still
-  `nextStart − 14 days` and nothing more.
+- It does not detect ovulation prospectively. The thermal shift is only
+  detectable a few mornings _after_ ovulation — that is enough to anchor the
+  next onset, but the "ovulation" date and fertile window on the Forecast
+  screen are still `nextStart − luteal phase` and nothing more.
 - It does not use population data. Every profile is learned from your own
   reports; the only outside numbers are the prior's 28 days and ±3, which one
   observed cycle starts overriding.

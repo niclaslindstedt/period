@@ -29,7 +29,7 @@
 // genuinely wide, without anyone having to hand-tune a fudge factor. The
 // widening is the model being honest, not a penalty bolted on afterwards.
 //
-// Three refinements on top, each earning its complexity:
+// Four refinements on top, each earning its complexity:
 //
 //   - **Recency weighting.** Cycles drift with age, stress, and life. Older
 //     observations get an exponentially decaying weight (a half-life in
@@ -42,6 +42,13 @@
 //     cannot be the day the period started. Ruling those out and renormalising
 //     is why the forecast sharpens as the cycle runs on. Days with *no* report
 //     stay possible — an unlogged day is not evidence of anything.
+//   - **A mixture, not one bell.** Cycle length is a cluster of ordinary
+//     cycles plus an occasional stretched one (Harlow & Zeger's standard /
+//     nonstandard split). The fit gives each observation a responsibility for
+//     the standard component and downweights the rest, so one 45-day cycle
+//     stops inflating the spread every ordinary cycle is judged by — and the
+//     predictive keeps a wide component at the fitted outlier share, so the
+//     possibility of another stretched cycle is priced in rather than denied.
 //
 // ## The multivariate model (cycle lengths + mood swings)
 //
@@ -101,6 +108,18 @@
 // are tempered harder than mood is; the total is capped as before, so five
 // channels that all agree still cannot overrule the cycle history.
 //
+// ## The thermal-shift anchor
+//
+// Nearly all of a cycle's variability is follicular; the luteal phase is the
+// steady half. So the single most informative event a thermometer can catch is
+// the day the temperature *steps up* — the classic three-over-six coverline
+// rule, run on the centred readings. Once this cycle's step is detected, the
+// onset is one luteal phase away regardless of what the follicular phase did,
+// and a Gaussian on that lead (learned from the reader's own past shifts, like
+// the ovulation test's) collapses most of the remaining spread. It is a sixth
+// clamped term in the same product: the same mornings also feed the plateau
+// profile, and the shared ceiling is what keeps the overlap honest.
+//
 // ## How long an episode lasts
 //
 // The distribution above is over the day the next period *starts*. A calendar
@@ -141,6 +160,7 @@ import {
   pmfQuantile,
   pmfStdev,
   studentTCdf,
+  studentTPdf,
   totalWeight,
   weightedMean,
   weightedSumSquares,
@@ -252,6 +272,37 @@ export type ModelOptions = {
    *  Caps the work and keeps a pathological history from producing a chart a
    *  year wide. */
   maxLeadDays: number;
+  /**
+   * How much wider the *nonstandard* cycle component is than the standard one,
+   * on the log scale. Cycle length is a mixture (Harlow & Zeger): a symmetric
+   * cluster of ordinary cycles plus an occasional stretched one — an
+   * anovulatory cycle, an illness, a stressful season. Four standard spreads is
+   * wide enough that a 45-day cycle in a 28±2 history reads as a member of the
+   * wide component rather than as reason to doubt every ordinary cycle.
+   */
+  outlierScale: number;
+  /** Prior share of cycles that are nonstandard. About one in thirteen, which
+   *  is the order reported for regularly cycling adults. */
+  outlierPriorShare: number;
+  /** How many cycles that prior share is worth. Twelve: the share should move
+   *  slowly — one odd cycle is not a new regime. */
+  outlierPriorStrength: number;
+  /** Exponent applied to the thermal-shift log-likelihood ratio. High, like
+   *  the ovulation test's, because a detected shift is one dated event rather
+   *  than a fortnight of correlated mornings — but not 1, because the same
+   *  mornings also feed the temperature profile and the overlap must not be
+   *  counted twice at full strength. */
+  thermalShiftTemper: number;
+  /** Spread, in days, of the lead from a detected thermal shift to the next
+   *  onset. A little wider than the ovulation test's: the luteal phase itself
+   *  varies by a couple of days within a person, and the detected shift day
+   *  adds a morning or two of reading noise on top. */
+  thermalShiftLeadSd: number;
+  /** How much the configured luteal phase counts for, in detected shifts, when
+   *  estimating that lead. Two, on the ovulation test's reasoning: a first
+   *  shift is read against the textbook span, a season of them against the
+   *  reader's own. */
+  thermalShiftLeadPriorStrength: number;
 };
 
 export const DEFAULT_MODEL_OPTIONS: ModelOptions = {
@@ -275,6 +326,12 @@ export const DEFAULT_MODEL_OPTIONS: ModelOptions = {
   temperatureMinSd: 0.06,
   temperatureMinDays: 12,
   maxLeadDays: 90,
+  outlierScale: 4,
+  outlierPriorShare: 0.075,
+  outlierPriorStrength: 12,
+  thermalShiftTemper: 0.8,
+  thermalShiftLeadSd: 2.5,
+  thermalShiftLeadPriorStrength: 2,
 };
 
 /**
@@ -326,6 +383,14 @@ export type CycleObservation = {
   /** True when this came from splitting a long gap rather than from two
    *  logged period starts. */
   imputed: boolean;
+  /**
+   * How much of this observation the fit read as a *standard* cycle, 0–1. The
+   * robust fit multiplies it into the weight, so a 45-day cycle in a 28-day
+   * history informs the wide component's share instead of stretching the
+   * spread every ordinary cycle is judged against. Absent when the fit was not
+   * robust (the plain {@link fitPosterior}).
+   */
+  standardShare?: number;
 };
 
 /** The fitted posterior, in the terms a statistician would want to check. */
@@ -346,6 +411,16 @@ export type PosteriorParams = {
   /** Posterior mean of σ on the log scale, expressed as ± days at the typical
    *  length. What "my cycle varies by about N days" actually means here. */
   spreadDays: number;
+  /**
+   * Posterior share of cycles belonging to the wide, nonstandard component —
+   * the mixture's answer to "how often does one of my cycles go long?". Zero
+   * from the plain {@link fitPosterior}, in which case the predictive is the
+   * single Student-t it always was.
+   */
+  outlierShare: number;
+  /** Scale of the nonstandard component's predictive, on the `ln(days)`
+   *  scale — the standard scale times {@link ModelOptions.outlierScale}. */
+  wideScale: number;
 };
 
 /**
@@ -500,6 +575,11 @@ export type ProbabilisticForecast = {
   /** The ovulation-test channel, or null until a test has been logged. */
   fertilityTest: FertilityTestProfile | null;
   temperature: TemperatureProfile | null;
+  /** The thermal-shift anchor, or null until a temperature has been logged.
+   *  Present with `detectedDay: null` while this cycle's step has not been
+   *  seen — which the screen says out loud, because "not yet" is itself
+   *  information about where the cycle has got to. */
+  thermalShift: ThermalShiftEstimate | null;
   /** Days the within-cycle evidence moved the expected date, negative for
    *  earlier. Zero under the univariate model, or when no channel had enough
    *  history to say anything. */
@@ -617,6 +697,84 @@ export function fitPosterior(
     effectiveSample: w,
     typicalLength,
     spreadDays: typicalLength * sigma,
+    outlierShare: 0,
+    wideScale: scale * options.outlierScale,
+  };
+}
+
+/** EM passes for the robust fit. The first finds the outliers against the
+ *  contaminated fit and each later one re-reads them against a cleaner fit;
+ *  an outlier four spreads out needs the full five to fall from "suspicious"
+ *  to the sliver it deserves, and a sixth moves nothing a whole day cares
+ *  about. Each pass is one closed-form update — there is no optimiser here. */
+const ROBUST_ITERATIONS = 5;
+
+/**
+ * The mixture fit: standard cycles, plus a wide component for the occasional
+ * stretched one.
+ *
+ * Cycle length is not one distribution. The literature since Harlow & Zeger
+ * (1991) models it as a mixture — a symmetric cluster of ordinary ovulatory
+ * cycles and a long-tailed remainder of delayed ones — and a single-component
+ * fit pays for ignoring that in one specific way: one 45-day cycle inflates
+ * the fitted spread, and every interval for the next year is wider than the
+ * reader's actual pattern deserves.
+ *
+ * So the fit is a small EM: each observation gets a *responsibility* — the
+ * posterior probability it belongs to the standard component, judged under the
+ * current fit — and the conjugate update is re-run with each weight multiplied
+ * by it. An ordinary cycle keeps its weight; a stretched one keeps only a
+ * sliver, and what it mostly informs is the mixture share itself, which the
+ * predictive keeps as a wide component. The odd cycle is not thrown away — it
+ * is filed where it belongs.
+ *
+ * A genuinely erratic history downweights *nothing*: when every cycle
+ * disagrees, the fitted spread is wide, no observation looks unusual against
+ * it, and every responsibility stays near one. The robustness only engages
+ * when there is a tight pattern for an outlier to stand out from — which is
+ * exactly when protecting the pattern matters.
+ */
+export function fitRobustPosterior(
+  observations: readonly CycleObservation[],
+  options: ModelOptions,
+): { params: PosteriorParams; observations: CycleObservation[] } {
+  const a0 = options.outlierPriorShare * options.outlierPriorStrength;
+  const b0 = (1 - options.outlierPriorShare) * options.outlierPriorStrength;
+
+  let responsibilities = observations.map(() => 1);
+  let params = fitPosterior(observations, options);
+  let share = options.outlierPriorShare;
+
+  for (let pass = 0; pass < ROBUST_ITERATIONS; pass++) {
+    responsibilities = observations.map((o) => {
+      const z = (Math.log(o.length) - params.mu) / params.scale;
+      const standard = studentTPdf(z, params.df) / params.scale;
+      const wide =
+        studentTPdf((z * params.scale) / params.wideScale, params.df) /
+        params.wideScale;
+      return ((1 - share) * standard) / ((1 - share) * standard + share * wide);
+    });
+    const outlierWeight = observations.reduce(
+      (sum, o, i) => sum + o.weight * (1 - responsibilities[i]!),
+      0,
+    );
+    const total = observations.reduce((sum, o) => sum + o.weight, 0);
+    share = (a0 + outlierWeight) / (a0 + b0 + total);
+    params = fitPosterior(
+      observations.map((o, i) => ({
+        ...o,
+        weight: o.weight * responsibilities[i]!,
+      })),
+      options,
+    );
+  }
+
+  return {
+    params: { ...params, outlierShare: share },
+    observations: observations.map((o, i) => ({
+      ...o,
+      standardShare: responsibilities[i]!,
+    })),
   };
 }
 
@@ -629,20 +787,28 @@ export function fitPosterior(
  * two differ noticeably.
  */
 export function predictivePmf(params: PosteriorParams, maxDay: number): Pmf {
-  const lo = Math.max(
-    1,
-    Math.floor(Math.exp(params.mu - 4 * params.scale)) - 1,
-  );
+  // With a nonstandard share the predictive is a two-component mixture, and
+  // the enumerated range has to reach the wide component's tails — 2.5 of its
+  // scales holds about 99% of it, and renormalising absorbs the rest.
+  const mixing = params.outlierShare > 0;
+  const reach = mixing
+    ? Math.max(4 * params.scale, 2.5 * params.wideScale)
+    : 4 * params.scale;
+  const lo = Math.max(1, Math.floor(Math.exp(params.mu - reach)) - 1);
   const hi = Math.min(
     maxDay,
-    Math.max(lo + 1, Math.ceil(Math.exp(params.mu + 4 * params.scale)) + 1),
+    Math.max(lo + 1, Math.ceil(Math.exp(params.mu + reach)) + 1),
   );
 
   const probabilities: number[] = [];
-  const cdfAt = (days: number) =>
-    days <= 0
-      ? 0
-      : studentTCdf((Math.log(days) - params.mu) / params.scale, params.df);
+  const cdfAt = (days: number) => {
+    if (days <= 0) return 0;
+    const x = Math.log(days) - params.mu;
+    const standard = studentTCdf(x / params.scale, params.df);
+    if (!mixing) return standard;
+    const wide = studentTCdf(x / params.wideScale, params.df);
+    return (1 - params.outlierShare) * standard + params.outlierShare * wide;
+  };
 
   for (let d = lo; d <= hi; d++) {
     probabilities.push(cdfAt(d + 0.5) - cdfAt(d - 0.5));
@@ -1111,6 +1277,197 @@ export function temperatureLogLikelihoodRatio(
   );
 }
 
+// --- The thermal-shift anchor ---------------------------------------------
+//
+// The temperature *profile* above reads the luteal plateau: a run of warm
+// mornings favours candidates that put those mornings in the fortnight before
+// an onset. What it cannot do is date the one event the plateau begins with.
+//
+// This channel does. Nearly all of a cycle's variability lives in the
+// follicular phase — in the Natural Cycles dataset of 600,000 cycles the
+// follicular phase spans 10–30 days across its 95% interval while the luteal
+// phase spans 7–17 — so the day the temperature *steps up* is the moment the
+// variable half of the cycle ends and the steady half begins. Detect that
+// step, and the onset is a luteal phase away, whatever the follicular phase
+// did this time. That is the sharpest statement the body makes on a schedule,
+// and it is available in the very first tracked cycle, before any profile has
+// enough history to learn from.
+
+/** Readings the rise is judged against — the classic "three over six" rule. */
+const THERMAL_SHIFT_LOW_DAYS = 6;
+const THERMAL_SHIFT_HIGH_DAYS = 3;
+
+/**
+ * How far above the warmest of the six low mornings the coolest of the three
+ * high ones must sit, in °C. The textbook coverline rule asks 0.2 on raw
+ * temperatures; these readings are already fever-filtered and centred, which
+ * removes the drift the extra margin exists to absorb, and 0.15 still stands
+ * three thermometer-noise deviations clear of a flat run.
+ */
+const THERMAL_SHIFT_MARGIN = 0.15;
+
+/** The three high readings must fall within this many days of each other, so
+ *  a patchy month cannot assemble a "sustained rise" out of three warm
+ *  mornings weeks apart. */
+const THERMAL_SHIFT_HIGH_SPAN = 4;
+
+/** The narrowest and widest lead from a detected shift to an onset worth
+ *  learning from. Outside it the "shift" was noise or the following onset was
+ *  never logged, and averaging it in would corrupt the one number this channel
+ *  turns on. */
+const THERMAL_LEAD_RANGE = { min: 5, max: 20 } as const;
+
+/** The lead the anchor scores against zero: candidates this many spreads from
+ *  the learned lead are neither helped nor hurt, nearer ones are favoured,
+ *  farther ones argued against. */
+const THERMAL_SHIFT_REF_SDS = 2.5;
+
+/**
+ * The thermal-shift channel: the detected step, and the lead it implies.
+ *
+ * Constructed rather than learned, like the ovulation test, and for the same
+ * reason: the relationship between the event and the onset is physiology, not
+ * personal idiosyncrasy. The only genuinely personal number is the lead — the
+ * reader's own luteal phase — and that is what gets learned.
+ */
+export type ThermalShiftEstimate = {
+  /** First morning of a sustained rise in the current cycle, or null while
+   *  none has been detected (or none has happened yet). */
+  detectedDay: DayKey | null;
+  /** Days from a detected shift to the next onset: the configured luteal
+   *  phase less a day, pulled toward the reader's own detected shifts. */
+  leadDays: number;
+  /** Spread of that lead, in days. */
+  leadSd: number;
+  /** Past cycles in which a shift was detected and followed by a logged
+   *  onset — what `leadDays` was learned from. */
+  observedShifts: number;
+  /** Whether the channel can move this forecast — true exactly when a shift
+   *  has been detected in the current cycle. */
+  informative: boolean;
+};
+
+/**
+ * Find the first sustained rise in one cycle's centred readings.
+ *
+ * The classic charting rule, applied to deviations: the coolest of three
+ * consecutive readings must clear the warmest of the six before them by
+ * {@link THERMAL_SHIFT_MARGIN}. Three sustained mornings is what separates the
+ * post-ovulatory step from one warm night, and six lows is what separates it
+ * from a noisy baseline. Readings, not calendar days — a skipped morning
+ * stretches the window rather than faking a reading — but the three highs must
+ * still sit within {@link THERMAL_SHIFT_HIGH_SPAN} days of each other.
+ *
+ * Returns the date of the first high reading, or null when no run qualifies.
+ */
+export function detectThermalShift(
+  readings: readonly CentredReading[],
+): DayKey | null {
+  const lastHigh = readings.length - THERMAL_SHIFT_HIGH_DAYS;
+  for (let i = THERMAL_SHIFT_LOW_DAYS; i <= lastHigh; i++) {
+    const highs = readings.slice(i, i + THERMAL_SHIFT_HIGH_DAYS);
+    if (
+      daysBetween(highs[0]!.date, highs[highs.length - 1]!.date) >
+      THERMAL_SHIFT_HIGH_SPAN
+    ) {
+      continue;
+    }
+    const lows = readings.slice(i - THERMAL_SHIFT_LOW_DAYS, i);
+    const warmestLow = Math.max(...lows.map((r) => r.deviation));
+    const coolestHigh = Math.min(...highs.map((r) => r.deviation));
+    if (coolestHigh >= warmestLow + THERMAL_SHIFT_MARGIN) {
+      return highs[0]!.date;
+    }
+  }
+  return null;
+}
+
+/**
+ * Build the thermal-shift channel: learn the lead from past cycles, and look
+ * for the step in the current one.
+ *
+ * The lead starts at the configured luteal phase less a day — the first high
+ * morning follows ovulation by about one — and is pulled toward the gaps the
+ * reader's own detected shifts have actually been followed by, at
+ * {@link ModelOptions.thermalShiftLeadPriorStrength} shifts' worth of inertia.
+ * Same construction as the ovulation test's lead, and for the same reason: it
+ * lets the anchor work on the first cycle it is possible to detect a shift in.
+ *
+ * Returns null when no temperature has ever been logged — a channel nobody
+ * feeds should be absent, not flat.
+ */
+export function thermalShiftEstimate(
+  data: AppData,
+  periods: readonly PeriodSpan[],
+  today: DayKey,
+  options: ModelOptions,
+  cycle: CycleOptions = DEFAULT_CYCLE_OPTIONS,
+): ThermalShiftEstimate | null {
+  if (periods.length === 0) return null;
+  const readings = centredTemperatures(data, options);
+  if (readings.length === 0) return null;
+
+  const leads: number[] = [];
+  for (let i = 1; i < periods.length; i++) {
+    const from = periods[i - 1]!.start;
+    const to = periods[i]!.start;
+    const within = readings.filter((r) => r.date >= from && r.date < to);
+    const shift = detectThermalShift(within);
+    if (shift === null) continue;
+    const lead = daysBetween(shift, to);
+    if (lead >= THERMAL_LEAD_RANGE.min && lead <= THERMAL_LEAD_RANGE.max) {
+      leads.push(lead);
+    }
+  }
+
+  const last = periods[periods.length - 1]!;
+  const current = readings.filter(
+    (r) => r.date >= last.start && r.date <= today,
+  );
+  const detectedDay = detectThermalShift(current);
+
+  const priorLead = cycle.lutealPhaseLength - 1;
+  const k = options.thermalShiftLeadPriorStrength;
+  const leadDays =
+    (leads.reduce((sum, l) => sum + l, 0) + k * priorLead) / (leads.length + k);
+
+  return {
+    detectedDay,
+    leadDays: Math.round(leadDays * 10) / 10,
+    leadSd: Math.max(0.5, options.thermalShiftLeadSd),
+    observedShifts: leads.length,
+    informative: detectedDay !== null,
+  };
+}
+
+/**
+ * The tempered log-likelihood ratio for "the period starts on `candidate`",
+ * given a detected thermal shift.
+ *
+ * A Gaussian in the gap from the shift to the candidate, centred on the
+ * learned lead, scored against the density {@link THERMAL_SHIFT_REF_SDS}
+ * spreads out — so the ratio collapses to `(ref² − z²)/2`: positive within the
+ * band a luteal phase plausibly spans, negative beyond it. A candidate on or
+ * before the shift day itself lands far outside the band, which is the model
+ * saying what the physiology says: bleeding does not precede the plateau that
+ * ends in it.
+ */
+export function thermalShiftLogLikelihoodRatio(
+  candidate: DayKey,
+  shift: ThermalShiftEstimate,
+  options: ModelOptions,
+): number {
+  if (shift.detectedDay === null) return 0;
+  const gap = daysBetween(shift.detectedDay, candidate);
+  const z = (gap - shift.leadDays) / shift.leadSd;
+  const tempered =
+    ((THERMAL_SHIFT_REF_SDS ** 2 - z ** 2) / 2) * options.thermalShiftTemper;
+  return Math.min(
+    options.symptomMaxLogLr,
+    Math.max(-options.symptomMaxLogLr, tempered),
+  );
+}
+
 /**
  * The tempered log-likelihood ratio for "the period starts on `candidate`",
  * given the recent reports on one binary channel.
@@ -1369,6 +1726,7 @@ type Evidence = {
   sex: BinaryProfile | null;
   fertilityTests: FertilityTestProfile | null;
   temperatures: TemperatureProfile | null;
+  thermalShift: ThermalShiftEstimate | null;
   recent: readonly DayEntry[];
   recentTemperatures: readonly CentredReading[];
 };
@@ -1437,6 +1795,13 @@ function evidenceLogLikelihoodRatio(
       options,
     );
   }
+  if (evidence.thermalShift) {
+    total += thermalShiftLogLikelihoodRatio(
+      candidate,
+      evidence.thermalShift,
+      options,
+    );
+  }
   const ceiling = options.evidenceMaxLogLr;
   return Math.min(ceiling, Math.max(-ceiling, total));
 }
@@ -1464,8 +1829,12 @@ export function probabilisticForecast(
   const last = periods[periods.length - 1];
   if (!last) return null;
 
-  const observations = observationsFrom(periods, modelOptions);
-  const params = fitPosterior(observations, modelOptions);
+  const robust = fitRobustPosterior(
+    observationsFrom(periods, modelOptions),
+    modelOptions,
+  );
+  const params = robust.params;
+  const observations = robust.observations;
 
   // Roll the anchor forward over cycles that were never logged, on the same
   // rule `cycle.ts` uses: stop at the first projected start less than a whole
@@ -1494,6 +1863,9 @@ export function probabilisticForecast(
   const temperatures = multivariate
     ? temperatureProfile(data, periods, modelOptions)
     : null;
+  const thermalShift = multivariate
+    ? thermalShiftEstimate(data, periods, today, modelOptions, cycle)
+    : null;
   const usable = <T extends { informative: boolean }>(profile: T | null) =>
     profile?.informative ? profile : null;
   const usableMoods = usable(moods);
@@ -1501,12 +1873,14 @@ export function probabilisticForecast(
   const usableSex = usable(sex);
   const usableFertilityTests = usable(fertilityTest);
   const usableTemperatures = usable(temperatures);
+  const usableThermalShift = usable(thermalShift);
   const hasEvidence =
     usableMoods !== null ||
     usableLust !== null ||
     usableSex !== null ||
     usableFertilityTests !== null ||
-    usableTemperatures !== null;
+    usableTemperatures !== null ||
+    usableThermalShift !== null;
 
   // One recent window, the widest any channel asks for; each channel then clips
   // to its own inside its likelihood ratio. A single filter here is what keeps
@@ -1534,6 +1908,7 @@ export function probabilisticForecast(
           sex: usableSex,
           fertilityTests: usableFertilityTests,
           temperatures: usableTemperatures,
+          thermalShift: usableThermalShift,
           recent,
           recentTemperatures,
         }),
@@ -1602,6 +1977,7 @@ export function probabilisticForecast(
     sex,
     fertilityTest,
     temperature: temperatures,
+    thermalShift,
     // Measured on the median, the same statistic the headline moves by — so
     // "this cycle's reports moved it two days earlier" is a claim about the
     // number the reader is looking at.

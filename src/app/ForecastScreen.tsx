@@ -2,6 +2,7 @@
 import { useMemo, type ReactNode } from "react";
 
 import {
+  addDays,
   daysBetween,
   type DayKey,
 } from "@niclaslindstedt/oss-framework/calendar";
@@ -414,28 +415,38 @@ function ModelPanel({
         {t("forecast.observations.title")}
       </p>
       <ul className="flex flex-wrap gap-1.5">
-        {f.observations.map((o, i) => (
-          <li
-            key={i}
-            title={
-              o.imputed ? t("forecast.observations.imputedHint") : undefined
-            }
-            className={`rounded-full border px-2 py-0.5 text-xs tabular-nums ${
-              o.imputed
-                ? "border-dashed border-muted/60 text-muted"
-                : "border-line text-fg"
-            }`}
-          >
-            {t("forecast.observations.row", {
-              length: o.length.toFixed(o.imputed ? 1 : 0),
-            })}
-            <span className="ml-1 text-muted/80">
-              {t("forecast.observations.weight", {
-                value: o.weight.toFixed(2),
+        {f.observations.map((o, i) => {
+          // Read by the fit as (mostly) a nonstandard cycle, so it carries only
+          // a sliver of its weight — the chip says so instead of showing a
+          // full-weight cycle the model quietly ignored.
+          const downweighted = !o.imputed && (o.standardShare ?? 1) < 0.5;
+          return (
+            <li
+              key={i}
+              title={
+                o.imputed
+                  ? t("forecast.observations.imputedHint")
+                  : downweighted
+                    ? t("forecast.observations.outlierHint")
+                    : undefined
+              }
+              className={`rounded-full border px-2 py-0.5 text-xs tabular-nums ${
+                o.imputed || downweighted
+                  ? "border-dashed border-muted/60 text-muted"
+                  : "border-line text-fg"
+              }`}
+            >
+              {t("forecast.observations.row", {
+                length: o.length.toFixed(o.imputed ? 1 : 0),
               })}
-            </span>
-          </li>
-        ))}
+              <span className="ml-1 text-muted/80">
+                {t("forecast.observations.weight", {
+                  value: (o.weight * (o.standardShare ?? 1)).toFixed(2),
+                })}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </Section>
   );
@@ -504,6 +515,28 @@ function PatternPanels({
             {t("forecast.temperatureProfile.thin")}
           </p>
         )}
+        {/* The anchor is separate from the profile on purpose: the plateau
+            needs a history, the step only needs this cycle's mornings — so it
+            can have something to say while the chart above is still thin. */}
+        {f.thermalShift &&
+          (f.thermalShift.detectedDay ? (
+            <p className="mt-2 text-sm text-fg">
+              {t("forecast.thermalShift.detected", {
+                date: formatShortDay(f.thermalShift.detectedDay),
+                count: String(Math.round(f.thermalShift.leadDays)),
+                onset: formatShortDay(
+                  addDays(
+                    f.thermalShift.detectedDay,
+                    Math.round(f.thermalShift.leadDays),
+                  ),
+                ),
+              })}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-muted">
+              {t("forecast.thermalShift.none")}
+            </p>
+          ))}
       </Section>
 
       {/* The one line that is about *all* of the panels above rather than any

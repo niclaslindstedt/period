@@ -10,8 +10,10 @@ import {
   centredTemperatures,
   confidenceFrom,
   DEFAULT_MODEL_OPTIONS,
+  detectThermalShift,
   fertilityTestProfile,
   fitPosterior,
+  fitRobustPosterior,
   lustProfile,
   OVULATORY_WINDOW,
   readFertilityTest,
@@ -27,7 +29,11 @@ import {
   symptomProfile,
   temperatureLogLikelihoodRatio,
   temperatureProfile,
+  thermalShiftEstimate,
+  thermalShiftLogLikelihoodRatio,
   PREMENSTRUAL_WINDOW,
+  type CentredReading,
+  type CycleObservation,
 } from "../src/app/forecastModel.ts";
 import { derivePeriods } from "../src/app/cycle.ts";
 import { pmfMode, pmfQuantile } from "../src/app/stats.ts";
@@ -1637,5 +1643,219 @@ describe("options plumbing", () => {
     )!;
     // With no cycle observed at all, the prior is the whole model.
     expect(f.expectedDay).toBe(addDays(starts[0]!, 35));
+  });
+});
+
+describe("fitRobustPosterior", () => {
+  const observe = (lengths: readonly number[]): CycleObservation[] =>
+    lengths.map((length) => ({ length, weight: 1, imputed: false }));
+
+  it("files one stretched cycle under the wide component", () => {
+    const lengths = [28, 28, 28, 28, 45, 28, 28, 28, 28];
+    const robust = fitRobustPosterior(observe(lengths), DEFAULT_MODEL_OPTIONS);
+    const plain = fitPosterior(observe(lengths), DEFAULT_MODEL_OPTIONS);
+
+    // The centre stays on the pattern and the spread stops paying for the
+    // outlier — that is the whole point of the mixture.
+    expect(robust.params.typicalLength).toBeGreaterThan(27);
+    expect(robust.params.typicalLength).toBeLessThan(29);
+    expect(robust.params.spreadDays).toBeLessThan(plain.spreadDays / 2);
+
+    const shares = robust.observations.map((o) => o.standardShare!);
+    expect(Math.min(...shares.slice(0, 4))).toBeGreaterThan(0.9);
+    expect(shares[4]!).toBeLessThan(0.2);
+
+    // …and the outlier raises the fitted share of nonstandard cycles above
+    // the prior instead of vanishing.
+    expect(robust.params.outlierShare).toBeGreaterThan(
+      DEFAULT_MODEL_OPTIONS.outlierPriorShare,
+    );
+  });
+
+  it("downweights nothing when the history is erratic through and through", () => {
+    const lengths = [21, 35, 24, 38, 26, 33, 22, 36];
+    const robust = fitRobustPosterior(observe(lengths), DEFAULT_MODEL_OPTIONS);
+
+    // Every cycle disagrees, so no cycle stands out: the spread stays wide
+    // and every responsibility stays high. Robustness must never turn an
+    // irregular history into a confidently narrow forecast.
+    for (const o of robust.observations) {
+      expect(o.standardShare!).toBeGreaterThan(0.7);
+    }
+    expect(robust.params.spreadDays).toBeGreaterThan(4);
+  });
+
+  it("keeps a steady history exactly as believable as before", () => {
+    const lengths = [28, 27, 29, 28, 28, 29, 27, 28];
+    const robust = fitRobustPosterior(observe(lengths), DEFAULT_MODEL_OPTIONS);
+    const plain = fitPosterior(observe(lengths), DEFAULT_MODEL_OPTIONS);
+    expect(robust.params.typicalLength).toBeCloseTo(plain.typicalLength, 1);
+    for (const o of robust.observations) {
+      expect(o.standardShare!).toBeGreaterThan(0.9);
+    }
+  });
+
+  it("keeps a fat right tail in the predictive for the next stretched cycle", () => {
+    const lengths = [28, 28, 28, 28, 45, 28, 28, 28, 28];
+    const { params } = fitRobustPosterior(
+      observe(lengths),
+      DEFAULT_MODEL_OPTIONS,
+    );
+    const mixture = predictivePmf(params, 90);
+    const sharp = predictivePmf({ ...params, outlierShare: 0 }, 90);
+    const tail = (pmf: typeof mixture) =>
+      pmf.probabilities.reduce(
+        (sum, p, i) => (pmf.offset + i >= 36 ? sum + p : sum),
+        0,
+      );
+    // The mixture prices in the possibility of another long cycle; a pure
+    // single-component predictive fitted this tightly all but denies it.
+    expect(tail(mixture)).toBeGreaterThan(tail(sharp) + 0.02);
+    const total = mixture.probabilities.reduce((sum, p) => sum + p, 0);
+    expect(total).toBeCloseTo(1, 6);
+  });
+});
+
+describe("detectThermalShift", () => {
+  const reading = (date: string, deviation: number): CentredReading => ({
+    date,
+    deviation,
+  });
+  /** Daily readings from `first`, at the given deviations. */
+  const run = (first: string, deviations: readonly number[]) =>
+    deviations.map((d, i) => reading(addDays(first, i), d));
+
+  it("finds the first morning of a sustained rise", () => {
+    const readings = run(
+      "2026-03-01",
+      [-0.14, -0.16, -0.13, -0.17, -0.15, -0.14, 0.16, 0.14, 0.17, 0.15],
+    );
+    expect(detectThermalShift(readings)).toBe("2026-03-07");
+  });
+
+  it("sees nothing in a flat, jittery run", () => {
+    const readings = run(
+      "2026-03-01",
+      [-0.02, 0.03, -0.01, 0.02, -0.03, 0.01, 0.02, 0.04, 0.03, 0.01, 0.02],
+    );
+    expect(detectThermalShift(readings)).toBeNull();
+  });
+
+  it("does not call one warm morning a shift", () => {
+    const readings = run(
+      "2026-03-01",
+      [-0.15, -0.14, -0.16, -0.15, -0.13, -0.16, 0.18, -0.14, -0.15, -0.13],
+    );
+    expect(detectThermalShift(readings)).toBeNull();
+  });
+
+  it("needs six mornings of baseline and three of rise", () => {
+    const readings = run("2026-03-01", [-0.15, -0.14, -0.16, 0.15, 0.17, 0.16]);
+    expect(detectThermalShift(readings)).toBeNull();
+  });
+
+  it("refuses three warm mornings scattered across weeks", () => {
+    const lows = run("2026-03-01", [-0.15, -0.14, -0.16, -0.15, -0.13, -0.16]);
+    const highs = [
+      reading("2026-03-07", 0.16),
+      reading("2026-03-12", 0.15),
+      reading("2026-03-17", 0.17),
+    ];
+    expect(detectThermalShift([...lows, ...highs])).toBeNull();
+  });
+});
+
+describe("the thermal-shift anchor", () => {
+  it("learns the reader's own lead from past detected shifts", () => {
+    const { data, starts } = steady({ temperatureShift: 0.35 });
+    const today = addDays(starts[starts.length - 1]!, 4);
+    const estimate = thermalShiftEstimate(
+      data,
+      derivePeriods(data),
+      today,
+      DEFAULT_MODEL_OPTIONS,
+    )!;
+    // The fixture raises the temperature through the last 13 days before each
+    // onset, so every detected shift leads its onset by 13 — which is also the
+    // prior (the configured luteal phase less a day), so the learned lead
+    // sits there however many shifts have been seen.
+    expect(estimate.observedShifts).toBeGreaterThanOrEqual(8);
+    expect(estimate.leadDays).toBeGreaterThan(12);
+    expect(estimate.leadDays).toBeLessThan(14);
+    // Four mornings into a period there is no rise to detect yet.
+    expect(estimate.detectedDay).toBeNull();
+    expect(estimate.informative).toBe(false);
+  });
+
+  it("is absent entirely without a single reading", () => {
+    const { data, starts } = steady();
+    const today = addDays(starts[starts.length - 1]!, 10);
+    expect(
+      thermalShiftEstimate(
+        data,
+        derivePeriods(data),
+        today,
+        DEFAULT_MODEL_OPTIONS,
+      ),
+    ).toBeNull();
+    const f = probabilisticForecast(data, today, "multivariate")!;
+    expect(f.thermalShift).toBeNull();
+  });
+
+  it("scores candidates a learned lead after the shift, and no others", () => {
+    const shift = {
+      detectedDay: "2026-04-16",
+      leadDays: 13,
+      leadSd: 2.5,
+      observedShifts: 5,
+      informative: true,
+    };
+    const at = (date: string) =>
+      thermalShiftLogLikelihoodRatio(date, shift, DEFAULT_MODEL_OPTIONS);
+    // Positive at the lead, fading either side, and firmly against a period
+    // starting on the shift day itself.
+    expect(at("2026-04-29")).toBeGreaterThan(2);
+    expect(at("2026-04-29")).toBeGreaterThan(at("2026-04-25"));
+    expect(at("2026-04-29")).toBeGreaterThan(at("2026-05-03"));
+    expect(at("2026-04-16")).toBe(-DEFAULT_MODEL_OPTIONS.symptomMaxLogLr);
+  });
+
+  it("anchors the current cycle once this cycle's rise is seen", () => {
+    // A genuinely variable follicular phase: gaps of 26–31 days. The hidden
+    // final cycle runs 31 days, but its temperature steps up 13 days before
+    // the onset — which is the fact the anchor is supposed to read.
+    const { data, starts } = build({
+      firstStart: "2025-05-05",
+      cycleLengths: [29, 27, 30, 26, 31, 27, 29, 26, 30, 28, 31],
+      temperatureShift: 0.35,
+    });
+    const hidden = starts[starts.length - 1]!;
+    const today = addDays(hidden, -9);
+    const truncated: AppData = {
+      ...data,
+      entries: Object.fromEntries(
+        Object.entries(data.entries).filter(([date]) => date <= today),
+      ),
+    };
+
+    const multi = probabilisticForecast(truncated, today, "multivariate")!;
+    const uni = probabilisticForecast(truncated, today, "univariate")!;
+
+    expect(uni.thermalShift).toBeNull();
+    expect(multi.thermalShift?.detectedDay).toBe(addDays(hidden, -13));
+
+    // Anchored, the forecast lands on the hidden onset even though the cycle
+    // history alone points a few days earlier…
+    expect(
+      Math.abs(daysBetween(hidden, multi.expectedDay)),
+    ).toBeLessThanOrEqual(2);
+    expect(
+      Math.abs(daysBetween(hidden, multi.expectedDay)),
+    ).toBeLessThanOrEqual(Math.abs(daysBetween(hidden, uni.expectedDay)));
+
+    // …and says so with a tighter band than the history alone could draw.
+    const width80 = (f: typeof multi) =>
+      f.intervals.find((i) => i.mass === 0.8)!.widthDays;
+    expect(width80(multi)).toBeLessThan(width80(uni));
   });
 });

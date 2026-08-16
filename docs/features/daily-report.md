@@ -107,7 +107,11 @@ nags for one.
 Taken before getting up, this is the single most useful thing you can add to the
 forecast. Body temperature steps up by roughly 0.3 °C after ovulation, holds
 through the rest of the cycle, and falls again as a period arrives — so it says
-where in the cycle you are, not just where the calendar thinks you are.
+where in the cycle you are, not just where the calendar thinks you are. The
+forecast reads it twice: the raised plateau counts as evidence about the days
+before a period, and the day of the **step itself**, once three raised mornings
+confirm it, anchors the next period a luteal phase later — the sharpest single
+thing a morning routine can tell the model.
 
 Two decimals is the point. The whole shift is about a third of a degree, so a
 reading rounded to 0.1 °C throws away most of the signal.
