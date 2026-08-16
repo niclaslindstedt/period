@@ -111,9 +111,10 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
 
 ### The app owns the domain ("store stays in the app")
 
-- `src/app/types.ts` — the `DayEntry` / `AppData` model. A report is two
-  booleans (`bleeding`, `moodSwings`), an optional `temperature`, and the day
-  they belong to; adding a fourth question is a decision, not a detail.
+- `src/app/types.ts` — the `DayEntry` / `AppData` model. A report is four
+  booleans (`bleeding`, `moodSwings`, `lust`, `sex`), an optional
+  `temperature`, an optional `fertilityTest`, and the day they belong to;
+  adding a seventh question is a decision, not a detail.
 - `src/app/cycle.ts` — the derivation: periods from bleeding days, cycle
   lengths, averages, one predicted date, the phase of a day. **Pure and
   clock-free.**
@@ -169,14 +170,23 @@ a report from three weeks ago immediately fixes every downstream number, and
 why there is no cache to invalidate. **Adding a derived field to `AppData` is
 almost always the wrong fix** — the right one is a function in `cycle.ts`.
 
-### The report is three fields, and the bar for a fourth is high
+### The report is six fields, and the bar for a seventh is high
 
 The Report screen asks whether there was blood, whether there were mood swings,
-and — optionally — this morning's waking temperature. That is the whole
+whether there was lust, whether there was sex, and — optionally — this
+morning's waking temperature and what an ovulation test said. That is the whole
 document. Every one of them feeds a number that is visible somewhere:
-`bleeding` derives the periods and the cycle lengths; `moodSwings` and
-`temperature` are the two evidence channels `forecastModel.ts` reads, both
-plotted on the Forecast screen's advanced view.
+`bleeding` derives the periods and the cycle lengths; the other five are the
+evidence channels `forecastModel.ts` reads, each plotted on the Forecast
+screen's advanced view.
+
+The five split into **premenstrual** (`moodSwings`, `temperature`) and
+**ovulatory** (`lust`, `sex`, `fertilityTest`), and that split is the argument
+for having five rather than two: the ovulatory channels speak about a part of
+the cycle the premenstrual ones are silent on, which is why they are read over a
+longer window (`OVULATORY_WINDOW`, 21 days) than the premenstrual ones
+(`PREMENSTRUAL_WINDOW`, 14). A new channel that duplicates a window and a signal
+already covered has not cleared the bar.
 
 v2 removed a five-level bleeding scale, a nine-mood roster, a 0–3 swing scale
 and a free-text note, all of which were asked every evening and read by nothing
@@ -187,13 +197,18 @@ reasonable it sounds in isolation. A tracker earns its place by being answerable
 in two taps in the dark at 23:50.
 
 Temperature cleared that bar because the post-ovulatory rise is the strongest
-single signal for onset there is, and it is **optional** precisely so the two
-taps still work on a morning nobody reached for a thermometer. A new field that
-has to be filled in every day to be useful has not cleared the bar.
+single signal for onset there is, and it is **optional** precisely so the taps
+still work on a morning nobody reached for a thermometer. The fertility test
+cleared it for the sharper version of the same reason — a positive strip dates
+ovulation to within a day — and is optional and _tri-state_ for the same one:
+"no test" and "a negative test" are different claims, and only a third state can
+keep them apart. A new field that has to be filled in every day to be useful has
+not cleared the bar.
 
 The screen fits one phone screen, portrait, without scrolling — verified on a
-375×667 viewport. A change that makes it scroll is a regression, not a layout
-detail.
+375×667 viewport. That is why the four yes/no answers sit in one row of four
+rather than a 2×2 block, and why their labels are one word each. A change that
+makes it scroll is a regression, not a layout detail.
 
 ### One posterior, three screens
 
@@ -239,6 +254,7 @@ the tests pin real dates without fake timers.
 | A new thing to log about a day       | Probably nowhere — see below. If it survives that: `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` step |
 | A new derived number or prediction   | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                                                               |
 | A new statistic over mood swings     | `src/app/swings.ts`                                                                                                                   |
+| A new evidence channel               | A profile + a clamped term in `src/app/forecastModel.ts`, with tests in `tests/forecastModel_test.ts`                                 |
 | A change to what a range save writes | `src/app/bulk.ts`, with tests in `tests/bulk_test.ts`                                                                                 |
 | A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`                                                                         |
 | A new setting                        | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                  |
@@ -281,17 +297,18 @@ with `[Learn more](feature:<slug>)`.
 
 ## Documentation sync points
 
-| If you change…                   | Update…                                                                                                        |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| The derivation in `cycle.ts`     | `docs/cycle.md`, and the README's Examples block if the output shape moved                                     |
-| `forecastModel.ts` or `stats.ts` | `docs/forecast-model.md`, `docs/features/forecast.md`, and the README's What block                             |
-| The `DayEntry` shape             | `docs/architecture.md`'s data shape, `docs/features/daily-report.md`, and a `migrations.ts` step               |
-| The sync engine or the merge     | `docs/sync.md`                                                                                                 |
-| A `VITE_*` variable              | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it |
-| A screen's behaviour             | The matching `docs/features/*.md` and the README's Usage table                                                 |
-| `dayStatus.ts`                   | `docs/features/status.md` and `docs/features/calendar.md` — both screens quote its rules                       |
-| Module layout                    | The "Where new code goes" table above and `docs/architecture.md`                                               |
-| A make target or script          | `CONTRIBUTING.md`, the README's Quick start, and this file's command list                                      |
+| If you change…                   | Update…                                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| The derivation in `cycle.ts`     | `docs/cycle.md`, and the README's Examples block if the output shape moved                                          |
+| `forecastModel.ts` or `stats.ts` | `docs/forecast-model.md`, `docs/features/forecast.md`, and the README's What block                                  |
+| The `DayEntry` shape             | `docs/architecture.md`'s data shape, `docs/features/daily-report.md`, and a `migrations.ts` step                    |
+| The sync engine or the merge     | `docs/sync.md`                                                                                                      |
+| A `VITE_*` variable              | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it      |
+| A screen's behaviour             | The matching `docs/features/*.md` and the README's Usage table                                                      |
+| `dayStatus.ts`                   | `docs/features/status.md` and `docs/features/calendar.md` — both screens quote its rules                            |
+| An evidence channel              | `docs/forecast-model.md`, `docs/features/daily-report.md`, `docs/features/forecast.md`, and the README's What block |
+| Module layout                    | The "Where new code goes" table above and `docs/architecture.md`                                                    |
+| A make target or script          | `CONTRIBUTING.md`, the README's Quick start, and this file's command list                                           |
 
 ## Parity and cross-cutting rules
 

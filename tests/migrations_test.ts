@@ -101,16 +101,19 @@ describe("the v1 → v2 migration", () => {
     expect(doc.entries).toEqual({});
   });
 
-  it("carries a v1 day all the way to a v3 entry", () => {
-    // Two migrations in one read: the collapse to booleans, then the added
-    // temperature. A phone that skipped the v2 build must land in the same
-    // place as one that did not.
+  it("carries a v1 day all the way to the current entry", () => {
+    // Three migrations in one read: the collapse to booleans, the added
+    // temperature, then the three ovulatory channels. A phone that skipped
+    // every build in between must land in the same place as one that did not.
     const entry = v1({ bleeding: "light", swing: 2 });
     expect(entry).toEqual({
       date: "2026-03-01",
       bleeding: true,
       moodSwings: true,
+      lust: false,
+      sex: false,
       temperature: null,
+      fertilityTest: null,
       updatedAt: new Date(0).toISOString(),
     });
   });
@@ -163,6 +166,59 @@ describe("the v2 → v3 migration", () => {
   });
 });
 
+// The v3 → v4 addition — the three ovulatory channels. Additive in the same
+// way v3 was, with one wrinkle worth pinning: the two booleans default to a no
+// while the test result defaults to *no test*, because "we did not" and "nobody
+// checked" are different claims and the forecast treats them differently.
+describe("the v3 → v4 migration", () => {
+  const v3 = (entry: Record<string, unknown>) =>
+    normalizeDoc({
+      version: 3,
+      entries: { "2026-03-01": { date: "2026-03-01", ...entry } },
+    }).entries["2026-03-01"]!;
+
+  it("gives every existing day the new answers at their defaults", () => {
+    const entry = v3({ bleeding: true, moodSwings: true, temperature: 36.5 });
+    expect(entry.lust).toBe(false);
+    expect(entry.sex).toBe(false);
+    expect(entry.fertilityTest).toBeNull();
+  });
+
+  it("keeps everything the day already carried", () => {
+    const entry = v3({ bleeding: true, moodSwings: true, temperature: 36.52 });
+    expect(entry.bleeding).toBe(true);
+    expect(entry.moodSwings).toBe(true);
+    expect(entry.temperature).toBe(36.52);
+  });
+
+  it("keeps the answers a v4 document already stored", () => {
+    const doc = normalizeDoc({
+      version: 4,
+      entries: {
+        "2026-03-01": {
+          date: "2026-03-01",
+          bleeding: false,
+          moodSwings: false,
+          lust: true,
+          sex: true,
+          temperature: null,
+          fertilityTest: "positive",
+        },
+      },
+    });
+    const entry = doc.entries["2026-03-01"]!;
+    expect(entry.lust).toBe(true);
+    expect(entry.sex).toBe(true);
+    expect(entry.fertilityTest).toBe("positive");
+  });
+
+  it("reads anything that is not one of the two words as no test taken", () => {
+    for (const value of ["POSITIVE", "faint", true, 1, null, {}]) {
+      expect(v3({ fertilityTest: value }).fertilityTest).toBeNull();
+    }
+  });
+});
+
 describe("serializeDoc", () => {
   it("round-trips a document", () => {
     const doc: AppData = {
@@ -172,7 +228,10 @@ describe("serializeDoc", () => {
           date: "2026-03-01",
           bleeding: true,
           moodSwings: true,
+          lust: false,
+          sex: false,
           temperature: 36.52,
+          fertilityTest: null,
           updatedAt: "2026-03-01T10:00:00.000Z",
         },
       },
@@ -188,7 +247,10 @@ describe("serializeDoc", () => {
         date,
         bleeding: true,
         moodSwings: false,
+        lust: false,
+        sex: false,
         temperature: null,
+        fertilityTest: null,
         updatedAt: "2026-03-01T00:00:00.000Z",
       };
     }
@@ -197,7 +259,10 @@ describe("serializeDoc", () => {
         date,
         bleeding: true,
         moodSwings: false,
+        lust: false,
+        sex: false,
         temperature: null,
+        fertilityTest: null,
         updatedAt: "2026-03-01T00:00:00.000Z",
       };
     }

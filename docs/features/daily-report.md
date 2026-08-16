@@ -1,6 +1,6 @@
 # Daily report
 
-The screen the app opens on. One day, two questions, one optional number, one
+The screen the app opens on. One day, four taps, two optional measurements, one
 **Save** — and the whole of it on a single phone screen, with nothing to scroll.
 
 - **Blood** — a button. Press it if there was any bleeding at all, spotting
@@ -8,14 +8,18 @@ The screen the app opens on. One day, two questions, one optional number, one
   for a heaviness it never reads.
 - **Mood swings** — a button. Press it if your mood moved noticeably across the
   day.
+- **Lust** — a button. Press it if your sex drive was noticeably raised.
+- **Sex** — a button. Press it if there was sex.
+- **Fertility test** — optional. **None**, **Negative** or **Positive**: what
+  an ovulation strip said this morning, if you ran one.
 - **Waking temperature** — optional. A slider for the reading, and a box for
   the exact one.
 
 Each button lights up in the app's red when it happened and sits dimmed when it
-did not, so one glance at the pair is the whole answer.
+did not, so one glance at the row is the whole answer.
 
-Leaving both dim is a real answer. **Save** is what files the report, so a day
-saved with neither button lit records that you checked and there was nothing —
+Leaving them all dim is a real answer. **Save** is what files the report, so a
+day saved with no button lit records that you checked and there was nothing —
 which the cycle derivation treats differently from a day you simply didn't log.
 The line under the date tells you which of the two you are looking at (**Logged**
 or **Nothing logged yet**), and a day you never save stays unlogged.
@@ -25,7 +29,7 @@ or **Nothing logged yet**), and a day you never save stays unlogged.
 Press the date and the picker opens on **One day**. Switch it to **Range** and
 the grid takes two taps: the first sets one end of the span, the second the
 other — in either order, so picking the last day first works too. Save then
-writes the same two answers to every day in between.
+writes the same four yes/no answers to every day in between.
 
 This is what filing a period after the fact looks like. Six consecutive
 bleeding days used to be the same four taps six times over; now it is press the
@@ -45,16 +49,58 @@ accident — not a limit on anything real: a period is under a fortnight. Once t
 first day is down, the picker greys out everything past the cap, so the limit is
 visible rather than something a tap discovers.
 
-### Temperature is per day
+### The measurements are per day
 
-The temperature control is switched off while a span is selected, and reads
-**One day only** where it otherwise says _Optional_. A waking temperature is one
-morning's measurement, so there is no honest value to write across six days.
+The temperature and the fertility test are both switched off while a span is
+selected, and read **One day only** where they otherwise say _Optional_. Each is
+one morning's observation, so there is no honest value to write across six days.
 
-**Readings already on those days survive.** Filing "I bled these six days" over
-a week you took your temperature every morning leaves all six of those readings
-exactly where they were — a bulk report writes the two answers and nothing else.
-To add or change a temperature, put the picker back on **One day**.
+**Readings and test results already on those days survive.** Filing "I bled
+these six days" over a week you took your temperature every morning leaves all
+six of those readings exactly where they were — a bulk report writes the four
+yes/no answers and nothing else. To add or change either measurement, put the
+picker back on **One day**.
+
+## Lust and sex
+
+Two buttons, answered the same way as the first two: press if it happened.
+
+They are here because sex drive rises toward ovulation, and ovulation is what
+the forecast would most like to know the date of. The model does not assume
+that, though — it learns the shape from your own reports, one rate per number of
+days before a period, and reads it back to you on the Forecast screen's advanced
+view. **Your lust pattern** should show a hump in the middle of the chart rather
+than at its right-hand end, which is what a mid-cycle signal looks like when the
+axis counts down to a period.
+
+**Sex** is the more confounded of the two — a weekend is not a hormone — and it
+is deliberately treated as a question rather than an assumption. If your reports
+do not follow your cycle, the chart comes out flat, and a flat channel is one
+the model leaves out. Nothing is lost by answering it honestly.
+
+## Fertility test
+
+**None**, **Negative** or **Positive** — what an ovulation (LH) test strip said,
+if you ran one.
+
+Three options rather than a switch, because **None** and **Negative** are
+different claims. A negative on the morning a surge was due is evidence; a
+morning nobody tested is not an observation at all, and the model skips it. That
+is the same distinction the app draws between a day with no report and a day
+saved with every answer no.
+
+A positive strip is the sharpest single thing you can tell this forecast. The LH
+surge precedes ovulation by about a day, and a period follows ovulation by the
+luteal phase — the steadiest stretch of the cycle. So one positive test dates the
+next period more tightly than a fortnight of anything else here, and it does so
+on the first cycle you use a strip: the model starts from the luteal phase set
+in **Settings → Cycle**, and moves toward whatever your own positives have
+actually been followed by as they accumulate. The Forecast screen's **Your
+fertility tests** panel names the number it is using and says where it came
+from.
+
+Most days there is no test, and **None** is where a blank report opens. Nothing
+nags for one.
 
 ## Waking temperature
 
@@ -121,10 +167,18 @@ Every field here feeds a number you can see somewhere else. That is the whole
 test, and it is a strict one.
 
 `bleeding` is what the periods, the cycle lengths and the prediction are derived
-from. `moodSwings` and `temperature` are the two channels [the forecast
+from. The other five are the evidence channels [the forecast
 model](../forecast-model.md) reads to sharpen that prediction _within_ a cycle,
-and both are plotted on the Forecast screen's advanced view so you can see what
-they are doing.
+and every one of them is plotted on the Forecast screen's advanced view so you
+can see what it is doing.
+
+They split into two families, and that split is why there are five rather than
+two. `moodSwings` and `temperature` are **premenstrual** — they speak about the
+days just before a period. `lust`, `sex` and `fertilityTest` are **ovulatory**:
+they peak around ovulation, which is a luteal phase _earlier_, so they say
+something about a part of the cycle the first two are silent on. A positive
+fertility test is the sharpest of the lot — it dates ovulation to within a day,
+and the next period follows it by the steadiest span in the cycle.
 
 The old five-field report failed that test. The bleeding level, the mood roster,
 the 0–3 swing scale and the free-text note were asked every evening and read by
@@ -134,6 +188,7 @@ of it.
 
 Existing reports were carried across when the model changed: any bleeding level
 other than `none` became a yes, and any swing above `steady` became a yes, and
-days logged before the temperature field existed simply carry no reading. The
-mood tags and notes were not migrated — see
+days logged before the temperature field existed simply carry no reading, and
+days logged before the ovulatory fields existed carry a no for lust and sex and
+no test. The mood tags and notes were not migrated — see
 [troubleshooting](../troubleshooting.md).

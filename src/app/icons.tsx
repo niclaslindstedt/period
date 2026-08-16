@@ -62,6 +62,30 @@ export function WaveIcon({ className }: IconProps) {
   );
 }
 
+/** Sex — two interlocking rings. A join rather than a pair of gendered
+ *  symbols: the report asks whether it happened, not who with. */
+export function RingsIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className}>
+      <circle cx="9" cy="12" r="5.5" />
+      <circle cx="15" cy="12" r="5.5" />
+    </Glyph>
+  );
+}
+
+/** An ovulation test — a strip stood on end, with the two bands whose second
+ *  line is the whole answer. Upright rather than boxed so it still reads as a
+ *  strip at the 16px the report screen draws it at. */
+export function TestStripIcon({ className }: IconProps) {
+  return (
+    <Glyph className={className}>
+      <rect x="8" y="2" width="8" height="20" rx="2.5" />
+      <path d="M9.5 8h5" />
+      <path d="M9.5 12h5" />
+    </Glyph>
+  );
+}
+
 /** Waking temperature — a thermometer, bulb down. */
 export function ThermometerIcon({ className }: IconProps) {
   return (

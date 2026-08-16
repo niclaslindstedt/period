@@ -94,22 +94,42 @@ A day with **no report at all** stays possible. Not logging is not a claim.
 
 ## The multivariate model: what this cycle is telling you
 
-Two further channels of evidence, both optional, both learned from your own
+Five further channels of evidence, all optional, all read against your own
 history and nobody else's.
+
+They come in two families, and the split is what makes five worth asking rather
+than two:
+
+- **Premenstrual** — mood swings and waking temperature. They speak about the
+  fortnight before a period.
+- **Ovulatory** — lust, sex and the fertility test. They speak about ovulation,
+  which is a luteal phase _earlier_ — the half of the cycle the first two are
+  silent on. They matter most in the middle of a cycle, while the forecast still
+  has a fortnight of spread left to sharpen.
 
 ### The shape of a channel
 
-Every channel works the same way, which is what makes a third one cheap:
+Every channel works the same way, which is what makes a further one cheap:
 
-1. Assign every reported day the number of days from it to the **next observed
+1. Assign every answered day the number of days from it to the **next observed
    period start** — its _lag_.
-2. Lags 0–13 (the luteal phase) build a **profile**; everything else builds the
-   **baseline** the profile is contrasted against.
+2. Lags inside the channel's **window** build a **profile**; everything outside
+   it builds the **baseline** the profile is contrasted against.
 3. At prediction time, each candidate onset day implies a lag for every recent
    report. Score those reports under the profile against the baseline, and
    reweight the day by the likelihood ratio.
 
+The window is 14 days for the premenstrual channels and 21 for the ovulatory
+ones. Twenty-one is not a round number: ovulation sits about 14 days before an
+onset, so a 14-day window would put the thing these channels are about exactly
+on its own edge and see none of the days around it. Twenty-one covers ovulation
+and the fertile days either side while still leaving the first week of a typical
+cycle outside — and the contrast against that week, when lust is lowest and
+nobody is testing, is what the profile measures.
+
 Days after the last observed start have no known lag and are used for neither.
+Neither are days the question was not answered on: a morning with no fertility
+test is not a negative, it is no observation at all.
 
 ### Mood swings
 
@@ -153,28 +173,82 @@ two Normals sharing that spread collapses to a difference of squares:
 ln LR = Σ [ (dev − baseline)² − (dev − mean[lag])² ] / 2σ²
 ```
 
+### Lust and sex
+
+Sex drive rises toward ovulation. Both channels are Bernoulli rates per lag —
+identical machinery to mood swings, over the longer window — so the only thing
+that differs is where the hump lands: in the middle of the chart rather than at
+its right-hand end.
+
+Neither is assumed to work. `sex` in particular is confounded (a weekend is not
+a hormone), and the same shrinkage that keeps a two-cycle mood profile flat is
+what keeps a channel that does not track the cycle flat however long it is
+logged. A flat profile changes nothing, so a channel that predicts nothing costs
+nothing — which is exactly why it is safe to ask.
+
+### Fertility tests
+
+The one channel whose profile is **constructed** rather than learned, and the
+reason is what a strip is: an assay for one hormone with a known relationship to
+one event. The shape of `rate[lag]` is not a personal idiosyncrasy waiting to be
+discovered — it is a bump on the days a surge could fall on. The only genuinely
+personal number in it is where that bump sits: the **lead** from a positive test
+to the next period.
+
+So the lead is what gets learned. It starts at the luteal phase from
+**Settings → Cycle** plus a day (a strip turns positive roughly a day before
+ovulation) and is pulled toward whatever your own positives have actually been
+followed by, at two tests' worth of inertia. That is what lets a strip help on
+the first cycle you use one; a learned profile would need a season of tests
+before it said anything, and a season of tests is not why anyone buys them.
+
+The bump is a Normal density over the lag, scaled by the chance of catching a
+surge at all (0.75) and sitting on a small false-positive floor. **It is a
+distribution, not a level** — the whole bump is worth about one caught surge,
+not one per lag inside it. A bump that peaked at the detection rate would be
+claiming three or four positive strips a cycle, and would then read the entirely
+expected negatives on the days either side of a real positive as evidence
+against it.
+
+Because the baseline sits above the floor, a positive at the wrong distance from
+a candidate counts _against_ that candidate rather than merely failing to count
+for it.
+
 ### Why the evidence is deliberately discounted
 
 The likelihood above treats days as conditionally independent. They are not — a
 rough stretch is one episode, not five, and a luteal plateau is one
 physiological state producing a fortnight of near-identical readings. Rather
 than pretend otherwise, each channel's log-likelihood ratio is **tempered** by a
-fixed exponent (0.5 for mood, 0.35 for temperature) and **clamped** to ±3.
-Channels are clamped before they are summed, and the total is clamped again at
-±4.5.
+fixed exponent and **clamped** to ±3. Channels are clamped before they are
+summed, and the total is clamped again at ±4.5.
+
+| Channel        | Temper | Why                                                         |
+| -------------- | ------ | ----------------------------------------------------------- |
+| Mood swings    | 0.5    | A rough stretch is one episode reported many times          |
+| Lust, sex      | 0.35   | Correlated within themselves _and_ with each other          |
+| Fertility test | 0.8    | One measurement of one event; little left to double-count   |
+| Temperature    | 0.35   | A luteal plateau is one state producing a fortnight of data |
 
 The result: this cycle's reports can move the date by a few days, and can never
-overrule the cycle history. Under-claiming is the right failure mode when the
-alternative is over-counting correlated observations.
+overrule the cycle history. Five channels that all agree still cannot break the
+±4.5 ceiling. Under-claiming is the right failure mode when the alternative is
+over-counting correlated observations.
 
 ### It stays silent until it has something to say
 
-A channel needs reported days in both the window and the baseline before it is
-used at all — 20 for mood, 12 for temperature. Below that, per-lag rates are
-shrunk almost entirely back to the overall rate by a pseudo-count, the profile
-comes out flat, and a flat profile changes nothing. **With too little history,
-the multivariate model reduces exactly to the univariate one**, which is why it
-is the default: there is no early-days penalty to opt out of.
+A learned channel needs answered days in both the window and the baseline before
+it is used at all — 20 for mood, lust and sex, 12 for temperature. Below that,
+per-lag rates are shrunk almost entirely back to the overall rate by a
+pseudo-count, the profile comes out flat, and a flat profile changes nothing.
+
+The fertility test is the exception, and only because its profile is not
+estimated from a sample: it needs a test to read, not a history to learn from.
+Until one is logged the channel is absent entirely.
+
+**With too little history, the multivariate model reduces exactly to the
+univariate one**, which is why it is the default: there is no early-days penalty
+to opt out of.
 
 ## From a distribution to a date
 

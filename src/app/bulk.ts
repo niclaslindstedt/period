@@ -8,8 +8,8 @@
 // simply because they log the whole thing on the day it ends — was tapping the
 // date, tapping Blood, tapping Save, six times over.
 //
-// So the picker can select a span, and Save writes the same two answers to
-// every day in it. That is the *whole* of the feature: the answers are the two
+// So the picker can select a span, and Save writes the same yes/no answers to
+// every day in it. That is the *whole* of the feature: the answers are the
 // booleans the derivation actually reads, the days are enumerated here, and
 // nothing new is stored — a bulk report is exactly the reports it expands to,
 // which is why the forecast needs to know nothing about this module.
@@ -64,26 +64,34 @@ export function loggedCount(data: AppData, range: DayRange): number {
   return daysInRange(range).filter((day) => data.entries[day]).length;
 }
 
-/** The two answers a bulk report carries. Deliberately not a `DayEntry`: a
- *  span has no single temperature, and this type is what says so. */
+/** The yes/no answers a bulk report carries. Deliberately not a `DayEntry`: a
+ *  span has no single temperature and no single test result, and this type is
+ *  what says so. */
 export type BulkAnswers = {
   bleeding: boolean;
   moodSwings: boolean;
+  lust: boolean;
+  sex: boolean;
 };
 
 /**
- * The entries a bulk save writes: the same two answers on every day of the
+ * The entries a bulk save writes: the same yes/no answers on every day of the
  * span, each stamped `now`.
  *
- * **A day's existing temperature survives.** A waking temperature is a
- * measurement of one morning, so a span cannot carry one — but neither may it
- * quietly erase the ones already recorded on the days it covers. Filing "I bled
- * these six days" over a week you took your temperature every morning has to
- * leave those six readings exactly where they were, or the bulk gesture would
- * be a data-loss trap wearing a convenience label. That is also why the
- * temperature control is disabled while a span is selected rather than merely
- * ignored: a control you can still move, whose value is then dropped, promises
- * something the save doesn't do.
+ * **A day's existing measurements survive.** A waking temperature and an
+ * ovulation test are both one morning's observation, so a span cannot carry
+ * either — but neither may it quietly erase the ones already recorded on the
+ * days it covers. Filing "I bled these six days" over a week you took your
+ * temperature every morning has to leave those six readings exactly where they
+ * were, or the bulk gesture would be a data-loss trap wearing a convenience
+ * label. That is also why both controls are disabled while a span is selected
+ * rather than merely ignored: a control you can still move, whose value is then
+ * dropped, promises something the save doesn't do.
+ *
+ * The yes/no answers are *not* preserved, because they are what the span is
+ * filing. That is the same trade the screen has always made for `moodSwings`,
+ * and `lust` and `sex` travel with it for the same reason: a span writes a
+ * report, and a report answers every question on the screen.
  */
 export function bulkEntries(
   data: AppData,
@@ -95,7 +103,10 @@ export function bulkEntries(
     date: day,
     bleeding: answers.bleeding,
     moodSwings: answers.moodSwings,
+    lust: answers.lust,
+    sex: answers.sex,
     temperature: data.entries[day]?.temperature ?? null,
+    fertilityTest: data.entries[day]?.fertilityTest ?? null,
     updatedAt: now,
   }));
 }

@@ -23,7 +23,10 @@ function entry(date: string, patch: Partial<DayEntry> = {}): DayEntry {
     date,
     bleeding: false,
     moodSwings: false,
+    lust: false,
+    sex: false,
     temperature: null,
+    fertilityTest: null,
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...patch,
   };
@@ -106,11 +109,46 @@ describe("loggedCount", () => {
 describe("bulkEntries", () => {
   const span = { start: "2026-03-01", end: "2026-03-05" };
 
+  it("keeps a fertility test already recorded on a day it covers", () => {
+    // Same contract as the temperature, and the same reason: a strip is one
+    // morning's observation, so a span cannot carry one — and must not erase
+    // the ones already there.
+    const doc = docOf(
+      entry("2026-03-02", { fertilityTest: "positive" }),
+      entry("2026-03-04", { fertilityTest: "negative" }),
+    );
+    const written = bulkEntries(
+      doc,
+      span,
+      { bleeding: true, moodSwings: false, lust: false, sex: false },
+      NOW,
+    );
+    expect(
+      Object.fromEntries(written.map((e) => [e.date, e.fertilityTest])),
+    ).toEqual({
+      "2026-03-01": null,
+      "2026-03-02": "positive",
+      "2026-03-03": null,
+      "2026-03-04": "negative",
+      "2026-03-05": null,
+    });
+  });
+
+  it("writes the ovulatory answers to every day in the span too", () => {
+    const written = bulkEntries(
+      emptyDoc(),
+      span,
+      { bleeding: false, moodSwings: false, lust: true, sex: true },
+      NOW,
+    );
+    expect(written.every((e) => e.lust && e.sex)).toBe(true);
+  });
+
   it("writes the two answers to every day in the span", () => {
     const written = bulkEntries(
       emptyDoc(),
       span,
-      { bleeding: true, moodSwings: false },
+      { bleeding: true, moodSwings: false, lust: false, sex: false },
       NOW,
     );
     expect(written.map((e) => e.date)).toEqual(daysInRange(span));
@@ -129,7 +167,7 @@ describe("bulkEntries", () => {
     const written = bulkEntries(
       doc,
       span,
-      { bleeding: true, moodSwings: true },
+      { bleeding: true, moodSwings: true, lust: false, sex: false },
       NOW,
     );
     const temperatures = Object.fromEntries(
@@ -151,7 +189,7 @@ describe("bulkEntries", () => {
     const written = bulkEntries(
       doc,
       span,
-      { bleeding: false, moodSwings: false },
+      { bleeding: false, moodSwings: false, lust: false, sex: false },
       NOW,
     );
     const third = written.find((e) => e.date === "2026-03-03");
@@ -162,7 +200,7 @@ describe("bulkEntries", () => {
     const written = bulkEntries(
       emptyDoc(),
       { start: "2026-03-01", end: "2026-03-01" },
-      { bleeding: true, moodSwings: false },
+      { bleeding: true, moodSwings: false, lust: false, sex: false },
       NOW,
     );
     expect(written).toHaveLength(1);

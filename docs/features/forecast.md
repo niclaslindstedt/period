@@ -50,8 +50,7 @@ Four chips underneath change how it is drawn, and nothing else:
 | **Compare**              | Overlay what the cycle history alone predicted, before this cycle's reports |
 
 **Compare** is the interesting one: the dashed line is the forecast without this
-cycle's mood swings and temperatures, so the gap between the two is exactly what
-today's reports changed.
+cycle's reports at all, so the gap between the two is exactly what they changed.
 
 ## Simple and advanced
 
@@ -69,6 +68,15 @@ week. That is what the screen is for, and most people never need more.
   from with its weight.
 - **Your mood pattern** — how often you reported mood swings at each number of
   days before a period started, against the rate for the rest of the cycle.
+- **Your lust pattern** and **Your sex pattern** — the same chart for the two
+  ovulatory answers. Their hump sits in the middle rather than at the right-hand
+  end, because it is ovulation they are about. A flat sex chart is a fact about
+  a life rather than a gap in your logging, and a flat channel is one the model
+  leaves out.
+- **Your fertility tests** — how likely a test is to read positive at each of
+  those lags, and the lead it implies: how many days a positive strip puts
+  between itself and the next period. The line says whether that number came
+  from your own positives or from the luteal phase in Settings.
 - **Your temperature pattern** — how far above the rest of your cycle your
   waking temperature sat at each of those lags, and the size of the rise after
   ovulation.
@@ -85,14 +93,16 @@ The **Based on** setting (also in **Settings → Forecast**) chooses what the
 model may read.
 
 - **Cycles** — the gaps between your period starts, and nothing else.
-- **Cycles + reports** — that, plus this cycle's mood swings and waking
-  temperatures. Both cluster in the days before a period, so they say something
-  about when the next one is due.
+- **Cycles + reports** — that, plus this cycle's mood swings, lust, sex,
+  fertility tests and waking temperatures. Mood and temperature cluster in the
+  days before a period; lust, sex and a positive test cluster around ovulation,
+  a fortnight earlier. Between them they say something about when the next
+  period is due from either half of the cycle.
 
-Cycles + reports is the default. It falls back to the cycles-only forecast on
-its own until there are enough reported days to learn your pattern, so there is
-no early-days cost to leaving it on — the advanced view says plainly when a
-pattern is still too thin to use.
+Cycles + reports is the default. Each channel falls back to the cycles-only
+forecast on its own until there are enough reported days to learn that pattern,
+so there is no early-days cost to leaving it on — the advanced view says plainly
+when a pattern is still too thin to use.
 
 For the arithmetic behind all of it, see
 [the forecast model](../forecast-model.md); for the period and phase

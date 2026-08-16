@@ -13,10 +13,24 @@
 import { createMigrator } from "@niclaslindstedt/oss-framework/storage";
 
 import { normalizeStoredTemperature } from "./temperature.ts";
-import { DOC_VERSION, emptyDoc, type AppData, type DayEntry } from "./types.ts";
+import {
+  DOC_VERSION,
+  emptyDoc,
+  type AppData,
+  type DayEntry,
+  type FertilityTest,
+} from "./types.ts";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Read a stored ovulation-test result. Anything that is not one of the two
+ *  words this build knows becomes "no test taken" — the claim that loses the
+ *  least, since a day with no test is already the common case and the model
+ *  simply skips it. */
+function parseFertilityTest(value: unknown): FertilityTest | null {
+  return value === "positive" || value === "negative" ? value : null;
 }
 
 /** Coerce one stored entry into a valid `DayEntry`, or drop it when it isn't
@@ -28,10 +42,13 @@ function parseEntry(day: string, value: unknown): DayEntry | null {
     date: typeof value.date === "string" ? value.date : day,
     bleeding: value.bleeding === true,
     moodSwings: value.moodSwings === true,
+    lust: value.lust === true,
+    sex: value.sex === true,
     // An implausible number is dropped to null rather than clamped: a reading
     // of 365 is a mis-keyed 36.5, and inventing 45 °C out of it would be worse
     // than having no reading for the day.
     temperature: normalizeStoredTemperature(value.temperature),
+    fertilityTest: parseFertilityTest(value.fertilityTest),
     updatedAt:
       typeof value.updatedAt === "string"
         ? value.updatedAt
@@ -88,6 +105,22 @@ const migrator = createMigrator({
           : value;
       }
       return { ...doc, version: 3, entries };
+    },
+    // v4 adds the three ovulatory channels. Additive in exactly the way v3 was:
+    // every existing day gets `lust: false`, `sex: false` and no test, which is
+    // the claim the absent fields already made. The two booleans default to a
+    // no rather than to "unknown" because that is what the rest of the document
+    // means by a saved day — a report is an answer to every question on the
+    // screen at the time it was filed.
+    3: (doc) => {
+      const entriesRaw = isRecord(doc.entries) ? doc.entries : {};
+      const entries: Record<string, unknown> = {};
+      for (const [day, value] of Object.entries(entriesRaw)) {
+        entries[day] = isRecord(value)
+          ? { ...value, lust: false, sex: false, fertilityTest: null }
+          : value;
+      }
+      return { ...doc, version: 4, entries };
     },
   },
 });

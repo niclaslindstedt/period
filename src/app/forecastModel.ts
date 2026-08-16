@@ -63,8 +63,43 @@
 // history. Under-claiming here is the right failure: this is the only
 // respectable way to use five correlated binary observations.
 //
-// The structure generalises. A third symptom is another profile and another
+// The structure generalises. A further symptom is another profile and another
 // factor in the product — nothing about the model is specific to mood swings.
+//
+// ## The ovulatory channels (lust, sex, ovulation tests)
+//
+// Mood swings and temperature both speak about the *fortnight before* an onset.
+// That leaves the first half of the cycle silent, and the first half of the
+// cycle is where the one genuinely datable event lives: ovulation. The luteal
+// phase between ovulation and the next onset is the steadiest span in the whole
+// cycle — far steadier than the follicular phase that precedes it — so anything
+// that pins down ovulation pins down the onset better than anything measured
+// afterwards can.
+//
+// Three reports do that, and they are read over a longer window
+// ({@link OVULATORY_WINDOW}) precisely so the profile can reach back past the
+// luteal phase to the days ovulation actually falls on:
+//
+//   - **Lust.** Sex drive rises toward ovulation. A learned per-lag rate, the
+//     same machinery as mood swings, only with the peak in a different place.
+//   - **Sex.** The same, and deliberately learned rather than assumed: whether
+//     it tracks the cycle at all is a fact about a person's life, not about
+//     their hormones. The shrinkage that keeps a thin mood profile flat is what
+//     keeps a *confounded* channel flat here, so a report that predicts nothing
+//     moves nothing.
+//   - **An ovulation test.** Different in kind, and the only channel whose
+//     profile is not learned from scratch. An LH strip is a calibrated
+//     instrument for one event, so its profile is *constructed*: a bump of
+//     positive-test probability centred on the lead from a surge to the next
+//     onset, with the centre of that bump shrunk toward the configured luteal
+//     phase and pulled by whatever positives the history holds. That is what
+//     lets a strip help on the first cycle it is used, which is the whole
+//     reason anyone buys them.
+//
+// The channels stay separate terms in the same clamped product. Lust and sex
+// are correlated with each other and with the same underlying event, so they
+// are tempered harder than mood is; the total is capped as before, so five
+// channels that all agree still cannot overrule the cycle history.
 //
 // ## How long an episode lasts
 //
@@ -162,6 +197,39 @@ export type ModelOptions = {
    *  before the symptom profile is used at all. Below this the multivariate
    *  model deliberately reduces to the univariate one. */
   symptomMinDays: number;
+  /** Exponent applied to each ovulatory binary channel's log-likelihood-ratio.
+   *  Lower than the mood one because lust and sex are correlated with *each
+   *  other* as well as within themselves, and two terms that double-count the
+   *  same evening would otherwise say twice what one evening is worth. */
+  ovulatoryTemper: number;
+  /** Exponent applied to the ovulation-test log-likelihood-ratio. Higher than
+   *  the others: a strip is a measurement of one event on one day rather than a
+   *  mood that ran all week, so there is far less autocorrelation to discount —
+   *  and there are only ever a handful of them to read. */
+  fertilityTemper: number;
+  /**
+   * Spread, in days, of the lead from a positive ovulation test to the next
+   * onset. Two days: the luteal phase is the least variable stretch of the
+   * cycle, and the residual is mostly *when the strip was read* rather than
+   * when the corpus luteum gave out.
+   */
+  fertilityLeadSd: number;
+  /**
+   * How much the configured luteal phase counts for, in positive tests, when
+   * estimating that lead. Two, so a first strip is read against the textbook
+   * span and a season of them is read against the reader's own.
+   */
+  fertilityLeadPriorStrength: number;
+  /**
+   * Ceiling on the *combined* log-likelihood ratio, after every channel has
+   * been tempered and clamped on its own.
+   *
+   * The point of a separate ceiling is that channels which agree should be able
+   * to say more than any one of them alone, but never so much more that the
+   * cycle history stops mattering. e⁴·⁵ ≈ 90:1 against the prior is already
+   * further than five noisy indicators deserve to move a date.
+   */
+  evidenceMaxLogLr: number;
   /** Exponent applied to the temperature log-likelihood-ratio. Lower than the
    *  mood one: a luteal plateau is a single physiological state producing a
    *  fortnight of near-identical readings, so treating them as independent
@@ -197,6 +265,11 @@ export const DEFAULT_MODEL_OPTIONS: ModelOptions = {
   symptomMaxLogLr: 3,
   symptomShrinkage: 4,
   symptomMinDays: 20,
+  ovulatoryTemper: 0.35,
+  fertilityTemper: 0.8,
+  fertilityLeadSd: 2,
+  fertilityLeadPriorStrength: 2,
+  evidenceMaxLogLr: 4.5,
   temperatureTemper: 0.35,
   temperatureCentreWindow: 45,
   temperatureMinSd: 0.06,
@@ -212,6 +285,24 @@ export const DEFAULT_MODEL_OPTIONS: ModelOptions = {
  * the rate inside it only means something against the rate outside.
  */
 export const PREMENSTRUAL_WINDOW = 14;
+
+/**
+ * How many days before an onset the ovulatory channels are profiled over.
+ *
+ * It has to reach past the luteal phase, because that is where the event these
+ * channels are about actually sits: ovulation is roughly fourteen days before
+ * an onset, so a window of fourteen would put the peak exactly on its own edge
+ * and see none of the days around it. Twenty-one covers ovulation and the
+ * fertile days either side of it while still leaving the first week of a
+ * typical cycle outside — and the contrast against that week, when lust is
+ * lowest and nobody is testing, is the whole of what these profiles measure.
+ */
+export const OVULATORY_WINDOW = 21;
+
+/** How far back a report can still be evidence about the next onset — the
+ *  longest of the per-channel windows. Each channel then clips to its own,
+ *  so widening this one cannot change what a narrower channel reads. */
+export const EVIDENCE_WINDOW = Math.max(PREMENSTRUAL_WINDOW, OVULATORY_WINDOW);
 
 /** Cycles the backtest needs before it will report anything. Two folds from
  *  three cycles is not an accuracy estimate; it is an anecdote. */
@@ -257,19 +348,51 @@ export type PosteriorParams = {
   spreadDays: number;
 };
 
-/** The estimated relationship between mood swings and an approaching onset. */
-export type SymptomProfile = {
+/**
+ * The estimated relationship between one yes/no report and an approaching
+ * onset.
+ *
+ * One shape for every binary channel — mood swings, lust, sex, and the
+ * constructed ovulation-test profile — because that is all a binary channel
+ * ever is: a rate per lag, and the rate outside the window it is contrasted
+ * against. Adding a channel is a `read` function and a window, and nothing
+ * else in the model changes.
+ */
+export type BinaryProfile = {
   /** Lags covered: 0 (the onset day) up to `window − 1`. */
   window: number;
-  /** `rate[lag]` — P(mood swings reported | `lag` days before onset). */
+  /** `rate[lag]` — P(a yes | `lag` days before onset). */
   rate: number[];
-  /** P(mood swings reported | outside the window). */
+  /** P(a yes | outside the window). */
   baseline: number;
-  /** Reported days behind the in-window rates and the baseline. */
+  /** Observed days behind the in-window rates and the baseline. Days the
+   *  question was not answered — an untaken test — count for neither. */
   windowDays: number;
   baselineDays: number;
   /** Whether there is enough of both to let the profile move the forecast. */
   informative: boolean;
+};
+
+/** The mood-swing channel's profile. The name the screens and the tests know
+ *  it by; the shape is the generic one above. */
+export type SymptomProfile = BinaryProfile;
+
+/**
+ * The ovulation-test channel, as the same profile plus the one number that
+ * built it.
+ *
+ * `leadDays` is exposed rather than kept private because it is the claim the
+ * channel makes — "a positive strip means a period in about this many days" —
+ * and the advanced view quotes it. It is also the only number here a reader
+ * could sanity-check against their own experience.
+ */
+export type FertilityTestProfile = BinaryProfile & {
+  /** Days from a positive test to the next onset: the configured luteal phase
+   *  plus a day for the surge, pulled toward whatever the history has seen. */
+  leadDays: number;
+  /** Positive tests with a known following onset — what `leadDays` was learned
+   *  from, and zero while the prior is doing all the work. */
+  observedPositives: number;
 };
 
 /**
@@ -371,6 +494,11 @@ export type ProbabilisticForecast = {
    *  Present but `informative: false` when there is a profile that is too thin
    *  to be allowed to move anything — which the screen says out loud. */
   symptoms: SymptomProfile | null;
+  /** The two ovulatory yes/no channels, on the same terms as `symptoms`. */
+  lust: BinaryProfile | null;
+  sex: BinaryProfile | null;
+  /** The ovulation-test channel, or null until a test has been logged. */
+  fertilityTest: FertilityTestProfile | null;
   temperature: TemperatureProfile | null;
   /** Days the within-cycle evidence moved the expected date, negative for
    *  earlier. Zero under the univariate model, or when no channel had enough
@@ -529,70 +657,246 @@ export function predictivePmf(params: PosteriorParams, maxDay: number): Pmf {
   );
 }
 
-// --- The symptom profile --------------------------------------------------
+// --- The binary channels --------------------------------------------------
+
+/** How one day answers a binary channel: true, false, or *not answered* —
+ *  which is a third thing, and the reason an ovulation test can share this
+ *  machinery with a question that is answered every evening. */
+export type BinaryRead = (entry: DayEntry) => boolean | null;
 
 /**
- * Estimate P(mood swings | days before onset) from the history.
+ * Estimate P(a yes | days before onset) from the history.
  *
- * Every reported day is assigned the lag to the next observed period start.
- * Days inside {@link PREMENSTRUAL_WINDOW} build the profile; days outside it
- * build the baseline the profile is contrasted against. Days after the last
- * observed start have no known lag and are used for neither — guessing one
- * would put the most recent (and most interesting) days into whichever bucket
- * the guess favoured.
+ * Every answered day is assigned the lag to the next observed period start.
+ * Days inside `window` build the profile; days outside it build the baseline
+ * the profile is contrasted against. Days after the last observed start have no
+ * known lag and are used for neither — guessing one would put the most recent
+ * (and most interesting) days into whichever bucket the guess favoured. Days
+ * where `read` returns null were not answered at all and are used for neither
+ * either.
  *
  * Each lag's rate is shrunk toward the overall rate by a pseudo-count and then
  * smoothed across neighbouring lags, because the underlying profile is a
- * gradual rise toward onset rather than a comb of independent spikes. With a
+ * gradual rise toward an event rather than a comb of independent spikes. With a
  * handful of cycles this leaves the profile nearly flat, and a nearly flat
  * profile is one that changes nothing — which is the behaviour a two-cycle
- * history deserves.
+ * history deserves, and also the behaviour a channel that simply does not track
+ * the cycle deserves however long it is logged.
  */
+export function binaryProfile(
+  data: AppData,
+  periods: readonly PeriodSpan[],
+  options: ModelOptions,
+  read: BinaryRead,
+  window: number,
+  minDays: number = options.symptomMinDays,
+): BinaryProfile | null {
+  if (periods.length === 0) return null;
+
+  const starts = periods.map((p) => p.start);
+  const windowYes = new Array<number>(window).fill(0);
+  const windowDaysAt = new Array<number>(window).fill(0);
+  let baselineYes = 0;
+  let baselineDays = 0;
+
+  for (const entry of sortedEntries(data)) {
+    const answer = read(entry);
+    if (answer === null) continue;
+    const lag = lagToNextStart(entry.date, starts);
+    if (lag === null) continue;
+    if (lag < window) {
+      windowDaysAt[lag]! += 1;
+      if (answer) windowYes[lag]! += 1;
+    } else {
+      baselineDays += 1;
+      if (answer) baselineYes += 1;
+    }
+  }
+
+  const windowDays = windowDaysAt.reduce((sum, d) => sum + d, 0);
+  const totalDays = baselineDays + windowDays;
+  if (totalDays === 0) return null;
+  const overall =
+    (baselineYes + windowYes.reduce((sum, s) => sum + s, 0)) / totalDays;
+
+  const a = options.symptomShrinkage;
+  const shrunk = windowDaysAt.map(
+    (days, lag) => (windowYes[lag]! + a * overall) / (days + a),
+  );
+
+  return {
+    window,
+    // Wrapped rather than passed by reference: `map` supplies the index as a
+    // second argument, which `clampRate` would read as a floor.
+    rate: smoothProfile(shrunk).map((r) => clampRate(r)),
+    baseline: clampRate((baselineYes + a * overall) / (baselineDays + a)),
+    windowDays,
+    baselineDays,
+    informative: windowDays >= minDays && baselineDays >= minDays,
+  };
+}
+
+/** The mood-swing profile: the premenstrual channel, over the premenstrual
+ *  window. */
 export function symptomProfile(
   data: AppData,
   periods: readonly PeriodSpan[],
   options: ModelOptions,
 ): SymptomProfile | null {
+  return binaryProfile(
+    data,
+    periods,
+    options,
+    (e) => e.moodSwings,
+    PREMENSTRUAL_WINDOW,
+  );
+}
+
+/** The lust profile: an ovulatory channel, so it is read over the longer
+ *  window that reaches back to ovulation itself. */
+export function lustProfile(
+  data: AppData,
+  periods: readonly PeriodSpan[],
+  options: ModelOptions,
+): BinaryProfile | null {
+  return binaryProfile(data, periods, options, (e) => e.lust, OVULATORY_WINDOW);
+}
+
+/** The sex profile. Identical machinery to lust, and separate from it because
+ *  wanting to and doing are different days for most people — and because
+ *  whether either tracks the cycle is a question the history answers rather
+ *  than one the model assumes. */
+export function sexProfile(
+  data: AppData,
+  periods: readonly PeriodSpan[],
+  options: ModelOptions,
+): BinaryProfile | null {
+  return binaryProfile(data, periods, options, (e) => e.sex, OVULATORY_WINDOW);
+}
+
+// --- The ovulation-test channel -------------------------------------------
+
+/**
+ * The chance a surge is caught at all, by someone testing through the days it
+ * could fall on. Not 1: a strip read at the wrong hour of a surge that lasts
+ * about a day is the ordinary way to miss one.
+ *
+ * It is spread across the lags rather than placed on any of them, which is the
+ * subtle half of this profile and the half that is easy to get wrong. `rate` is
+ * a *marginal* — the chance a test taken at this lag reads positive — and a
+ * surge happens once, so those chances have to add up to one detection across
+ * the bump, not to one at every lag inside it. A bump that peaked at the
+ * detection rate would be claiming three or four positive strips a cycle, and
+ * would then read the (entirely expected) negatives on the days either side of
+ * a real positive as evidence against it.
+ */
+const FERTILITY_TEST_DETECTION = 0.75;
+
+/** How often a test reads positive at a lag the surge is nowhere near — LH
+ *  pulses outside the surge, and strips read optimistically. Small, and
+ *  non-zero so a mistimed positive is finite evidence rather than an
+ *  impossibility. */
+const FERTILITY_TEST_FLOOR = 0.01;
+
+/** The rate a test is contrasted against: how often a test taken at a lag the
+ *  profile says nothing about comes back positive. Above the floor, so a
+ *  positive strip at the wrong distance from an onset counts *against* that
+ *  onset instead of merely failing to count for it. */
+const FERTILITY_TEST_BASELINE = 0.02;
+
+/** The narrowest and widest lead from a positive test to an onset that is worth
+ *  learning from. Outside it the "positive" was a mistimed strip or an onset
+ *  that was never logged, and averaging it in would move the centre of the
+ *  bump by more than the observation is worth. */
+const FERTILITY_LEAD_RANGE = { min: 5, max: OVULATORY_WINDOW - 1 } as const;
+
+/**
+ * Build the ovulation-test profile.
+ *
+ * The one channel whose per-lag rates are *constructed* rather than learned,
+ * and the reason is what a strip is: an assay for a single hormone with a known
+ * relationship to a single event. The shape of `rate[lag]` is not a personal
+ * idiosyncrasy waiting to be discovered — it is a bump on the days a surge
+ * could be, and the only genuinely personal number in it is where that bump
+ * sits, which is the lead from the surge to the next onset.
+ *
+ * So the lead is what gets learned. It starts at the configured luteal phase
+ * plus a day (a strip turns positive roughly a day before ovulation) and is
+ * pulled toward whatever the reader's own positives have actually been followed
+ * by, at {@link ModelOptions.fertilityLeadPriorStrength} tests' worth of
+ * inertia. That is what lets a strip help on the very first cycle it is used —
+ * a learned profile would need a season of tests before it said anything, and a
+ * season of tests is not why anyone buys them.
+ *
+ * Returns null until at least one test has been logged: a channel nobody uses
+ * should be absent rather than flat, so the screen can say "no tests yet"
+ * rather than draw a bump nothing produced.
+ */
+export function fertilityTestProfile(
+  data: AppData,
+  periods: readonly PeriodSpan[],
+  options: ModelOptions,
+  cycle: CycleOptions = DEFAULT_CYCLE_OPTIONS,
+): FertilityTestProfile | null {
   if (periods.length === 0) return null;
 
   const starts = periods.map((p) => p.start);
-  const windowSwings = new Array<number>(PREMENSTRUAL_WINDOW).fill(0);
-  const windowDaysAt = new Array<number>(PREMENSTRUAL_WINDOW).fill(0);
-  let baselineSwings = 0;
+  const leads: number[] = [];
+  let windowDays = 0;
   let baselineDays = 0;
+  let tests = 0;
 
   for (const entry of sortedEntries(data)) {
+    if (entry.fertilityTest === null) continue;
+    tests += 1;
     const lag = lagToNextStart(entry.date, starts);
     if (lag === null) continue;
-    if (lag < PREMENSTRUAL_WINDOW) {
-      windowDaysAt[lag]! += 1;
-      if (entry.moodSwings) windowSwings[lag]! += 1;
-    } else {
-      baselineDays += 1;
-      if (entry.moodSwings) baselineSwings += 1;
+    if (lag < OVULATORY_WINDOW) windowDays += 1;
+    else baselineDays += 1;
+    if (
+      entry.fertilityTest === "positive" &&
+      lag >= FERTILITY_LEAD_RANGE.min &&
+      lag <= FERTILITY_LEAD_RANGE.max
+    ) {
+      leads.push(lag);
     }
   }
+  if (tests === 0) return null;
 
-  const totalDays = baselineDays + windowDaysAt.reduce((sum, d) => sum + d, 0);
-  if (totalDays === 0) return null;
-  const overall =
-    (baselineSwings + windowSwings.reduce((sum, s) => sum + s, 0)) / totalDays;
+  // The surge precedes ovulation by about a day, and ovulation precedes the
+  // onset by the luteal phase — so a positive strip leads the onset by one more
+  // day than the luteal setting alone.
+  const priorLead = cycle.lutealPhaseLength + 1;
+  const k = options.fertilityLeadPriorStrength;
+  const leadDays =
+    (leads.reduce((sum, l) => sum + l, 0) + k * priorLead) / (leads.length + k);
 
-  const a = options.symptomShrinkage;
-  const shrunk = windowDaysAt.map(
-    (days, lag) => (windowSwings[lag]! + a * overall) / (days + a),
+  // A Normal density over the lag the surge falls on, times the chance of
+  // catching it — so summing `rate − floor` across the window recovers the
+  // detection rate, and one positive strip a cycle is what the profile expects.
+  const sd = Math.max(0.5, options.fertilityLeadSd);
+  const density = (lag: number) =>
+    Math.exp(-((lag - leadDays) ** 2) / (2 * sd ** 2)) /
+    (sd * Math.sqrt(2 * Math.PI));
+  const rate = Array.from({ length: OVULATORY_WINDOW }, (_, lag) =>
+    clampRate(
+      FERTILITY_TEST_FLOOR + FERTILITY_TEST_DETECTION * density(lag),
+      FERTILITY_TEST_FLOOR,
+    ),
   );
-  const windowDays = windowDaysAt.reduce((sum, d) => sum + d, 0);
 
   return {
-    window: PREMENSTRUAL_WINDOW,
-    rate: smoothProfile(shrunk).map(clampRate),
-    baseline: clampRate((baselineSwings + a * overall) / (baselineDays + a)),
+    window: OVULATORY_WINDOW,
+    rate,
+    baseline: FERTILITY_TEST_BASELINE,
     windowDays,
     baselineDays,
-    informative:
-      windowDays >= options.symptomMinDays &&
-      baselineDays >= options.symptomMinDays,
+    // A constructed profile does not need a sample to be usable — it needs a
+    // test to read. The one thing being counted here is whether the reader has
+    // ever taken one.
+    informative: true,
+    leadDays: Math.round(leadDays * 10) / 10,
+    observedPositives: leads.length,
   };
 }
 
@@ -626,9 +930,19 @@ function smoothProfile(rates: readonly number[]): number[] {
   });
 }
 
-/** Keep a rate away from 0 and 1 so its likelihood ratio stays finite. */
-function clampRate(p: number): number {
-  return Math.min(0.98, Math.max(0.02, p));
+/**
+ * Keep a rate away from 0 and 1 so its likelihood ratio stays finite.
+ *
+ * The floor is a parameter because a *learned* rate and a *constructed* one
+ * need different ones. Two percent is the right floor for a rate estimated
+ * from a few dozen days — below that the estimate is noise. A constructed rate
+ * can honestly be smaller than any sample could show, and clamping the
+ * ovulation-test floor up to the learned one would push it onto the baseline it
+ * is meant to be contrasted against, which silently costs a mistimed positive
+ * all of its meaning.
+ */
+function clampRate(p: number, min = 0.02): number {
+  return Math.min(0.98, Math.max(min, p));
 }
 
 // --- The temperature profile ----------------------------------------------
@@ -799,34 +1113,64 @@ export function temperatureLogLikelihoodRatio(
 
 /**
  * The tempered log-likelihood ratio for "the period starts on `candidate`",
- * given the recent reports.
+ * given the recent reports on one binary channel.
  *
- * Each report at lag ℓ before the candidate contributes `ln(rate[ℓ]/baseline)`
- * when swings were reported and `ln((1−rate[ℓ])/(1−baseline))` when they were
- * not — so a quiet run is evidence *against* an imminent onset just as a rough
- * one is evidence for it. Reports at or after the candidate day say nothing
- * about it and are skipped.
+ * Each answered report at lag ℓ before the candidate contributes
+ * `ln(rate[ℓ]/baseline)` for a yes and `ln((1−rate[ℓ])/(1−baseline))` for a no
+ * — so a quiet run is evidence *against* a candidate just as a busy one is
+ * evidence for it. Reports at or after the candidate day say nothing about it
+ * and are skipped, as are days the question was not answered on.
+ *
+ * The tempering exponent is per channel because the over-counting it corrects
+ * for is per channel: a fortnight of mood is one episode reported fourteen
+ * times, while three ovulation tests are three measurements.
  */
+export function binaryLogLikelihoodRatio(
+  candidate: DayKey,
+  recent: readonly DayEntry[],
+  profile: BinaryProfile,
+  options: ModelOptions,
+  read: BinaryRead,
+  temper: number,
+): number {
+  let total = 0;
+  for (const entry of recent) {
+    const answer = read(entry);
+    if (answer === null) continue;
+    const lag = daysBetween(entry.date, candidate);
+    if (lag < 0 || lag >= profile.window) continue;
+    const p = profile.rate[lag]!;
+    const b = profile.baseline;
+    total += answer ? Math.log(p / b) : Math.log((1 - p) / (1 - b));
+  }
+  const tempered = total * temper;
+  return Math.min(
+    options.symptomMaxLogLr,
+    Math.max(-options.symptomMaxLogLr, tempered),
+  );
+}
+
+/** The mood-swing channel's contribution, at the mood tempering. */
 export function symptomLogLikelihoodRatio(
   candidate: DayKey,
   recent: readonly DayEntry[],
   profile: SymptomProfile,
   options: ModelOptions,
 ): number {
-  let total = 0;
-  for (const entry of recent) {
-    const lag = daysBetween(entry.date, candidate);
-    if (lag < 0 || lag >= profile.window) continue;
-    const p = profile.rate[lag]!;
-    const b = profile.baseline;
-    total += entry.moodSwings ? Math.log(p / b) : Math.log((1 - p) / (1 - b));
-  }
-  const tempered = total * options.symptomTemper;
-  return Math.min(
-    options.symptomMaxLogLr,
-    Math.max(-options.symptomMaxLogLr, tempered),
+  return binaryLogLikelihoodRatio(
+    candidate,
+    recent,
+    profile,
+    options,
+    (e) => e.moodSwings,
+    options.symptomTemper,
   );
 }
+
+/** How one day answers the ovulation-test channel: a positive is a yes, a
+ *  negative is a no, and a morning nobody tested is not an answer. */
+export const readFertilityTest: BinaryRead = (entry) =>
+  entry.fertilityTest === null ? null : entry.fertilityTest === "positive";
 
 // --- How long an episode lasts --------------------------------------------
 
@@ -1021,6 +1365,9 @@ export function periodLengthSurvival(
 /** What the within-cycle channels have to work with at prediction time. */
 type Evidence = {
   moods: SymptomProfile | null;
+  lust: BinaryProfile | null;
+  sex: BinaryProfile | null;
+  fertilityTests: FertilityTestProfile | null;
   temperatures: TemperatureProfile | null;
   recent: readonly DayEntry[];
   recentTemperatures: readonly CentredReading[];
@@ -1031,11 +1378,12 @@ type Evidence = {
  * onset day.
  *
  * Each channel is tempered and clamped *before* the sum, so no single one can
- * run away, and the total is clamped again at one and a half times the
- * per-channel cap. That ceiling is the point: two channels that agree should be
- * able to say more than either alone, but never so much more that the cycle
- * history stops mattering. Adding a third channel means one more clamped term
- * here and one more profile above — nothing else in the model changes.
+ * run away, and the total is clamped again at
+ * {@link ModelOptions.evidenceMaxLogLr}. That ceiling is the point: channels
+ * that agree should be able to say more than any of them alone, but never so
+ * much more that the cycle history stops mattering. Adding a channel means one
+ * more clamped term here and one more profile above — nothing else in the model
+ * changes.
  */
 function evidenceLogLikelihoodRatio(
   candidate: DayKey,
@@ -1051,6 +1399,36 @@ function evidenceLogLikelihoodRatio(
       options,
     );
   }
+  if (evidence.lust) {
+    total += binaryLogLikelihoodRatio(
+      candidate,
+      evidence.recent,
+      evidence.lust,
+      options,
+      (e) => e.lust,
+      options.ovulatoryTemper,
+    );
+  }
+  if (evidence.sex) {
+    total += binaryLogLikelihoodRatio(
+      candidate,
+      evidence.recent,
+      evidence.sex,
+      options,
+      (e) => e.sex,
+      options.ovulatoryTemper,
+    );
+  }
+  if (evidence.fertilityTests) {
+    total += binaryLogLikelihoodRatio(
+      candidate,
+      evidence.recent,
+      evidence.fertilityTests,
+      options,
+      readFertilityTest,
+      options.fertilityTemper,
+    );
+  }
   if (evidence.temperatures) {
     total += temperatureLogLikelihoodRatio(
       candidate,
@@ -1059,7 +1437,7 @@ function evidenceLogLikelihoodRatio(
       options,
     );
   }
-  const ceiling = options.symptomMaxLogLr * 1.5;
+  const ceiling = options.evidenceMaxLogLr;
   return Math.min(ceiling, Math.max(-ceiling, total));
 }
 
@@ -1102,26 +1480,44 @@ export function probabilisticForecast(
 
   const prior = predictivePmf(params, modelOptions.maxLeadDays);
 
-  // Both profiles are estimated from lags to *observed* onsets, so neither
+  // Every profile is estimated from lags to *observed* onsets, so none of them
   // ever sees the day it is about to be asked to explain.
   const multivariate = model === "multivariate";
   const moods = multivariate
     ? symptomProfile(data, periods, modelOptions)
     : null;
+  const lust = multivariate ? lustProfile(data, periods, modelOptions) : null;
+  const sex = multivariate ? sexProfile(data, periods, modelOptions) : null;
+  const fertilityTest = multivariate
+    ? fertilityTestProfile(data, periods, modelOptions, cycle)
+    : null;
   const temperatures = multivariate
     ? temperatureProfile(data, periods, modelOptions)
     : null;
-  const usableMoods = moods?.informative ? moods : null;
-  const usableTemperatures = temperatures?.informative ? temperatures : null;
-  const hasEvidence = usableMoods !== null || usableTemperatures !== null;
+  const usable = <T extends { informative: boolean }>(profile: T | null) =>
+    profile?.informative ? profile : null;
+  const usableMoods = usable(moods);
+  const usableLust = usable(lust);
+  const usableSex = usable(sex);
+  const usableFertilityTests = usable(fertilityTest);
+  const usableTemperatures = usable(temperatures);
+  const hasEvidence =
+    usableMoods !== null ||
+    usableLust !== null ||
+    usableSex !== null ||
+    usableFertilityTests !== null ||
+    usableTemperatures !== null;
 
+  // One recent window, the widest any channel asks for; each channel then clips
+  // to its own inside its likelihood ratio. A single filter here is what keeps
+  // the premenstrual channels reading exactly the days they always did while
+  // the ovulatory ones reach back to ovulation.
   const recent = sortedEntries(data).filter(
-    (e) => e.date <= today && daysBetween(e.date, today) < PREMENSTRUAL_WINDOW,
+    (e) => e.date <= today && daysBetween(e.date, today) < EVIDENCE_WINDOW,
   );
   const recentTemperatures = usableTemperatures
     ? centredTemperatures(data, modelOptions).filter(
-        (r) =>
-          r.date <= today && daysBetween(r.date, today) < PREMENSTRUAL_WINDOW,
+        (r) => r.date <= today && daysBetween(r.date, today) < EVIDENCE_WINDOW,
       )
     : [];
 
@@ -1134,6 +1530,9 @@ export function probabilisticForecast(
       Math.exp(
         evidenceLogLikelihoodRatio(day, modelOptions, {
           moods: usableMoods,
+          lust: usableLust,
+          sex: usableSex,
+          fertilityTests: usableFertilityTests,
           temperatures: usableTemperatures,
           recent,
           recentTemperatures,
@@ -1199,6 +1598,9 @@ export function probabilisticForecast(
     params,
     observations,
     symptoms: moods,
+    lust,
+    sex,
+    fertilityTest,
     temperature: temperatures,
     // Measured on the median, the same statistic the headline moves by — so
     // "this cycle's reports moved it two days earlier" is a claim about the

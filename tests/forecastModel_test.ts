@@ -6,10 +6,16 @@ import { addDays, daysBetween } from "@niclaslindstedt/oss-framework/calendar";
 import { DEFAULT_CYCLE_OPTIONS } from "../src/app/cycle.ts";
 import {
   backtest,
+  binaryLogLikelihoodRatio,
   centredTemperatures,
   confidenceFrom,
   DEFAULT_MODEL_OPTIONS,
+  fertilityTestProfile,
   fitPosterior,
+  lustProfile,
+  OVULATORY_WINDOW,
+  readFertilityTest,
+  sexProfile,
   observationsFrom,
   periodLengthModel,
   periodLengthSurvival,
@@ -66,6 +72,20 @@ type BuildOptions = {
   /** Share of logged days that carry a reading, so a test can be as patchy as
    *  a real morning routine. */
   temperatureCoverage?: number;
+  /** Lust is reported on the days at these lags before each onset — a set of
+   *  lags rather than a count, because the ovulatory channels peak in the
+   *  *middle* of the window rather than up against its right-hand end. */
+  lustLags?: readonly number[];
+  /** Chance of lust on any other reported day. */
+  backgroundLustRate?: number;
+  /** Sex is reported on the days at these lags before each onset. */
+  sexLags?: readonly number[];
+  /** Chance of sex on any other reported day. */
+  backgroundSexRate?: number;
+  /** An ovulation test is taken on the days at these lags before each onset… */
+  testLags?: readonly number[];
+  /** …and reads positive at this one. Every other tested day reads negative. */
+  positiveTestLag?: number;
 };
 
 /** The follicular-phase resting temperature the fixture builds around. */
@@ -86,6 +106,12 @@ function build(opts: BuildOptions): { data: AppData; starts: string[] } {
     logEveryDay = true,
     temperatureShift = 0,
     temperatureCoverage = 1,
+    lustLags = [],
+    backgroundLustRate = 0,
+    sexLags = [],
+    backgroundSexRate = 0,
+    testLags = [],
+    positiveTestLag,
   } = opts;
 
   const data = emptyDoc();
@@ -133,11 +159,23 @@ function build(opts: BuildOptions): { data: AppData; starts: string[] } {
     const date = addDays(firstStart, i);
     const isBleeding = bleeding.has(date);
     if (!logEveryDay && !isBleeding) continue;
+    // The ovulatory channels are placed by lag rather than by date, so a
+    // fixture says "lust on the days around ovulation" and the arithmetic
+    // works out which calendar days those were.
+    const lag = lagOf(date);
+    const at = (lags: readonly number[]) => lag !== null && lags.includes(lag);
     data.entries[date] = {
       date,
       bleeding: isBleeding,
       moodSwings: swinging.has(date) || noise(i + 1) < backgroundSwingRate,
+      lust: at(lustLags) || noise(i + 101) < backgroundLustRate,
+      sex: at(sexLags) || noise(i + 201) < backgroundSexRate,
       temperature: temperatureFor(date, i),
+      fertilityTest: at(testLags)
+        ? lag === positiveTestLag
+          ? "positive"
+          : "negative"
+        : null,
       updatedAt: STAMP,
     };
   }
@@ -391,7 +429,10 @@ describe("periodLengthModel", () => {
       date: "2026-03-01",
       bleeding: true,
       moodSwings: false,
+      lust: false,
+      sex: false,
       temperature: null,
+      fertilityTest: null,
       updatedAt: STAMP,
     };
     const m = periodLengthModel(
@@ -545,7 +586,10 @@ describe("probabilisticForecast", () => {
         date,
         bleeding: false,
         moodSwings: false,
+        lust: false,
+        sex: false,
         temperature: null,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -575,7 +619,10 @@ describe("probabilisticForecast", () => {
           date,
           bleeding: false,
           moodSwings: false,
+          lust: false,
+          sex: false,
           temperature: null,
+          fertilityTest: null,
           updatedAt: STAMP,
         };
       }
@@ -681,7 +728,10 @@ describe("symptomLogLikelihoodRatio", () => {
     date,
     bleeding: false,
     moodSwings,
+    lust: false,
+    sex: false,
     temperature: null,
+    fertilityTest: null,
     updatedAt: STAMP,
   });
 
@@ -747,6 +797,211 @@ describe("symptomLogLikelihoodRatio", () => {
       DEFAULT_MODEL_OPTIONS,
     );
     expect(value).toBeLessThanOrEqual(DEFAULT_MODEL_OPTIONS.symptomMaxLogLr);
+  });
+});
+
+// The ovulatory channels. What separates them from the mood one is *where*
+// their peak sits: an onset-anchored window of a fortnight cannot see ovulation
+// at all, so these read over the longer window and their bump lands in the
+// middle of it rather than up against the right-hand end.
+describe("lustProfile / sexProfile", () => {
+  /** A year of steady cycles with lust reported across the fertile days —
+   *  lags 12–16 before onset, which is ovulation ±2 on a 28-day cycle. */
+  const fertileLags = [12, 13, 14, 15, 16];
+
+  it("finds the mid-cycle rise, a luteal phase before the onset", () => {
+    const { data } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: Array.from({ length: 12 }, () => 28),
+      lustLags: fertileLags,
+      backgroundLustRate: 0.1,
+    });
+    const profile = lustProfile(
+      data,
+      derivePeriods(data),
+      DEFAULT_MODEL_OPTIONS,
+    )!;
+
+    expect(profile.window).toBe(OVULATORY_WINDOW);
+    expect(profile.informative).toBe(true);
+    // The peak is at ovulation, not against the onset — which is the whole
+    // reason this channel is read over a longer window than mood is.
+    expect(profile.rate[14]!).toBeGreaterThan(profile.baseline * 3);
+    expect(profile.rate[14]!).toBeGreaterThan(profile.rate[2]! * 2);
+  });
+
+  it("reads much flatter for a channel that does not track the cycle", () => {
+    // The claim the sex channel rests on: whether it follows the cycle is a
+    // fact about a life rather than about hormones, and a channel that does not
+    // has to produce a profile too flat to move anything. Both fixtures log the
+    // same number of days at a similar overall rate — the only difference is
+    // whether the yeses cluster at a lag.
+    const cycles = Array.from({ length: 12 }, () => 28);
+    const profileOf = (extra: Partial<BuildOptions>) => {
+      const { data } = build({
+        firstStart: "2025-06-02",
+        cycleLengths: cycles,
+        ...extra,
+      });
+      return sexProfile(data, derivePeriods(data), DEFAULT_MODEL_OPTIONS)!;
+    };
+    const structured = profileOf({ sexLags: fertileLags });
+    const confounded = profileOf({ backgroundSexRate: 0.2 });
+
+    const spread = (p: { rate: number[] }) =>
+      Math.max(...p.rate) - Math.min(...p.rate);
+    expect(confounded.informative).toBe(true);
+    expect(spread(confounded)).toBeLessThan(spread(structured) / 2);
+  });
+
+  it("has no profile at all with no periods", () => {
+    expect(lustProfile(emptyDoc(), [], DEFAULT_MODEL_OPTIONS)).toBeNull();
+    expect(sexProfile(emptyDoc(), [], DEFAULT_MODEL_OPTIONS)).toBeNull();
+  });
+});
+
+describe("fertilityTestProfile", () => {
+  const twelveCycles = Array.from({ length: 12 }, () => 28);
+
+  it("is absent until a test has actually been taken", () => {
+    const { data } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: twelveCycles,
+    });
+    expect(
+      fertilityTestProfile(data, derivePeriods(data), DEFAULT_MODEL_OPTIONS),
+    ).toBeNull();
+  });
+
+  it("centres on the luteal phase plus a day before any positive is seen", () => {
+    // Tests taken and all negative: there is nothing to learn the lead from, so
+    // the configured luteal phase is the whole of it.
+    const { data } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: twelveCycles,
+      testLags: [16, 15, 14, 13],
+    });
+    const profile = fertilityTestProfile(
+      data,
+      derivePeriods(data),
+      DEFAULT_MODEL_OPTIONS,
+      DEFAULT_CYCLE_OPTIONS,
+    )!;
+    expect(profile.observedPositives).toBe(0);
+    expect(profile.leadDays).toBe(DEFAULT_CYCLE_OPTIONS.lutealPhaseLength + 1);
+    expect(profile.window).toBe(OVULATORY_WINDOW);
+    // The bump peaks at the lead and is back at the floor a week either side.
+    expect(profile.rate[15]!).toBe(Math.max(...profile.rate));
+    expect(profile.rate[15]!).toBeGreaterThan(profile.baseline * 5);
+    expect(profile.rate[8]!).toBeLessThan(profile.baseline);
+    // And it is a distribution over which day the surge fell on, not a claim
+    // that every day in the middle of the cycle tests positive: the whole bump
+    // is worth about one caught surge, not one per lag inside it.
+    const bump = profile.rate.reduce((sum, r) => sum + r, 0) - 21 * 0.01;
+    expect(bump).toBeGreaterThan(0.6);
+    expect(bump).toBeLessThan(0.9);
+  });
+
+  it("moves the lead toward the reader's own positives", () => {
+    // Surges consistently eleven days before the onset — a short luteal phase,
+    // which the textbook fifteen would put four days wrong.
+    const { data } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: twelveCycles,
+      testLags: [13, 12, 11, 10],
+      positiveTestLag: 11,
+    });
+    const profile = fertilityTestProfile(
+      data,
+      derivePeriods(data),
+      DEFAULT_MODEL_OPTIONS,
+      DEFAULT_CYCLE_OPTIONS,
+    )!;
+    expect(profile.observedPositives).toBe(12);
+    expect(profile.leadDays).toBeGreaterThan(11);
+    expect(profile.leadDays).toBeLessThan(12);
+  });
+
+  it("reads a positive strip as evidence for an onset a lead away", () => {
+    const { data } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: twelveCycles,
+      testLags: [15],
+    });
+    const profile = fertilityTestProfile(
+      data,
+      derivePeriods(data),
+      DEFAULT_MODEL_OPTIONS,
+      DEFAULT_CYCLE_OPTIONS,
+    )!;
+    const positive = [
+      {
+        date: "2026-06-01",
+        bleeding: false,
+        moodSwings: false,
+        lust: false,
+        sex: false,
+        temperature: null,
+        fertilityTest: "positive" as const,
+        updatedAt: STAMP,
+      },
+    ];
+    const onLead = binaryLogLikelihoodRatio(
+      addDays("2026-06-01", Math.round(profile.leadDays)),
+      positive,
+      profile,
+      DEFAULT_MODEL_OPTIONS,
+      readFertilityTest,
+      DEFAULT_MODEL_OPTIONS.fertilityTemper,
+    );
+    const offLead = binaryLogLikelihoodRatio(
+      addDays("2026-06-01", Math.round(profile.leadDays) - 7),
+      positive,
+      profile,
+      DEFAULT_MODEL_OPTIONS,
+      readFertilityTest,
+      DEFAULT_MODEL_OPTIONS.fertilityTemper,
+    );
+    expect(onLead).toBeGreaterThan(1);
+    // A positive at the wrong distance is evidence *against* that day, not
+    // merely a shrug — which is what the baseline sitting above the floor buys.
+    expect(offLead).toBeLessThan(0);
+  });
+
+  it("says nothing at all about a morning nobody tested", () => {
+    const { data } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: twelveCycles,
+      testLags: [15],
+    });
+    const profile = fertilityTestProfile(
+      data,
+      derivePeriods(data),
+      DEFAULT_MODEL_OPTIONS,
+      DEFAULT_CYCLE_OPTIONS,
+    )!;
+    const untested = [
+      {
+        date: "2026-06-01",
+        bleeding: false,
+        moodSwings: false,
+        lust: false,
+        sex: false,
+        temperature: null,
+        fertilityTest: null,
+        updatedAt: STAMP,
+      },
+    ];
+    expect(
+      binaryLogLikelihoodRatio(
+        addDays("2026-06-01", Math.round(profile.leadDays)),
+        untested,
+        profile,
+        DEFAULT_MODEL_OPTIONS,
+        readFertilityTest,
+        DEFAULT_MODEL_OPTIONS.fertilityTemper,
+      ),
+    ).toBe(0);
   });
 });
 
@@ -1008,7 +1263,10 @@ describe("the multivariate model", () => {
         date,
         bleeding: false,
         moodSwings: true,
+        lust: false,
+        sex: false,
         temperature: null,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -1031,7 +1289,10 @@ describe("the multivariate model", () => {
         date,
         bleeding: false,
         moodSwings: false,
+        lust: false,
+        sex: false,
         temperature: null,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -1051,7 +1312,10 @@ describe("the multivariate model", () => {
         date,
         bleeding: false,
         moodSwings: true,
+        lust: false,
+        sex: false,
         temperature: null,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -1079,8 +1343,11 @@ describe("the multivariate model", () => {
         date,
         bleeding: false,
         moodSwings: false,
+        lust: false,
+        sex: false,
         // Raised from cycle day 6 — four days earlier than this history's norm.
         temperature: i >= 9 ? 36.7 : 36.4,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -1108,7 +1375,10 @@ describe("the multivariate model", () => {
         date,
         bleeding: false,
         moodSwings: false,
+        lust: false,
+        sex: false,
         temperature: 36.4,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -1136,7 +1406,10 @@ describe("the multivariate model", () => {
         date,
         bleeding: false,
         moodSwings: i >= 18,
+        lust: false,
+        sex: false,
         temperature: i >= 9 ? 36.7 : 36.4,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -1151,6 +1424,94 @@ describe("the multivariate model", () => {
     // Two agreeing channels may say more than one, but the cycle history is
     // still what the forecast is anchored to.
     expect(Math.abs(multi.evidenceShiftDays)).toBeLessThanOrEqual(8);
+  });
+
+  // The ovulatory channels, end to end. What they buy over the premenstrual
+  // ones is timing: they speak in the middle of the cycle, when the forecast
+  // still has a fortnight of prior spread left to sharpen, rather than in the
+  // last few days when it has nearly resolved itself anyway.
+  it("brings the forecast forward when this cycle's lust peaked early", () => {
+    const { data, starts } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: Array.from({ length: 12 }, () => 28),
+      lustLags: [12, 13, 14, 15, 16],
+      backgroundLustRate: 0.08,
+    });
+    const lastStart = starts[starts.length - 1]!;
+    // Lust on cycle days 8–12 — four days ahead of where this history puts it,
+    // so ovulation came early and the period will follow it.
+    for (let i = 5; i <= 15; i++) {
+      const date = addDays(lastStart, i);
+      data.entries[date] = {
+        date,
+        bleeding: false,
+        moodSwings: false,
+        lust: i >= 7 && i <= 11,
+        sex: false,
+        temperature: null,
+        fertilityTest: null,
+        updatedAt: STAMP,
+      };
+    }
+    const today = addDays(lastStart, 15);
+    const uni = probabilisticForecast(data, today, "univariate")!;
+    const multi = probabilisticForecast(data, today, "multivariate")!;
+
+    expect(multi.lust?.informative).toBe(true);
+    expect(daysBetween(multi.expectedDay, uni.expectedDay)).toBeGreaterThan(0);
+    expect(multi.evidenceShiftDays).toBeLessThan(0);
+  });
+
+  it("dates the next period from a positive fertility test", () => {
+    // A history with no tests in it at all, so the profile is the constructed
+    // one and the lead is the configured luteal phase plus a day. The whole
+    // point of the channel: a strip helps on the first cycle it is used.
+    const { data, starts } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: Array.from({ length: 12 }, () => 28),
+    });
+    const lastStart = starts[starts.length - 1]!;
+    // A surge on cycle day 10 — four days earlier than a 28-day cycle implies.
+    const surge = addDays(lastStart, 9);
+    for (let i = 5; i <= 12; i++) {
+      const date = addDays(lastStart, i);
+      data.entries[date] = {
+        date,
+        bleeding: false,
+        moodSwings: false,
+        lust: false,
+        sex: false,
+        temperature: null,
+        fertilityTest: date === surge ? "positive" : "negative",
+        updatedAt: STAMP,
+      };
+    }
+    const today = addDays(lastStart, 12);
+    const uni = probabilisticForecast(data, today, "univariate")!;
+    const multi = probabilisticForecast(data, today, "multivariate")!;
+
+    expect(multi.fertilityTest?.informative).toBe(true);
+    expect(multi.fertilityTest?.observedPositives).toBe(0);
+    // The strip pulls the date toward the surge plus the lead, and the cycle
+    // history holds it back from landing exactly there.
+    const implied = addDays(surge, DEFAULT_CYCLE_OPTIONS.lutealPhaseLength + 1);
+    expect(daysBetween(multi.expectedDay, uni.expectedDay)).toBeGreaterThan(0);
+    expect(multi.expectedDay >= implied).toBe(true);
+    expect(multi.expectedDay <= uni.expectedDay).toBe(true);
+  });
+
+  it("leaves the forecast alone when no test was taken", () => {
+    // The same fixture with the strips removed. A morning nobody tested is not
+    // a negative, so the channel has to be silent rather than confident.
+    const { data, starts } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: Array.from({ length: 12 }, () => 28),
+    });
+    const today = addDays(starts[starts.length - 1]!, 12);
+    const uni = probabilisticForecast(data, today, "univariate")!;
+    const multi = probabilisticForecast(data, today, "multivariate")!;
+    expect(multi.fertilityTest).toBeNull();
+    expect(multi.expectedDay).toBe(uni.expectedDay);
   });
 
   it("ignores temperature entirely under the univariate model", () => {

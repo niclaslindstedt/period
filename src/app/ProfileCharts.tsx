@@ -1,28 +1,44 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 import { BarChart } from "@niclaslindstedt/oss-framework/charts";
 
-import type { SymptomProfile, TemperatureProfile } from "./forecastModel.ts";
+import type { BinaryProfile, TemperatureProfile } from "./forecastModel.ts";
 import { useT } from "./i18n/index.ts";
 import type { TemperatureUnit } from "./temperature.ts";
 
-// The two patterns the multivariate model learned, drawn.
+// The patterns the multivariate model learned, drawn.
 //
 // These are the "show your working" charts. The forecast claims that mood
-// swings and waking temperature say something about when a period is coming;
-// these are the evidence for that claim, read straight out of the reader's own
-// reports. A flat pair of charts means the model is not using them, which is
-// exactly what the panel around them says in words — and a reader who can see
-// the flatness does not have to take that on trust.
+// swings, lust, sex, fertility tests and waking temperature say something about
+// when a period is coming; these are the evidence for that claim, read straight
+// out of the reader's own reports. A flat chart means the model is not using
+// that channel, which is exactly what the panel around it says in words — and a
+// reader who can see the flatness does not have to take that on trust.
 //
-// Both run right to left: the x axis counts *down* to the period, so the day it
-// starts is at the right-hand end, where a reader's eye already expects "now".
-// The framework's `BarChart` handles the marks, the axis and the tooltips, so
-// these are only about orientation, labelling and units.
+// They all run right to left: the x axis counts *down* to the period, so the
+// day it starts is at the right-hand end, where a reader's eye already expects
+// "now". The framework's `BarChart` handles the marks, the axis and the
+// tooltips, so these are only about orientation, labelling and units.
 
-/** How often mood swings were reported at each lag before an onset. */
-export function MoodProfileChart({ profile }: { profile: SymptomProfile }) {
+/**
+ * How often a yes/no channel came back yes at each lag before an onset.
+ *
+ * One component for every binary channel, because they are the same chart of a
+ * different answer — and because a reader who has read the mood one has already
+ * learned how to read the rest. The title and description are passed in rather
+ * than switched on inside, so the chart never has to know which channel it is
+ * drawing.
+ */
+export function BinaryProfileChart({
+  profile,
+  title,
+  desc,
+}: {
+  profile: BinaryProfile;
+  title: string;
+  desc: string;
+}) {
   const t = useT();
-  // Reversed so lag 13 is leftmost and the onset day is at the right.
+  // Reversed so the longest lag is leftmost and the onset day is at the right.
   const values = [...profile.rate].reverse().map((r) => r * 100);
   const labels = Array.from({ length: profile.window }, (_, i) =>
     String(profile.window - 1 - i),
@@ -34,12 +50,12 @@ export function MoodProfileChart({ profile }: { profile: SymptomProfile }) {
         series={[{ values }]}
         labels={labels}
         height={130}
-        ariaLabel={t("forecast.moodProfile.title")}
-        desc={t("forecast.moodProfile.chartDesc")}
+        ariaLabel={title}
+        desc={desc}
         formatValue={(v) => `${Math.round(v)}%`}
       />
       <p className="text-[11px] text-muted">
-        {t("forecast.moodProfile.axisLag")}
+        {t("forecast.binaryProfile.axisLag")}
       </p>
     </>
   );
