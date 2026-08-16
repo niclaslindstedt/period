@@ -1,7 +1,8 @@
 # Period
 
 > A local-first period tracking PWA built on @niclaslindstedt/oss-framework.
-> One report per day — two yes/no answers, blood and mood swings — stored
+> One report per day — four yes/no answers (blood, mood swings, lust, sex) plus
+> an optional waking temperature and ovulation-test result — stored
 > on-device as JSON, with an optional copy synced to the user's own
 > Dropbox or Google Drive. Cycles, averages, and the next-period forecast are
 > derived from those reports at read time; nothing about a cycle is stored.
@@ -12,7 +13,8 @@
 
 ## Features
 
-- Daily report: blood yes/no and mood swings yes/no, for a date that defaults
+- Daily report: blood, mood swings, lust and sex as yes/no, plus an optional
+  waking temperature and fertility-test result, for a date that defaults
   to today; the whole screen fits a phone without scrolling
 - Forecast: cycle day, predicted next period, and an optional fertile window,
   with a stated confidence rather than a bare date

@@ -28,7 +28,10 @@ function docOf(days: Record<string, boolean>): AppData {
       date,
       bleeding,
       moodSwings: false,
+      lust: false,
+      sex: false,
       temperature: null,
+      fertilityTest: null,
       updatedAt: "2026-01-01T00:00:00.000Z",
     };
   }

@@ -13,7 +13,10 @@ function entry(date: string, patch: Partial<DayEntry> = {}): DayEntry {
     date,
     bleeding: true,
     moodSwings: false,
+    lust: false,
+    sex: false,
     temperature: null,
+    fertilityTest: null,
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...patch,
   };

@@ -10,23 +10,26 @@
 ## What
 
 **period** is a period tracker that runs entirely in your browser. Each day you
-tap two buttons — was there blood, were there mood swings — and optionally add
-your waking temperature, on a screen that fits a phone without scrolling. The
-app derives everything else from those reports: where you are in your cycle,
-when the next period is likely, how your cycle length has moved over time, and
-which phase your mood swings cluster in.
+tap four buttons — blood, mood swings, lust, sex — and optionally add your
+waking temperature and what an ovulation test said, on a screen that fits a
+phone without scrolling. The app derives everything else from those reports:
+where you are in your cycle, when the next period is likely, how your cycle
+length has moved over time, and which phase your mood swings cluster in.
 
 The forecast is not a single date. It is a probability for each day ahead, drawn
 with its 50/80/95% credible bands, from a Bayesian model fitted to your own
 history — log-normal cycle lengths under a conjugate prior, recent cycles
 weighted more heavily, days you already reported without bleeding ruled out, and
-your mood swings and temperatures read as evidence about _this_ cycle. A
+your own reports read as evidence about _this_ cycle. Mood swings and
+temperature speak about the days before a period; lust, sex and a positive
+ovulation test speak about ovulation, a fortnight earlier, so the two halves of
+the cycle both have something to say. A
 **simple** view names the date and the range; an **advanced** view shows the
 fitted parameters, the patterns it learned, and how well it has done on your past
 cycles. Both read the same posterior, so they are equally accurate — advanced
 just shows the workings.
 
-Three fields is the whole report on purpose, and each one feeds a number you can
+Six fields is the whole report on purpose, and each one feeds a number you can
 see: a heaviness scale, a mood roster and a free-text note were fields asked
 every evening that nothing ever read.
 
@@ -79,8 +82,7 @@ npm run dev
 ```
 
 Open the printed URL. The app boots on the **Report** tab with today selected:
-press **Blood** and **Mood swings** if they happened, then press **Save
-report**. Log a few days of a period and the **Forecast** tab starts predicting;
+press whichever of the four buttons applies, then press **Save report**. Log a few days of a period and the **Forecast** tab starts predicting;
 log a second period and **History** starts drawing.
 
 To try the production build the way it deploys:
@@ -93,14 +95,14 @@ npm run build && npm run preview
 
 Six tabs, on a bottom bar:
 
-| Tab          | What it does                                                                                                                                                                                                                                                                                                |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**   | What today is, in a word — _Fertile_, _Not fertile_, _Period_ — with how sure that is as a percentage, the cycle day, the next period, and a week of days either side of today in the same colours the calendar uses.                                                                                       |
-| **Report**   | A button each for blood and mood swings — lit when it happened — and an optional waking temperature, on a slider across the range one actually lands in or three digits in the box beside it. Press the date to reach any past day, or to pick a **range** and file a whole period of bleeding in one Save. |
-| **Calendar** | A month at a time, each day's number on a coloured circle: reported bleeding, predicted period, fertile window, or a day you reported with nothing on it. Pages either way.                                                                                                                                 |
-| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, and the optional fertile window. Switch between **simple** and **advanced** detail.                                                                                  |
-| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                                                                                                 |
-| **Settings** | Theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync, backup / restore / delete, and the build's version.                                                                                                                                                                 |
+| Tab          | What it does                                                                                                                                                                                                                                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**   | What today is, in a word — _Fertile_, _Not fertile_, _Period_ — with how sure that is as a percentage, the cycle day, the next period, and a week of days either side of today in the same colours the calendar uses.                                                                                                                                         |
+| **Report**   | A button each for blood, mood swings, lust and sex — lit when it happened — plus an optional fertility-test result and an optional waking temperature, on a slider across the range one actually lands in or three digits in the box beside it. Press the date to reach any past day, or to pick a **range** and file a whole period of bleeding in one Save. |
+| **Calendar** | A month at a time, each day's number on a coloured circle: reported bleeding, predicted period, fertile window, or a day you reported with nothing on it. Pages either way.                                                                                                                                                                                   |
+| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, and the optional fertile window. Switch between **simple** and **advanced** detail.                                                                                                                                    |
+| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                                                                                                                                                   |
+| **Settings** | Theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync, backup / restore / delete, and the build's version.                                                                                                                                                                                                                   |
 
 ## Configuration
 
@@ -133,7 +135,10 @@ for (const date of ["2026-03-01", "2026-03-02", "2026-03-03"]) {
     date,
     bleeding: true,
     moodSwings: false,
+    lust: false,
+    sex: false,
     temperature: null,
+    fertilityTest: null,
     updatedAt: new Date().toISOString(),
   };
 }

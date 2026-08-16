@@ -15,7 +15,7 @@ index.html
             └── SettingsScreen    settings, sync controls, backup, about
 
 src/app/
-  types.ts          the model: DayEntry (two booleans, a temperature, a date)
+  types.ts          the model: DayEntry (four booleans, two measurements)
   cycle.ts          periods → cycle lengths → one date      (pure, clock-free)
   forecastModel.ts  reports → a distribution over days      (pure, clock-free)
   dayStatus.ts      that distribution → one call per day    (pure, clock-free)
@@ -55,30 +55,39 @@ One document, one key in localStorage:
 
 ```jsonc
 {
-  "version": 3,
+  "version": 4,
   "entries": {
     "2026-03-01": {
       "date": "2026-03-01",
       "bleeding": true, // any bleeding at all, spotting included
       "moodSwings": false,
+      "lust": false, // noticeably raised sex drive
+      "sex": false,
       "temperature": 36.52, // waking, °C, or null when none was taken
+      "fertilityTest": null, // "positive" | "negative" | null when none taken
       "updatedAt": "2026-03-01T20:14:03.219Z",
     },
   },
 }
 ```
 
-A report is two yes/no answers, an optional temperature, and the day they
+A report is four yes/no answers, two optional measurements, and the day they
 belong to. `bleeding` is what the periods and the cycle lengths are derived
-from; `moodSwings` and `temperature` are the two evidence channels the forecast
-model reads within a cycle. A field nobody derives anything from would be a
-field asked for every evening for nothing — v2 removed the four that were (a
-five-level bleeding scale, a nine-mood roster, a 0–3 swing scale, and a note).
+from; the other five are the evidence channels the forecast model reads within a
+cycle. They come in two families: `moodSwings` and `temperature` are
+premenstrual, and `lust`, `sex` and `fertilityTest` are ovulatory — they speak
+about ovulation, a luteal phase before the onset, which is the part of the cycle
+the first two are silent on.
+
+A field nobody derives anything from would be a field asked for every evening
+for nothing — v2 removed the four that were (a five-level bleeding scale, a
+nine-mood roster, a 0–3 swing scale, and a note).
 
 `migrations.ts` carries older documents across: v1 → v2 turns any bleeding level
 but `none` into `bleeding: true` and any swing above steady into
-`moodSwings: true`; v2 → v3 gives every existing day `temperature: null`, which
-is the same claim the absent field made.
+`moodSwings: true`; v2 → v3 gives every existing day `temperature: null`; v3 → v4
+gives every existing day `lust: false`, `sex: false` and `fertilityTest: null`.
+Each of those is the same claim the absent field made.
 
 Temperature is stored in **Celsius** whatever unit the reader has chosen, at
 three decimal places. The third is not precision anybody typed — it is what lets

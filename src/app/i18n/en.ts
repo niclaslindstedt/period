@@ -57,6 +57,20 @@ export const en = {
     rangeLogged: "{logged} of {count} days logged",
     blood: "Blood",
     swings: "Mood swings",
+    // The two ovulatory yes/no answers. Kept to one word each because they sit
+    // in a row of four on a 375px screen — and because the shortest honest
+    // label is the one that reads fastest at 23:50.
+    lust: "Lust",
+    sex: "Sex",
+    // The ovulation test. "Fertility test" is what the box in the chemist says;
+    // the three options are the three states a strip can be in, and "None" is
+    // the one it is in on most days.
+    fertilityTest: "Fertility test",
+    fertilityTestOptional: "Optional",
+    fertilityTestRangeOff: "One day only",
+    fertilityTestNone: "None",
+    fertilityTestNegative: "Negative",
+    fertilityTestPositive: "Positive",
     temperature: "Waking temperature",
     temperatureOptional: "Optional",
     // A waking temperature is one morning's measurement, so a span can't carry
@@ -194,7 +208,7 @@ export const en = {
       title: "The model",
       how: "Cycle lengths are modelled as log-normal with a conjugate Normal-Inverse-Gamma prior, so the prediction is a Student-t over the days ahead. Days you reported without bleeding are removed and the rest rescaled.",
       howReports:
-        "On top of that, each candidate day is weighed by how well this cycle's mood swings and temperatures fit the pattern your own history shows at that distance from a period. Both are discounted before they are applied, so they shift the date rather than decide it.",
+        "On top of that, each candidate day is weighed by how well this cycle's reports — mood swings, lust, sex, fertility tests and temperatures — fit the pattern your own history shows at that distance from a period. Every one of them is discounted before it is applied, and the total is capped, so they shift the date rather than decide it.",
       typicalLength: "Typical cycle",
       spread: "Predictive spread",
       effectiveSample: "Effective sample",
@@ -210,16 +224,55 @@ export const en = {
       intervalWidth: "{count} days wide",
     },
 
+    // The learned yes/no profiles. One set of shared lines — the axis, the
+    // baseline, the sample size, the "too thin to use yet" note — because every
+    // one of these charts is the same chart of a different answer, and a reader
+    // who has understood one has understood all of them.
+    binaryProfile: {
+      axisLag: "Days before a period",
+      baseline: "Rest of the cycle: {percent}",
+      sample:
+        "From {window} reported days before a period and {baseline} elsewhere.",
+      thin: "Log a few more days and this fills in. Until it does, these reports do not move the forecast.",
+    },
+
     // The mood-swing profile the multivariate model learned.
     moodProfile: {
       title: "Your mood pattern",
       chartDesc:
         "How often you reported mood swings at each number of days before a period started.",
-      axisLag: "Days before a period",
-      baseline: "Rest of the cycle: {percent}",
-      sample:
-        "From {window} reported days before a period and {baseline} elsewhere.",
-      thin: "Log a few more days and this fills in. Until it does, your mood reports do not move the forecast.",
+    },
+
+    // The two ovulatory yes/no patterns. Their peak sits about a luteal phase
+    // before a period rather than up against it, which is the whole reason they
+    // are worth reading alongside the mood one.
+    lustProfile: {
+      title: "Your lust pattern",
+      chartDesc:
+        "How often you reported raised sex drive at each number of days before a period started.",
+    },
+    sexProfile: {
+      title: "Your sex pattern",
+      chartDesc:
+        "How often you reported sex at each number of days before a period started.",
+      // Said once, under the chart that most invites the wrong reading. A flat
+      // chart here is a fact about a life, not a failure to log enough.
+      confounded:
+        "A flat chart here just means your reports do not follow your cycle — the model then leaves them out rather than reading something into them.",
+    },
+
+    // The ovulation-test channel. Constructed rather than learned, so the copy
+    // has to say what it rests on: a positive strip is dated evidence, and the
+    // number it implies is a lead, not a pattern.
+    fertilityTestProfile: {
+      title: "Your fertility tests",
+      chartDesc:
+        "How likely a fertility test is to read positive at each number of days before a period started.",
+      lead: "A positive test points at a period about {count} days later.",
+      leadLearned:
+        "A positive test points at a period about {count} days later — from your own {positives} positive tests and the luteal phase in Settings.",
+      counts: "{window} tests taken in the {days} days before a period.",
+      none: "No fertility tests logged yet. One positive strip dates ovulation to within a day, which is the sharpest single thing you can tell this forecast.",
     },
 
     // The temperature profile — the biphasic shift, learned from the reports.
@@ -333,7 +386,7 @@ export const en = {
       "Advanced adds the model's parameters, the patterns it learned from your reports, and how well it has done on your past cycles. The prediction itself is the same.",
     forecastModel: "Based on",
     forecastModelHint:
-      "Cycles + reports also reads this cycle's mood swings and temperatures. It falls back to cycles alone until there is enough history to learn your pattern.",
+      "Cycles + reports also reads this cycle's mood swings, lust, sex, fertility tests and temperatures. Each falls back to cycles alone until there is enough history to learn that pattern.",
     sync: "Sync",
     syncHint:
       "Reports live on this device. Connect a cloud account to keep a copy and read it on your other devices.",

@@ -44,7 +44,10 @@ function steadyDoc(): AppData {
         date,
         bleeding: true,
         moodSwings: false,
+        lust: false,
+        sex: false,
         temperature: null,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -122,7 +125,10 @@ describe("dayStatus", () => {
       date: "2026-06-10",
       bleeding: false,
       moodSwings: true,
+      lust: false,
+      sex: false,
       temperature: null,
+      fertilityTest: null,
       updatedAt: STAMP,
     };
     const status = dayStatus("2026-06-10", contextFor(data, "2026-06-10"));
@@ -136,7 +142,10 @@ describe("dayStatus", () => {
       date: "2026-06-10",
       bleeding: false,
       moodSwings: false,
+      lust: false,
+      sex: false,
       temperature: null,
+      fertilityTest: null,
       updatedAt: STAMP,
     };
     const ctx = contextFor(data, "2026-06-10");
@@ -237,7 +246,10 @@ describe("the period already running", () => {
         date: day,
         bleeding: true,
         moodSwings: false,
+        lust: false,
+        sex: false,
         temperature: null,
+        fertilityTest: null,
         updatedAt: STAMP,
       };
     }
@@ -268,7 +280,10 @@ describe("the period already running", () => {
       date: "2026-05-22",
       bleeding: false,
       moodSwings: false,
+      lust: false,
+      sex: false,
       temperature: null,
+      fertilityTest: null,
       updatedAt: STAMP,
     };
     const ctx = contextFor(data, "2026-05-22");

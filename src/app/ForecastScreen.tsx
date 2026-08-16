@@ -22,13 +22,18 @@ import {
 import {
   backtest,
   probabilisticForecast,
+  type BinaryProfile,
+  type FertilityTestProfile,
   type ForecastModelKind,
   type ProbabilisticForecast,
 } from "./forecastModel.ts";
 import { formatDay, formatShortDay } from "./format.ts";
 import { ForecastIcon } from "./icons.tsx";
 import { useT, type TFn } from "./i18n/index.ts";
-import { MoodProfileChart, TemperatureProfileChart } from "./ProfileCharts.tsx";
+import {
+  BinaryProfileChart,
+  TemperatureProfileChart,
+} from "./ProfileCharts.tsx";
 import { formatTemperatureDelta, type TemperatureUnit } from "./temperature.ts";
 import type { AppData } from "./types.ts";
 
@@ -436,8 +441,8 @@ function ModelPanel({
   );
 }
 
-/** What the model learned about mood swings and temperature, and what this
- *  cycle's reports did to the date because of it. */
+/** What the model learned from each channel of reports, and what this cycle's
+ *  reports did to the date because of it. */
 function PatternPanels({
   forecast: f,
   temperatureUnit,
@@ -448,26 +453,23 @@ function PatternPanels({
   const t = useT();
   return (
     <>
-      <Section title={t("forecast.moodProfile.title")}>
-        {f.symptoms?.informative ? (
-          <>
-            <MoodProfileChart profile={f.symptoms} />
-            <p className="mt-1 text-xs text-muted">
-              {t("forecast.moodProfile.baseline", {
-                percent: `${Math.round(f.symptoms.baseline * 100)}%`,
-              })}
-            </p>
-            <p className="text-xs text-muted">
-              {t("forecast.moodProfile.sample", {
-                window: String(f.symptoms.windowDays),
-                baseline: String(f.symptoms.baselineDays),
-              })}
-            </p>
-          </>
-        ) : (
-          <p className="text-sm text-muted">{t("forecast.moodProfile.thin")}</p>
-        )}
-      </Section>
+      <BinaryPanel
+        profile={f.symptoms}
+        title={t("forecast.moodProfile.title")}
+        desc={t("forecast.moodProfile.chartDesc")}
+      />
+      <BinaryPanel
+        profile={f.lust}
+        title={t("forecast.lustProfile.title")}
+        desc={t("forecast.lustProfile.chartDesc")}
+      />
+      <BinaryPanel
+        profile={f.sex}
+        title={t("forecast.sexProfile.title")}
+        desc={t("forecast.sexProfile.chartDesc")}
+        note={t("forecast.sexProfile.confounded")}
+      />
+      <FertilityTestPanel profile={f.fertilityTest} />
 
       <Section title={t("forecast.temperatureProfile.title")}>
         {f.temperature === null ? (
@@ -502,11 +504,111 @@ function PatternPanels({
             {t("forecast.temperatureProfile.thin")}
           </p>
         )}
-        <p className="mt-2 text-sm text-fg">
-          {shiftLine(t, f.evidenceShiftDays)}
+      </Section>
+
+      {/* The one line that is about *all* of the panels above rather than any
+          one of them, so it sits after the last of them rather than inside
+          whichever happened to be drawn last. */}
+      <p className="px-1 text-sm text-fg">
+        {shiftLine(t, f.evidenceShiftDays)}
+      </p>
+    </>
+  );
+}
+
+/** One learned yes/no channel: its chart when there is enough history behind
+ *  it to be allowed to move anything, and the reason why not when there is not.
+ *  A channel with no profile at all — nothing logged yet — is left off the
+ *  screen entirely rather than shown as an empty box. */
+function BinaryPanel({
+  profile,
+  title,
+  desc,
+  note,
+}: {
+  profile: BinaryProfile | null;
+  title: string;
+  desc: string;
+  /** An extra line under the chart, for a channel whose flatness means
+   *  something the shared copy does not cover. */
+  note?: string;
+}) {
+  const t = useT();
+  if (!profile) return null;
+  return (
+    <Section title={title}>
+      {profile.informative ? (
+        <>
+          <BinaryProfileChart profile={profile} title={title} desc={desc} />
+          <p className="mt-1 text-xs text-muted">
+            {t("forecast.binaryProfile.baseline", {
+              percent: `${Math.round(profile.baseline * 100)}%`,
+            })}
+          </p>
+          <p className="text-xs text-muted">
+            {t("forecast.binaryProfile.sample", {
+              window: String(profile.windowDays),
+              baseline: String(profile.baselineDays),
+            })}
+          </p>
+          {note && <p className="mt-1 text-xs text-muted">{note}</p>}
+        </>
+      ) : (
+        <p className="text-sm text-muted">{t("forecast.binaryProfile.thin")}</p>
+      )}
+    </Section>
+  );
+}
+
+/**
+ * The ovulation-test channel.
+ *
+ * Its own panel rather than another {@link BinaryPanel} because the number
+ * worth reading here is not the sample size — the profile is constructed, so
+ * the sample never gates it — but the *lead*: how many days a positive strip
+ * puts between itself and the next period. That is the claim the channel makes,
+ * and the copy names where it came from, so a reader can tell a figure learned
+ * from their own strips from one taken out of Settings.
+ */
+function FertilityTestPanel({
+  profile,
+}: {
+  profile: FertilityTestProfile | null;
+}) {
+  const t = useT();
+  if (!profile) {
+    return (
+      <Section title={t("forecast.fertilityTestProfile.title")}>
+        <p className="text-sm text-muted">
+          {t("forecast.fertilityTestProfile.none")}
         </p>
       </Section>
-    </>
+    );
+  }
+  return (
+    <Section title={t("forecast.fertilityTestProfile.title")}>
+      <BinaryProfileChart
+        profile={profile}
+        title={t("forecast.fertilityTestProfile.title")}
+        desc={t("forecast.fertilityTestProfile.chartDesc")}
+      />
+      <p className="mt-1 text-sm text-fg">
+        {profile.observedPositives > 0
+          ? t("forecast.fertilityTestProfile.leadLearned", {
+              count: String(Math.round(profile.leadDays)),
+              positives: String(profile.observedPositives),
+            })
+          : t("forecast.fertilityTestProfile.lead", {
+              count: String(Math.round(profile.leadDays)),
+            })}
+      </p>
+      <p className="text-xs text-muted">
+        {t("forecast.fertilityTestProfile.counts", {
+          window: String(profile.windowDays),
+          days: String(profile.window),
+        })}
+      </p>
+    </Section>
   );
 }
 

@@ -13,6 +13,7 @@ import {
 import {
   Button,
   CalendarIcon,
+  HeartIcon,
   Modal,
   SegmentedControl,
 } from "@niclaslindstedt/oss-framework/components";
@@ -25,7 +26,13 @@ import {
   loggedCount,
   rangeLength,
 } from "./bulk.ts";
-import { DropletIcon, ThermometerIcon, WaveIcon } from "./icons.tsx";
+import {
+  DropletIcon,
+  RingsIcon,
+  TestStripIcon,
+  ThermometerIcon,
+  WaveIcon,
+} from "./icons.tsx";
 import { MonthCalendar } from "./MonthCalendar.tsx";
 import { formatDay, formatFullDay, formatShortDay } from "./format.ts";
 import { useT, type TFn } from "./i18n/index.ts";
@@ -42,22 +49,31 @@ import {
   sliderIndexOf,
   type TemperatureUnit,
 } from "./temperature.ts";
-import { blankEntry, type DayEntry } from "./types.ts";
+import { blankEntry, type DayEntry, type FertilityTest } from "./types.ts";
 import type { PeriodStore } from "./usePeriodStore.ts";
 
-// The screen the app opens on: one day, two questions, one Save — and the
-// whole of it on one phone screen, without scrolling, on the smallest phone
-// worth designing for.
+// The screen the app opens on: one day, four taps, one Save — and the whole of
+// it on one phone screen, without scrolling, on the smallest phone worth
+// designing for.
 //
 // It is short on purpose. Every field that used to be here (how heavy the
 // bleeding was, which moods, how far the mood moved on a 0–3 scale, a note) was
-// asked every evening and read by nothing: the forecast is built from bleeding
-// days alone. `bleeding` is the one answer the derivation needs, and
-// `moodSwings` is the one pattern worth plotting against it.
+// asked every evening and read by nothing. Everything that *is* here is read:
+// `bleeding` is the answer the derivation needs, and the other five are the
+// evidence channels the forecast weighs each candidate onset day against.
 //
-// The layout is centred rather than top-aligned. With three controls there is
-// more screen than content, and putting the card under the thumb — instead of
-// stranding it at the top above 300px of nothing — is what the space is for.
+// The four yes/no answers sit in one row rather than in a 2×2 block, and that
+// is a height decision rather than a taste one — a second row of targets this
+// size is the difference between a screen that fits a 375×667 phone and one
+// that scrolls. Their labels are one word each for the same reason.
+//
+// The two measurements are stacked below them because neither is a tap: a
+// temperature is a number and a test result is one of three states, and both
+// need a control wide enough to be hit without aiming.
+//
+// The layout is centred rather than top-aligned. There is still more screen
+// than content, and putting the card under the thumb — instead of stranding it
+// at the top above 200px of nothing — is what the space is for.
 //
 // The day is picked from the card itself: tapping the date opens the month
 // grid. The old week strip cost a row of chevrons and seven buttons at the top
@@ -65,16 +81,16 @@ import type { PeriodStore } from "./usePeriodStore.ts";
 //
 // That picker also selects a *span*, which is the one bulk gesture the screen
 // has: a period is five or six consecutive bleeding days, and filing one after
-// the fact was the same four taps repeated six times. Save then writes the two
-// answers to every day in the span (see `bulk.ts`). The screen itself does not
-// change shape for it — the same two buttons, the same Save — because a span
-// is not a different kind of report, it is the same report on more days.
+// the fact was the same four taps repeated six times. Save then writes the
+// yes/no answers to every day in the span (see `bulk.ts`). The screen itself
+// does not change shape for it — the same four buttons, the same Save — because
+// a span is not a different kind of report, it is the same report on more days.
 //
-// The temperature is the exception, and it is disabled rather than ignored
-// while a span is selected: it is one morning's measurement, and a control the
-// user can still move whose value is then dropped on six days would promise
-// something the save does not do. The readings already on those days survive
-// the write untouched.
+// The two measurements are the exception, and they are disabled rather than
+// ignored while a span is selected: each is one morning's observation, and a
+// control the user can still move whose value is then dropped on six days would
+// promise something the save does not do. The readings and test results already
+// on those days survive the write untouched.
 //
 // The draft is held locally and only reaches the store on Save. That keeps a
 // half-finished report from moving the forecast under the user mid-edit, and
@@ -142,8 +158,8 @@ export function ReportScreen({
   const save = () => {
     const now = new Date().toISOString();
     if (multi) {
-      // Two answers over the span; each day keeps whatever temperature it
-      // already had (see `bulkEntries`).
+      // The yes/no answers over the span; each day keeps whatever temperature
+      // and test result it already had (see `bulkEntries`).
       store.saveEntries(bulkEntries(store.data, span, draft, now));
       onSaved(t("report.savedRange", { count: String(spanDays) }));
       return;
@@ -246,26 +262,48 @@ export function ReportScreen({
         </p>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {/* The two questions, side by side. Two targets this size cost less
-            height than two labelled rows did, which is what buys the
-            temperature control its room on a 375×667 screen. */}
-        <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-col gap-3">
+        {/* The four questions, in one row. Targets this size cost less height
+            than four labelled rows would, which is what buys the two
+            measurements their room on a 375×667 screen. */}
+        <div className="grid grid-cols-4 gap-2">
           <Answer
-            icon={<DropletIcon className="h-8 w-8" />}
+            icon={<DropletIcon className="h-6 w-6" />}
             label={t("report.blood")}
             value={draft.bleeding}
             onChange={(bleeding) => setDraft((prev) => ({ ...prev, bleeding }))}
           />
           <Answer
-            icon={<WaveIcon className="h-8 w-8" />}
+            icon={<WaveIcon className="h-6 w-6" />}
             label={t("report.swings")}
             value={draft.moodSwings}
             onChange={(moodSwings) =>
               setDraft((prev) => ({ ...prev, moodSwings }))
             }
           />
+          <Answer
+            icon={<HeartIcon className="h-6 w-6" />}
+            label={t("report.lust")}
+            value={draft.lust}
+            onChange={(lust) => setDraft((prev) => ({ ...prev, lust }))}
+          />
+          <Answer
+            icon={<RingsIcon className="h-6 w-6" />}
+            label={t("report.sex")}
+            value={draft.sex}
+            onChange={(sex) => setDraft((prev) => ({ ...prev, sex }))}
+          />
         </div>
+        <FertilityTestField
+          // Blank over a span, on the same reasoning as the temperature: the
+          // control is not showing a value there, so showing one would read as
+          // the value about to be written to all of them.
+          value={multi ? null : draft.fertilityTest}
+          disabled={multi}
+          onChange={(fertilityTest) =>
+            setDraft((prev) => ({ ...prev, fertilityTest }))
+          }
+        />
         <Temperature
           unit={temperatureUnit}
           // Blank rather than the span's first day's reading: over a span this
@@ -424,7 +462,70 @@ function RangeFill({ first, last }: { first: boolean; last: boolean }) {
 }
 
 /**
- * The optional third field: this morning's waking temperature.
+ * The ovulation test, as the three states a strip can be in.
+ *
+ * Three options rather than a toggle, because "no test" and "a negative test"
+ * are different claims and the model treats them differently: a negative on the
+ * day a surge was due is evidence, and a morning nobody tested is not. That is
+ * the same distinction the document draws between an absent day and a no/no
+ * day, and it is worth a third segment to keep.
+ *
+ * `None` is the left-hand default, where a blank report opens — most mornings
+ * nobody tests, and a control that opened on an answer would collect one from
+ * everybody who walked past it.
+ */
+function FertilityTestField({
+  value,
+  disabled = false,
+  onChange,
+}: {
+  value: FertilityTest | null;
+  /** True while a span is selected. Like the temperature, the control stays on
+   *  screen and stops accepting a value a span has no room to store. */
+  disabled?: boolean;
+  onChange: (next: FertilityTest | null) => void;
+}) {
+  const t = useT();
+  return (
+    <div
+      className={`flex flex-col gap-1.5 ${disabled ? "opacity-50" : ""}`}
+      aria-disabled={disabled || undefined}
+    >
+      <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-fg">
+        <span className="text-muted">
+          <TestStripIcon className="h-4 w-4" />
+        </span>
+        <span className="truncate">{t("report.fertilityTest")}</span>
+        <span className="shrink-0 text-xs font-normal text-muted">
+          {disabled
+            ? t("report.fertilityTestRangeOff")
+            : t("report.fertilityTestOptional")}
+        </span>
+      </span>
+      <SegmentedControl<FertilityTestChoice>
+        value={value ?? "none"}
+        options={[
+          { value: "none", label: t("report.fertilityTestNone") },
+          { value: "negative", label: t("report.fertilityTestNegative") },
+          { value: "positive", label: t("report.fertilityTestPositive") },
+        ]}
+        onChange={(next) =>
+          !disabled && onChange(next === "none" ? null : next)
+        }
+        ariaLabel={t("report.fertilityTest")}
+        fullWidth
+      />
+    </div>
+  );
+}
+
+/** The three segments, with "no test taken" spelled as a value so the control
+ *  can be a plain single-choice switch rather than a switch with an escape
+ *  hatch beside it. */
+type FertilityTestChoice = FertilityTest | "none";
+
+/**
+ * The optional field below it: this morning's waking temperature.
  *
  * Optional in a way the two questions are not, and the control says so — it
  * opens on "nothing recorded" rather than on a plausible-looking default.
@@ -626,9 +727,9 @@ function valueTextFor(
 }
 
 /**
- * One of the two questions, as a single button: the glyph large, its name
- * underneath, and pressing it means it happened. Lit in the app's own red when
- * it did, dimmed when it did not.
+ * One of the four questions, as a single button: the glyph above its name, and
+ * pressing it means it happened. Lit in the app's own red when it did, dimmed
+ * when it did not.
  *
  * A toggle rather than the Yes/No pair this used to be. The objection to a
  * toggle is real — one left alone cannot say whether it was answered or
@@ -660,7 +761,7 @@ function Answer({
       type="button"
       aria-pressed={value}
       onClick={() => onChange(!value)}
-      className={`flex flex-col items-center justify-center gap-2 rounded-xl border px-2 py-4 transition-colors ${
+      className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border px-1 py-3 transition-colors ${
         value
           ? // The accent is this app's red (see styles.css). `page-bg` for the
             // contents is what the framework's solid buttons use, so the mark
@@ -670,7 +771,10 @@ function Answer({
       }`}
     >
       {icon}
-      <span className="text-center text-sm leading-tight font-semibold">
+      {/* `text-xs` and a tight leading are what let "Mood swings" wrap to two
+          lines inside a quarter of a 375px screen without pushing the row
+          taller than the icon it sits under. */}
+      <span className="text-center text-xs leading-tight font-semibold">
         {label}
       </span>
     </button>
