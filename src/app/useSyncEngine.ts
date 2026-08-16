@@ -153,7 +153,14 @@ export type SyncEngine = {
   checkConnection: () => Promise<ConnectionProbeResult>;
 };
 
-export function useSyncEngine(store: PeriodStore): SyncEngine {
+export function useSyncEngine(
+  store: PeriodStore,
+  // Suspend every read and write against the backend. Set while the developer
+  // "Demo data" backend has taken over storage, so a year of invented reports
+  // is never pushed up to — or merged with — a connected cloud copy. Demo data
+  // stays entirely in memory (see `dev/useDemoData.ts`).
+  paused = false,
+): SyncEngine {
   const [backend, setBackendState] = useState<SyncBackendId>(readBackend);
   const [dropboxTokens, setDropboxTokens] = useState<DropboxTokens | null>(
     readDropboxTokens,
@@ -262,7 +269,7 @@ export function useSyncEngine(store: PeriodStore): SyncEngine {
 
   const push = useCallback(
     async (editAtSend: number): Promise<void> => {
-      if (!adapter) return;
+      if (!adapter || paused) return;
       setStatus("saving");
       try {
         const snapshot = await adapter.save(
@@ -291,11 +298,11 @@ export function useSyncEngine(store: PeriodStore): SyncEngine {
         reportFailure(err, "save");
       }
     },
-    [adapter, adoptRemote, reportFailure],
+    [adapter, adoptRemote, paused, reportFailure],
   );
 
   const pull = useCallback(async (): Promise<void> => {
-    if (!adapter) return;
+    if (!adapter || paused) return;
     try {
       const snapshot = await adapter.load();
       baseRevision.current = snapshot?.revision;
@@ -316,7 +323,7 @@ export function useSyncEngine(store: PeriodStore): SyncEngine {
     } finally {
       setBaselineReady(true);
     }
-  }, [adapter, adoptRemote, reportFailure]);
+  }, [adapter, adoptRemote, paused, reportFailure]);
 
   // Complete a Dropbox OAuth redirect: trade the `?code=` for tokens, persist
   // them, and adopt the backend. Runs once on boot when a flow is mid-flight.
@@ -356,8 +363,12 @@ export function useSyncEngine(store: PeriodStore): SyncEngine {
       setOffline(false);
       return;
     }
+    // Demo data has taken over storage: hold the baseline read, which also
+    // holds every push behind it. The credentials and the cloud copy are left
+    // exactly as they were, and turning the toggle off re-runs this effect.
+    if (paused) return;
     void pull();
-  }, [adapter, pull]);
+  }, [adapter, paused, pull]);
 
   // Local edits mark the document dirty regardless of backend, so switching
   // one on later still pushes what's already here.
@@ -370,12 +381,12 @@ export function useSyncEngine(store: PeriodStore): SyncEngine {
   // baseline read resolves, or while a blocking fault stands in the way — the
   // edit is already safe in localStorage, so waiting costs nothing.
   useEffect(() => {
-    if (!adapter || !baselineReady || !dirty) return;
+    if (!adapter || paused || !baselineReady || !dirty) return;
     if (status === "saving" || status === "auth-error") return;
     const editAtSend = store.editCount;
     const timer = setTimeout(() => void push(editAtSend), SAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [adapter, baselineReady, dirty, status, store.editCount, push]);
+  }, [adapter, paused, baselineReady, dirty, status, store.editCount, push]);
 
   const connect = useCallback(async (next: SyncBackendId): Promise<void> => {
     if (next === "local") {

@@ -136,9 +136,16 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   cloud sync and backup restore run through.
 - `src/app/migrations.ts` — parse / normalise / serialize; the only module that
   trusts stored bytes.
-- `src/app/usePeriodStore.ts` — the document store (localStorage-persisted).
+- `src/app/usePeriodStore.ts` — the document store, over a `DocBackend` seam
+  rather than `localStorage` directly (which is what demo data swaps).
 - `src/app/useSyncEngine.ts` — the sync engine over the framework's storage
-  adapters (debounced push, conflict / auth / throttle handling).
+  adapters (debounced push, conflict / auth / throttle handling). Suspended
+  wholesale while demo data has taken over storage.
+- `src/app/dev/` — the developer "Demo data" switch: a year of invented reports
+  (`demoData.ts`, pure and clock-free, every date an offset from `today`), the
+  in-memory `DocBackend` that serves them (`demoBackend.ts`), and the
+  never-persisted flag both `App` and Settings read (`useDemoData.ts`). Behind
+  `import()`, so a production user never downloads it.
 - `src/app/dayStatus.ts` — the posterior turned into one call per day
   (_period_ / _predicted period_ / _fertile_ / _not fertile_) and the
   probability behind it. Fits nothing of its own; it only takes mass out of
@@ -249,18 +256,20 @@ the tests pin real dates without fake timers.
 
 ## Where new code goes
 
-| Change                               | Goes in                                                                                                                               |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| A new thing to log about a day       | Probably nowhere — see below. If it survives that: `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` step |
-| A new derived number or prediction   | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                                                               |
-| A new statistic over mood swings     | `src/app/swings.ts`                                                                                                                   |
-| A new evidence channel               | A profile + a clamped term in `src/app/forecastModel.ts`, with tests in `tests/forecastModel_test.ts`                                 |
-| A change to what a range save writes | `src/app/bulk.ts`, with tests in `tests/bulk_test.ts`                                                                                 |
-| A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`                                                                         |
-| A new setting                        | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                  |
-| A new storage backend                | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                       |
-| Any user-facing string               | `src/app/i18n/en.ts`, never inline in a component                                                                                     |
-| A shared UI primitive                | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                         |
+| Change                               | Goes in                                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| A new thing to log about a day       | Probably nowhere — see below. If it survives that: `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` step        |
+| A new derived number or prediction   | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                                                                      |
+| A new statistic over mood swings     | `src/app/swings.ts`                                                                                                                          |
+| A new evidence channel               | A profile + a clamped term in `src/app/forecastModel.ts`, with tests in `tests/forecastModel_test.ts`                                        |
+| A change to what a range save writes | `src/app/bulk.ts`, with tests in `tests/bulk_test.ts`                                                                                        |
+| A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`                                                                                |
+| A new setting                        | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                         |
+| A new developer-only affordance      | `src/app/dev/`, revealed behind `settings.devMode` in `SettingsScreen.tsx` — never in the persisted settings if it must not survive a reload |
+| A change to what the demo shows      | `src/app/dev/demoData.ts` (offsets from `today`, never fixed dates), with tests in `tests/demoData_test.ts`                                  |
+| A new storage backend                | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                              |
+| Any user-facing string               | `src/app/i18n/en.ts`, never inline in a component                                                                                            |
+| A shared UI primitive                | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                                |
 
 ## Test conventions
 

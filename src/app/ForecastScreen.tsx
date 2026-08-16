@@ -27,7 +27,7 @@ import {
   type ForecastModelKind,
   type ProbabilisticForecast,
 } from "./forecastModel.ts";
-import { formatDay, formatShortDay } from "./format.ts";
+import { formatDay, formatShortDay, probabilityPercent } from "./format.ts";
 import { ForecastIcon } from "./icons.tsx";
 import { useT, type TFn } from "./i18n/index.ts";
 import {
@@ -239,7 +239,7 @@ function Headline({
       </p>
       <p className="mt-2 text-xs text-muted">
         {t("forecast.chanceWithinWeek", {
-          percent: `${Math.round(f.probabilityWithinWeek * 100)}%`,
+          percent: probabilityPercent(f.probabilityWithinWeek),
         })}
       </p>
       <p className="mt-0.5 text-xs text-muted">

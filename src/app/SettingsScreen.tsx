@@ -20,6 +20,7 @@ import { LogViewer } from "@niclaslindstedt/oss-framework/logging";
 
 import { descendingLogStore, logStore } from "./log.ts";
 import { downloadBackup, readBackupFile } from "./backup.ts";
+import type { DemoDataToggle } from "./dev/useDemoData.ts";
 import { useT } from "./i18n/index.ts";
 import { mergeDocs } from "./merge.ts";
 import { serializeDoc } from "./migrations.ts";
@@ -48,6 +49,9 @@ type Props = {
   update: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   store: PeriodStore;
   sync: SyncEngine;
+  /** The in-memory demo-data takeover. Not part of `settings` on purpose: it
+   *  is never persisted, so a reload always lands back on the real document. */
+  demoData: DemoDataToggle;
   onNotice: (message: string) => void;
 };
 
@@ -56,6 +60,7 @@ export function SettingsScreen({
   update,
   store,
   sync,
+  demoData,
   onNotice,
 }: Props) {
   const t = useT();
@@ -323,18 +328,37 @@ export function SettingsScreen({
           label={t("settings.devMode")}
           hint={t("settings.devModeHint")}
           checked={settings.devMode}
-          onChange={(next) => update("devMode", next)}
-        />
-        <ToggleRow
-          label={t("settings.captureLogs")}
-          checked={settings.captureLogs}
           onChange={(next) => {
-            update("captureLogs", next);
-            logStore.setCaptureEnabled(next);
+            update("devMode", next);
+            // Everything below is only reachable while developer mode is on,
+            // so leaving demo data running as the switch that reveals it goes
+            // off would strand the app on a document with no way back short of
+            // a reload.
+            if (!next && demoData.on) demoData.setOn(false);
           }}
         />
         {settings.devMode && (
           <>
+            <ToggleRow
+              label={t("settings.demoData")}
+              hint={t("settings.demoDataHint")}
+              checked={demoData.on}
+              onChange={(next) => {
+                demoData.setOn(next);
+                onNotice(
+                  next ? t("settings.demoDataOn") : t("settings.demoDataOff"),
+                );
+              }}
+            />
+            <ToggleRow
+              label={t("settings.captureLogs")}
+              hint={t("settings.captureLogsHint")}
+              checked={settings.captureLogs}
+              onChange={(next) => {
+                update("captureLogs", next);
+                logStore.setCaptureEnabled(next);
+              }}
+            />
             <p className="text-xs text-muted">
               {t("settings.documentSize")}:{" "}
               {serializeDoc(store.data).length.toLocaleString()} bytes

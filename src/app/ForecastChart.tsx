@@ -12,7 +12,7 @@ import {
 } from "@niclaslindstedt/oss-framework/charts";
 import { useMeasuredSize } from "@niclaslindstedt/oss-framework/hooks";
 
-import { formatDay, formatShortDay } from "./format.ts";
+import { formatDay, formatShortDay, probabilityPercent } from "./format.ts";
 import type { ForecastDay, ProbabilisticForecast } from "./forecastModel.ts";
 import { useT } from "./i18n/index.ts";
 
@@ -510,7 +510,13 @@ function Readout({
   priorValue: number;
 }) {
   const t = useT();
-  const percent = (v: number) => `${(v * 100).toFixed(v < 0.1 ? 1 : 0)}%`;
+  // The cumulative reading walks all the way to the far end of the window,
+  // which is exactly where a rounded percentage would print "100%" for a day
+  // the model only thinks is very likely — see `probabilityPercent`. This
+  // readout used to carry a decimal below ten percent; it doesn't now, for the
+  // same reason nothing else does. A day whose share rounds to nothing is a
+  // day the chart is already drawing as a bar you can barely see.
+  const percent = probabilityPercent;
 
   return (
     <div

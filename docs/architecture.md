@@ -30,6 +30,10 @@ src/app/
   useAppSettings.ts the settings blob
   backup.ts         export / restore a JSON file
 
+  dev/demoData.ts    a year of invented reports, relative to today (pure)
+  dev/demoBackend.ts that year as an in-memory DocBackend
+  dev/useDemoData.ts the developer "Demo data" switch (in-memory only)
+
   ForecastChart.tsx the probability-per-day chart with its credible bands
   ProfileCharts.tsx the learned mood and temperature patterns
   DayCircle.tsx     a day's status → its colour, for the two screens that paint days
@@ -122,6 +126,38 @@ The payoff is that there is no stale state to invalidate. Correct a report from
 three weeks ago and the cycle length, the average, the confidence label, the
 predicted date, today's status and the calendar's colours all move together,
 because they were never anything but functions of the reports.
+
+## Demo data
+
+`usePeriodStore` reads and writes through a `DocBackend` rather than touching
+`localStorage` itself. That seam is what the developer **Demo data** switch
+uses: while it is on, `App` hands the store an in-memory backend seeded with a
+year of invented reports instead of the real `localDocBackend`, so a demo needs
+no special case anywhere in the store, the screens, or the derivation.
+
+Three properties make it safe to ship in the production bundle:
+
+- **Nothing is persisted.** The demo document lives in a closure. Edits made
+  during a demo round-trip through it — saving a report and watching the
+  forecast move works exactly as it does for real — but `localStorage` is never
+  written, and the real document is reloaded untouched when the switch goes off.
+- **Nothing is synced.** `useSyncEngine` takes a `paused` flag that is set for
+  as long as the takeover is in effect. No baseline read, no push: a year of
+  invented reports can never reach a connected Dropbox or Drive account, and
+  the cloud copy that is already there is left exactly as it was.
+- **Nothing survives a reload.** The switch is module state, never persisted,
+  so reloading the page is always the guaranteed way back to the real reports.
+
+`dev/demoData.ts` itself is pure and clock-free like the derivation it feeds:
+`today` is a parameter, and every date in the document is an _offset_ from it
+("26 days ago"), never a fixed date that would age into a stale demo. The
+"randomness" is a hash of each day's offset, so two builds of the same day are
+byte-identical. The clock is read once, in `dev/demoBackend.ts`, when a
+document is first seeded.
+
+The builder and the backend sit behind `import()` and are fetched only when the
+switch is first turned on, so the year of sample reports costs a production
+user nothing.
 
 ## Rendering runtime
 

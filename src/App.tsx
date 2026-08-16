@@ -17,6 +17,7 @@ import { useApplyTheme } from "@niclaslindstedt/oss-framework/theme";
 
 import { BottomNav, type Tab } from "./app/BottomNav.tsx";
 import { CalendarScreen } from "./app/CalendarScreen.tsx";
+import { demoBackendModule, useDemoData } from "./app/dev/useDemoData.ts";
 import { ForecastScreen } from "./app/ForecastScreen.tsx";
 import { HistoryScreen } from "./app/HistoryScreen.tsx";
 import { ReportScreen } from "./app/ReportScreen.tsx";
@@ -31,7 +32,7 @@ import {
   cycleOptions,
   useAppSettings,
 } from "./app/useAppSettings.ts";
-import { usePeriodStore } from "./app/usePeriodStore.ts";
+import { localDocBackend, usePeriodStore } from "./app/usePeriodStore.ts";
 import { useSyncEngine } from "./app/useSyncEngine.ts";
 import { status } from "./output.ts";
 
@@ -68,8 +69,21 @@ export function App() {
     };
   }, []);
 
-  const store = usePeriodStore();
-  const sync = useSyncEngine(store);
+  // Developer "Demo data" takeover: while the toggle is on, an in-memory
+  // backend seeded with a year of invented reports replaces the real
+  // localStorage one for the session. Nothing on disk is touched, the sync
+  // engine is paused so none of it can reach a connected cloud account, and a
+  // reload restores the real document (see `useDemoData`).
+  const demo = useDemoData();
+  const backend = useMemo(() => {
+    // Non-null whenever the toggle is on: `setDemoData` only flips it once the
+    // dev chunk has loaded.
+    const module = demoBackendModule();
+    if (demo.on && module) return module.createDemoBackend();
+    return localDocBackend;
+  }, [demo.on]);
+  const store = usePeriodStore(backend);
+  const sync = useSyncEngine(store, demo.on);
   const options = useMemo(() => cycleOptions(settings), [settings]);
   const look = useMemo(() => chartLook(settings), [settings]);
 
@@ -209,6 +223,7 @@ export function App() {
               update={update}
               store={store}
               sync={sync}
+              demoData={demo}
               onNotice={notice}
             />
           )}

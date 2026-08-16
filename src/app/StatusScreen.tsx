@@ -18,7 +18,7 @@ import {
   probabilisticForecast,
   type ForecastModelKind,
 } from "./forecastModel.ts";
-import { formatDay, formatWeekday } from "./format.ts";
+import { formatDay, formatWeekday, probabilityPercent } from "./format.ts";
 import { HeartIcon } from "@niclaslindstedt/oss-framework/components";
 import { useT, type TFn } from "./i18n/index.ts";
 import type { AppData } from "./types.ts";
@@ -114,7 +114,7 @@ export function StatusScreen({
           {now.observed
             ? t("status.fromYourReport")
             : t("status.certainty", {
-                percent: `${Math.round(now.probability * 100)}%`,
+                percent: probabilityPercent(now.probability),
               })}
         </p>
         {!now.observed && (
