@@ -261,6 +261,36 @@ export function credibleInterval(
   };
 }
 
+/**
+ * The distribution of `A + B` for independent `A ~ a` and `B ~ b`.
+ *
+ * The discrete convolution, and the reason it is here: the day the *second*
+ * next period starts is the day the first one starts plus one more cycle
+ * length, and both of those are distributions this app already has. Adding two
+ * random variables is exactly this sum, so projecting a cycle further ahead
+ * needs no new fit — only the one the model made, applied again.
+ *
+ * The result spreads: two uncertain quantities added are less certain than
+ * either, which is why a projection thins out the further ahead it reaches
+ * rather than repeating the first prediction at full confidence.
+ */
+export function convolve(a: Pmf, b: Pmf): Pmf {
+  if (a.probabilities.length === 0 || b.probabilities.length === 0) {
+    return { offset: a.offset + b.offset, probabilities: [] };
+  }
+  const probabilities = new Array<number>(
+    a.probabilities.length + b.probabilities.length - 1,
+  ).fill(0);
+  for (let i = 0; i < a.probabilities.length; i++) {
+    const pa = a.probabilities[i]!;
+    if (pa === 0) continue;
+    for (let j = 0; j < b.probabilities.length; j++) {
+      probabilities[i + j]! += pa * b.probabilities[j]!;
+    }
+  }
+  return { offset: a.offset + b.offset, probabilities };
+}
+
 /** Total mass on values in `[lower, upper]` inclusive. */
 export function pmfMassBetween(pmf: Pmf, lower: number, upper: number): number {
   let total = 0;

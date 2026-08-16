@@ -21,6 +21,10 @@ export const en = {
     forecast: "Forecast",
     history: "History",
     settings: "Settings",
+    // The top bar's `+`. It is a glyph with no label beside it, so the name it
+    // is announced and hovered by has to carry the whole of what it does —
+    // "Report" alone would read as a place rather than as filing one.
+    newReport: "New report",
   },
 
   common: {

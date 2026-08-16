@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { dayKeyOf } from "@niclaslindstedt/oss-framework/calendar";
 import {
@@ -15,7 +15,14 @@ import {
 } from "@niclaslindstedt/oss-framework/sync";
 import { useApplyTheme } from "@niclaslindstedt/oss-framework/theme";
 
-import { BottomNav, initialTab, type Tab } from "./app/BottomNav.tsx";
+import {
+  BottomNav,
+  initialTab,
+  isNavTab,
+  TABS,
+  type NavTab,
+  type Tab,
+} from "./app/BottomNav.tsx";
 import { CalendarScreen } from "./app/CalendarScreen.tsx";
 import { demoBackendModule, useDemoData } from "./app/dev/useDemoData.ts";
 import { ForecastScreen } from "./app/ForecastScreen.tsx";
@@ -23,6 +30,8 @@ import { HistoryScreen } from "./app/HistoryScreen.tsx";
 import { ReportScreen } from "./app/ReportScreen.tsx";
 import { SettingsScreen } from "./app/SettingsScreen.tsx";
 import { StatusScreen } from "./app/StatusScreen.tsx";
+import { TopBar } from "./app/TopBar.tsx";
+import { useSwipeNav } from "./app/useSwipeNav.ts";
 import { useT } from "./app/i18n/index.ts";
 import { appearanceFor } from "./app/look.ts";
 import { descendingLogStore, logStore } from "./app/log.ts";
@@ -94,6 +103,41 @@ export function App() {
   // render started with — the store reads localStorage synchronously, so it is
   // the real one and not a placeholder.
   const [tab, setTab] = useState<Tab>(() => initialTab(store.data));
+  // Where the bottom nav was left. Report and Settings are things you do and
+  // then leave, so pressing their button a second time — or swiping off them —
+  // puts you back where you were rather than on whichever screen happens to be
+  // first. Status is the fallback for a first run, which opens on Report with
+  // no nav tab behind it.
+  const [home, setHome] = useState<NavTab>("status");
+  const show = useCallback((next: Tab) => {
+    if (isNavTab(next)) setHome(next);
+    setTab(next);
+  }, []);
+  const toggle = useCallback(
+    (next: "report" | "settings") => setTab(tab === next ? home : next),
+    [tab, home],
+  );
+
+  // A swipe moves one tab along the bar, and stops at its ends: the bar is a
+  // row with a first and a last, and wrapping from History back to Status would
+  // be the one motion on screen that does not match a thing you can see. From
+  // Report or Settings — which are not on the bar — it goes back to the tab
+  // they were opened from, since that is the only left-to-right neighbour
+  // either of them has.
+  const main = useRef<HTMLElement>(null);
+  const swipe = useCallback(
+    (direction: 1 | -1) => {
+      if (!isNavTab(tab)) {
+        setTab(home);
+        return;
+      }
+      const next = TABS[TABS.indexOf(tab) + direction];
+      if (next !== undefined) show(next);
+    },
+    [tab, home, show],
+  );
+  useSwipeNav(main, swipe);
+
   const [syncDetailsOpen, setSyncDetailsOpen] = useState(false);
   // Applying an update (skip-waiting → the new worker takes control → the page
   // reloads) has a visible gap. Flip a flag on the tap so the toast shows a
@@ -122,22 +166,18 @@ export function App() {
 
   return (
     <div className="flex h-full flex-col bg-page text-fg">
-      {/* The status bar's worth of inset, a rule, and nothing else. The app's
-          name used to sit here as a visible title, which is a row of chrome
-          repeating what the icon the user just tapped already said — on a
-          phone that is a tab's worth of height spent on no information. The
-          heading survives as `sr-only` so the document still has one for a
-          screen reader and a crawler.
-
-          `padding-top` is the raw `env(safe-area-inset-top)` (see
-          `styles.css`), so the rule lands immediately under the status bar /
-          Dynamic Island rather than a loose half-rem below it. The bar only
-          takes height beyond the inset when the sync glyph is actually there
-          to occupy it. */}
-      <header className="app-header relative flex shrink-0 items-center justify-end border-b border-line bg-surface-3 px-3">
-        <h1 className="sr-only">{t("app.name")}</h1>
-        {sync.backend !== "local" && (
-          <div className="py-1.5">
+      {/* The bar carries the two screens that are actions rather than
+          destinations — filing a report and changing a setting — plus the sync
+          glyph and the wordmark (see `TopBar.tsx`). It used to be an empty rule
+          under the status bar, on the argument that a title repeats what the
+          icon you just tapped already said; the argument stands, but the row
+          now has buttons in it and has to have height regardless, and an empty
+          left half is worse than the app's name. */}
+      <TopBar
+        active={tab}
+        onOpen={toggle}
+        syncSlot={
+          sync.backend !== "local" ? (
             <SyncStatus
               providerName={sync.providerName}
               status={sync.status}
@@ -146,9 +186,9 @@ export function App() {
               onOpenDetails={() => setSyncDetailsOpen(true)}
               labels={{ syncedTo: (name) => t("sync.syncedTo", { name }) }}
             />
-          </div>
-        )}
-      </header>
+          ) : undefined
+        }
+      />
 
       {/* `relative` is load-bearing, not decoration. Absolutely-positioned
           descendants resolve against the nearest positioned ancestor, and
@@ -159,7 +199,10 @@ export function App() {
           list. The result was a second scrollbar that moved the whole shell,
           bottom nav included, off the top of the screen. Positioning the
           scroller brings them back inside it. */}
-      <main className="relative min-h-0 flex-1 overflow-y-auto">
+      {/* The scroller is also what a swipe is measured across (see
+          `useSwipeNav.ts`): the gesture belongs to the screen being paged, not
+          to the bars that stay put either side of it. */}
+      <main ref={main} className="relative min-h-0 flex-1 overflow-y-auto">
         {/* `min-h-full` + `flex` so a screen can ask for the leftover height
             — the Report screen centres its card in it rather than stranding
             three controls at the top of an empty phone. */}
@@ -234,7 +277,7 @@ export function App() {
         </div>
       </main>
 
-      <BottomNav active={tab} onSelect={setTab} />
+      <BottomNav active={tab} onSelect={show} />
 
       <SyncDetailsModal
         open={syncDetailsOpen}

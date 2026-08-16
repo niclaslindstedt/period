@@ -29,6 +29,8 @@ function status(
     reported: false,
     fertileProbability: 0,
     periodProbability: 0,
+    expectedPeriod: false,
+    expectedFertile: false,
     ...fields,
   };
 }
@@ -45,6 +47,21 @@ describe("toneFor", () => {
   it("keeps a fertile day fertile even when it carries a report", () => {
     expect(toneFor(status({ kind: "fertile", reported: true }))).toBe(
       "fertile",
+    );
+  });
+
+  it("paints a projected period in the predicted outline", () => {
+    // Cycles far enough ahead that no single day clears a half still have a
+    // span the model expects them in, and the outline is what says "expected".
+    expect(toneFor(status({ kind: "notFertile", expectedPeriod: true }))).toBe(
+      "predicted",
+    );
+    expect(toneFor(status({ kind: "notFertile", expectedFertile: true }))).toBe(
+      "fertile",
+    );
+    // A reported bleeding day is still what actually happened.
+    expect(toneFor(status({ kind: "period", expectedFertile: true }))).toBe(
+      "period",
     );
   });
 

@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  convolve,
   credibleInterval,
   logGamma,
   median,
@@ -17,6 +18,7 @@ import {
   totalWeight,
   weightedMean,
   weightedSumSquares,
+  type Pmf,
 } from "../src/app/stats.ts";
 
 // These functions have published right answers, which is the point of them
@@ -184,5 +186,41 @@ describe("Pmf helpers", () => {
     expect(pmfMassBetween(pmf, 11, 13)).toBeCloseTo(0.8, 12);
     expect(pmfMassBetween(pmf, 0, 100)).toBeCloseTo(1, 12);
     expect(pmfMassBetween(pmf, 20, 30)).toBe(0);
+  });
+});
+
+describe("convolve", () => {
+  it("adds the offsets and multiplies the masses out", () => {
+    // A fair coin over {0,1} added to a fair coin over {10,11} is the
+    // triangular {10:¼, 11:½, 12:¼}.
+    const sum = convolve(
+      { offset: 0, probabilities: [0.5, 0.5] },
+      { offset: 10, probabilities: [0.5, 0.5] },
+    );
+    expect(sum.offset).toBe(10);
+    expect(sum.probabilities).toEqual([0.25, 0.5, 0.25]);
+  });
+
+  it("keeps the total mass and adds the means and the variances", () => {
+    const a: Pmf = { offset: 3, probabilities: [0.2, 0.5, 0.3] };
+    const b: Pmf = { offset: 25, probabilities: [0.1, 0.4, 0.4, 0.1] };
+    const sum = convolve(a, b);
+    expect(sum.probabilities.reduce((t, p) => t + p, 0)).toBeCloseTo(1, 12);
+    expect(pmfMean(sum)).toBeCloseTo(pmfMean(a) + pmfMean(b), 12);
+    // Independent variables: variances add, so the spread grows — which is the
+    // whole reason a projected cycle is less certain than the one before it.
+    expect(pmfStdev(sum) ** 2).toBeCloseTo(
+      pmfStdev(a) ** 2 + pmfStdev(b) ** 2,
+      12,
+    );
+    expect(pmfStdev(sum)).toBeGreaterThan(pmfStdev(a));
+  });
+
+  it("survives an empty distribution rather than producing a negative length", () => {
+    const empty = convolve(
+      { offset: 1, probabilities: [] },
+      { offset: 10, probabilities: [1] },
+    );
+    expect(empty.probabilities).toEqual([]);
   });
 });

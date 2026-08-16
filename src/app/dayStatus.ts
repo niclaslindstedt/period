@@ -11,14 +11,23 @@
 // already fitted. Nothing is re-estimated, so a status can never disagree with
 // the forecast it came from:
 //
-//   - a day D is inside the next period  ⟺  the period starts on some day S ≤ D
-//     and runs for at least D − S + 1 days
-//   - a day D is fertile                 ⟺  the period starts on some day in
+//   - a day D is inside a period  ⟺  a period starts on some day S ≤ D and runs
+//     for at least D − S + 1 days
+//   - a day D is fertile          ⟺  a period starts on some day in
 //     [D + luteal − after, D + luteal + before]
 //
-// (the fertile window is defined *backwards* from the next start — ovulation
-// is `luteal` days before it — which is exactly why the posterior over start
-// days answers both questions.)
+// (the fertile window is defined *backwards* from the following start —
+// ovulation is `luteal` days before it — which is exactly why the posterior
+// over start days answers both questions.)
+//
+// "A period" rather than "the next period" throughout, and that is the whole of
+// what puts more than one cycle on the calendar. `forecastModel.ts` projects the
+// onset after the next, and the one after that, by convolving its posterior with
+// another cycle length; every one of them is a set of candidate start days on
+// the same terms as the first, so both rules above answer for a day in
+// September without either of them learning that September exists. The
+// projection widens as it goes, so the strokes fade out on their own where the
+// history stops supporting them.
 //
 // There is a third case, and it is the one a start-day distribution on its own
 // gets wrong. On the morning you log the first bleeding day of a period, the
@@ -58,8 +67,8 @@ import type { AppData } from "./types.ts";
 export type DayStatusKind =
   /** Bleeding was reported. Not a prediction — a fact. */
   | "period"
-  /** A period is more likely than not to cover this day — either the one
-   *  already running or the next one. */
+  /** A period is more likely than not to cover this day — the one already
+   *  running, the next one, or one further ahead. */
   | "predictedPeriod"
   /** More likely than not inside the fertile window. */
   | "fertile"
@@ -89,8 +98,24 @@ export type DayStatus = {
   /** Posterior probability the day falls inside the fertile window. */
   fertileProbability: number;
   /** Posterior probability the day is covered by a period — the one running
-   *  now, or the next one. */
+   *  now, or an upcoming one. */
   periodProbability: number;
+  /**
+   * The day falls inside the span an upcoming period is *expected* to cover —
+   * a projected start day and the days a typical episode runs for.
+   *
+   * Separate from `kind` on purpose. `kind` is the call, and it keeps the half
+   * rule; this is where the model expects the period to fall, which it has an
+   * opinion about for months after no single day clears a half. The calendar
+   * paints from this, the wording quotes `kind`, and `probability` says how
+   * sure either of them is. False on a day already reported without bleeding —
+   * a logged "no" outranks a projection, the same way it rules a candidate
+   * start day out of the forecast.
+   */
+  expectedPeriod: boolean;
+  /** The same for the fertile window around each projected ovulation. Always
+   *  false when the fertile window is turned off. */
+  expectedFertile: boolean;
 };
 
 /** Above this, a probability is stated as the day's status rather than as its
@@ -98,17 +123,22 @@ export type DayStatus = {
  *  the opposite call would be the less likely one. */
 const CALL_THRESHOLD = 0.5;
 
-/** Posterior mass on next-period start days inside an inclusive range. Days
- *  outside the modelled window carry no mass, so a range that runs past its
- *  edge simply contributes nothing. */
+/** Posterior mass on period start days inside an inclusive range — every
+ *  projected onset, not only the next one, which is what lets the months after
+ *  next be painted at all. Days outside the projection carry no mass, so a
+ *  range that runs past its edge simply contributes nothing.
+ *
+ *  `onsets` is sorted by day, so the walk stops at the far end of the range
+ *  rather than reading a year of projection for a seven-day window. */
 function startMassBetween(
   f: ProbabilisticForecast,
   from: DayKey,
   to: DayKey,
 ): number {
   let sum = 0;
-  for (const d of f.days) {
-    if (d.day >= from && d.day <= to) sum += d.probability;
+  for (const d of f.onsets) {
+    if (d.day > to) break;
+    if (d.day >= from) sum += d.probability;
   }
   return Math.min(1, sum);
 }
@@ -128,7 +158,8 @@ export function fertileProbability(
 }
 
 /**
- * How likely the day is covered by the **next** period.
+ * How likely the day is covered by an **upcoming** period — the next one, or a
+ * later one.
  *
  * Every candidate start day S at or before `day` could cover it, but only if
  * the episode runs far enough: S contributes its own posterior mass times the
@@ -137,15 +168,25 @@ export function fertileProbability(
  * window a soft trailing edge — the fifth day of a predicted period is less
  * certain than its second, which a fixed span of "N days from the start" could
  * not express.
+ *
+ * Reading every projected onset rather than only the first is the whole of what
+ * puts a period on a calendar paged two months forward. It needs no special
+ * case: a later onset is another set of candidate start days, weighed by the
+ * same survival curve, and each one is wider than the last — so the strokes
+ * thin out with distance and eventually stop, which is the shape of what the
+ * history actually supports.
+ *
+ * `onsets` is sorted, so the walk stops once it is past the day being asked
+ * about — every start day after it is one this day cannot belong to.
  */
 export function upcomingPeriodProbability(
   f: ProbabilisticForecast,
   day: DayKey,
 ): number {
   let sum = 0;
-  for (const d of f.days) {
+  for (const d of f.onsets) {
+    if (d.day > day) break;
     const index = daysBetween(d.day, day) + 1;
-    if (index < 1) continue;
     const survives = periodLengthSurvival(f.periodLength, index);
     if (survives === 0) continue;
     sum += d.probability * survives;
@@ -190,9 +231,9 @@ export function ongoingPeriodProbability(
   return Math.min(1, periodLengthSurvival(f.periodLength, index) / reached);
 }
 
-/** How likely the day is a period day at all — the episode running now, or the
- *  next one. The two are different episodes a cycle apart and cannot both cover
- *  a day, so their masses add. */
+/** How likely the day is a period day at all — the episode running now, or an
+ *  upcoming one. They are different episodes at least a cycle apart and cannot
+ *  both cover a day, so their masses add. */
 export function periodProbability(
   f: ProbabilisticForecast,
   day: DayKey,
@@ -202,6 +243,62 @@ export function periodProbability(
     1,
     ongoingPeriodProbability(f, day, data) + upcomingPeriodProbability(f, day),
   );
+}
+
+/**
+ * Whether the day falls inside the span an upcoming period is *expected* to
+ * cover: one of the projected start days, and the days after it a typical
+ * episode runs for.
+ *
+ * This exists because far enough ahead the probability rule above runs out.
+ * Each projected cycle is wider than the last, and once the spread is broader
+ * than a period is long, no single day is more likely than not a period day —
+ * so a calendar drawing only the days that clear a half answers "when is my
+ * period in September?" with an empty month. That is not the cautious answer;
+ * it is the wrong one, because the model has a perfectly good opinion about
+ * September and is simply not being asked for it in the right terms.
+ *
+ * So the mark and the word part company here, which they already do elsewhere
+ * (a reported quiet day is marked while its status is "not fertile"). The word
+ * and the percentage keep the half rule and stay exactly as honest as they
+ * were. The mark says where the period is expected to fall, in the outline that
+ * has always meant *predicted* rather than observed — and it fades out on its
+ * own, because `upcomingStarts` stops where the projection stops being a date
+ * (see `forecastModel.ts`).
+ */
+function inExpectedPeriod(f: ProbabilisticForecast, day: DayKey): boolean {
+  const length = Math.max(1, f.periodLength.typicalLength);
+  for (const start of f.upcomingStarts) {
+    if (start > day) break;
+    if (daysBetween(start, day) < length) return true;
+  }
+  return false;
+}
+
+/**
+ * The same for the fertile window: the days around the ovulation each projected
+ * start implies.
+ *
+ * The window is derived from the start rather than estimated on its own, on the
+ * rule the whole module runs on — ovulation is `luteal` days before an onset —
+ * so it cannot land anywhere other than a fortnight before the stroke the
+ * calendar drew for that period.
+ */
+function inExpectedFertileWindow(
+  f: ProbabilisticForecast,
+  day: DayKey,
+  options: CycleOptions,
+): boolean {
+  for (const start of f.upcomingStarts) {
+    const ovulation = addDays(start, -options.lutealPhaseLength);
+    if (
+      day >= addDays(ovulation, -options.fertileWindowBefore) &&
+      day <= addDays(ovulation, options.fertileWindowAfter)
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Everything a status call needs that isn't the day itself. Bundled because
@@ -239,6 +336,17 @@ export function dayStatus(day: DayKey, ctx: StatusContext): DayStatus {
     reported: entry !== undefined,
     fertileProbability: fertile,
     periodProbability: period,
+    // A logged "no" outranks a projection, exactly as it rules a candidate
+    // start day out of the forecast: an overdue period's expected span can
+    // reach back over days that have already been answered.
+    expectedPeriod:
+      f !== null &&
+      !(entry !== undefined && !entry.bleeding) &&
+      inExpectedPeriod(f, day),
+    expectedFertile:
+      f !== null &&
+      ctx.showFertileWindow &&
+      inExpectedFertileWindow(f, day, ctx.options),
   };
 
   if (entry?.bleeding) {

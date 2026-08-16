@@ -18,6 +18,9 @@
   to today; the whole screen fits a phone without scrolling
 - Forecast: cycle day, predicted next period, and an optional fertile window,
   with a stated confidence rather than a bare date
+- Calendar: a month at a time, with the periods and fertile windows after the
+  next one projected too — each further cycle a little less certain, and drawn
+  only while the model can still say which week
 - History: average cycle and period length, cycle-length trend, mood swings by
   cycle phase, and the list of periods behind the averages
 - Settings: light/dark theme, cycle assumptions, cloud sync, JSON backup and

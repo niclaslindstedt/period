@@ -94,12 +94,26 @@ function continues(here: RunKind, there: DayTone): boolean {
   return here !== null && runOf(there) === here;
 }
 
-/** Which tone a status wears. Reported-but-quiet days come last so a logged
- *  fertile day still reads as fertile. */
+/**
+ * Which tone a status wears. Reported-but-quiet days come last so a logged
+ * fertile day still reads as fertile.
+ *
+ * `expectedPeriod` and `expectedFertile` sit alongside the calls they echo
+ * rather than below them, and they are what puts the months after next on the
+ * calendar at all. A day is *called* a period day when it is more likely than
+ * not one, which stops being true of any single day a few cycles out — but the
+ * model still has a perfectly good opinion about where that period falls, and
+ * the outline that has always meant "expected, not observed" is exactly the
+ * mark for it (see `expectedPeriod` in `dayStatus.ts`). The word and the
+ * percentage on the Status screen keep the stricter rule; only the paint reads
+ * these.
+ */
 export function toneFor(status: DayStatus): DayTone {
   if (status.kind === "period") return "period";
-  if (status.kind === "predictedPeriod") return "predicted";
-  if (status.kind === "fertile") return "fertile";
+  if (status.kind === "predictedPeriod" || status.expectedPeriod) {
+    return "predicted";
+  }
+  if (status.kind === "fertile" || status.expectedFertile) return "fertile";
   if (status.reported) return "reported";
   return "none";
 }

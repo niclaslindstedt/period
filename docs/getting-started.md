@@ -29,7 +29,7 @@ web sessions do it from `.claude/hooks/session-start.sh`.
 
 ## Log your first day
 
-With nothing reported yet, the app opens on the **Report** tab with today
+With nothing reported yet, the app opens on the daily report with today
 selected. (Once there is a report to derive from, it opens on **Status**
 instead — Report is always a tap away on the bottom bar.)
 

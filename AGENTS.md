@@ -120,7 +120,11 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   clock-free.**
 - `src/app/forecastModel.ts` — the probabilistic forecast: a distribution over
   the days ahead rather than one of them, plus the mood and temperature
-  evidence channels and the rolling-origin backtest. Also pure and clock-free.
+  evidence channels and the rolling-origin backtest. It also projects the cycles
+  _after_ the next one, by convolving its own posterior with its own
+  cycle-length predictive — no second fit, each one wider than the last, and it
+  stops where an onset's 80% interval passes half a cycle. Also pure and
+  clock-free.
 - `src/app/stats.ts` — the numerics underneath it (Student-t, the regularized
   incomplete beta, weighted moments, discrete distributions). Textbook
   definitions with textbook-value tests.
@@ -149,10 +153,22 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
 - `src/app/dayStatus.ts` — the posterior turned into one call per day
   (_period_ / _predicted period_ / _fertile_ / _not fertile_) and the
   probability behind it. Fits nothing of its own; it only takes mass out of
-  `forecastModel.ts`. Also pure and clock-free.
+  `forecastModel.ts`. Also pure and clock-free. It additionally reports whether
+  a day falls in the _span_ an upcoming period is expected to cover — a weaker
+  claim than the call, and the one the paint follows a few cycles out, where no
+  single day clears a half but the model still has an opinion about the week.
+  The word and the percentage keep the stricter rule; only the mark reads it.
 - `src/app/StatusScreen.tsx`, `ReportScreen.tsx`, `CalendarScreen.tsx`,
   `ForecastScreen.tsx`, `HistoryScreen.tsx`, `SettingsScreen.tsx` — the six
-  screens, one per bottom-nav tab.
+  screens. Four are bottom-nav tabs; Report and Settings are reached from the
+  top bar, because they are things you do and leave rather than places you are.
+- `src/app/TopBar.tsx` — the top bar: the wordmark, the sync glyph, the `+` that
+  opens the daily report, and the settings cog. Its geometry is the sibling
+  `notes` header's (`px-4 py-3`, `text-lg font-bold`, the same
+  `max(0.75rem, env(safe-area-inset-top))`); its surface is this app's.
+- `src/app/useSwipeNav.ts` — the touch swipe that moves one tab along the bottom
+  bar. Bails on range inputs, dialogs, `[data-swipe-ignore]`, and anything that
+  scrolls sideways; a horizontal drag is not always a page gesture.
 - `src/app/DayMark.tsx` — a day's status as a mark, plus the legend built from
   the same table. The only place that mapping exists, so the Status week row and
   the Calendar month grid cannot paint one day two ways. Shape carries meaning
@@ -267,7 +283,7 @@ the tests pin real dates without fake timers.
 | A new statistic over mood swings     | `src/app/swings.ts`                                                                                                                          |
 | A new evidence channel               | A profile + a clamped term in `src/app/forecastModel.ts`, with tests in `tests/forecastModel_test.ts`                                        |
 | A change to what a range save writes | `src/app/bulk.ts`, with tests in `tests/bulk_test.ts`                                                                                        |
-| A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`                                                                                |
+| A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`, or a button in `src/app/TopBar.tsx` if it is an action rather than a place    |
 | A new setting                        | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                         |
 | A new developer-only affordance      | `src/app/dev/`, revealed behind `settings.devMode` in `SettingsScreen.tsx` — never in the persisted settings if it must not survive a reload |
 | A change to what the demo shows      | `src/app/dev/demoData.ts` (offsets from `today`, never fixed dates), with tests in `tests/demoData_test.ts`                                  |
@@ -319,6 +335,7 @@ with `[Learn more](feature:<slug>)`.
 | A `VITE_*` variable              | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it      |
 | A screen's behaviour             | The matching `docs/features/*.md` and the README's Usage table                                                      |
 | `dayStatus.ts`                   | `docs/features/status.md` and `docs/features/calendar.md` — both screens quote its rules                            |
+| The navigation (nav or top bar)  | `docs/architecture.md`'s tree, the README's Usage tables, and `docs/features/daily-report.md`                       |
 | An evidence channel              | `docs/forecast-model.md`, `docs/features/daily-report.md`, `docs/features/forecast.md`, and the README's What block |
 | Module layout                    | The "Where new code goes" table above and `docs/architecture.md`                                                    |
 | A make target or script          | `CONTRIBUTING.md`, the README's Quick start, and this file's command list                                           |
@@ -330,10 +347,13 @@ with `[Learn more](feature:<slug>)`.
 - **Two themes only** — one light, one dark, plus "follow the device". The
   framework ships a dozen palettes; this app deliberately exposes none of them.
   Don't reintroduce the picker.
-- **The bottom nav is the navigation.** Six tabs, no sidebar, no drawer. Six is
-  the ceiling, not a direction of travel: at 375px each tab gets about 62px,
-  which fits "Calendar" and nothing longer. A seventh destination should
-  replace one, not be squeezed in.
+- **The bottom nav is the navigation.** Four tabs, no sidebar, no drawer, and
+  they are _destinations_ — a fixed left-to-right order a swipe moves along
+  (`useSwipeNav.ts`). Things you do and then leave belong on the top bar
+  instead, which is where Report and Settings went. Six was the old ceiling
+  (about 62px a tab at 375px, which fits "Calendar" and nothing longer); at four
+  there is room, but a new _destination_ still has to earn a place in an order
+  that means something, and a new _action_ is a top-bar button, not a tab.
 - **No dependency creep.** The framework, Preact, a font, and workbox-window.
   A new runtime dependency needs a reason that the framework can't serve.
 

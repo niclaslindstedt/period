@@ -6,6 +6,11 @@ anything to do. One day, four taps, two optional measurements, one **Save** —
 and the whole of it on a single phone screen, with nothing to scroll. Once a
 day has been reported the app opens on [Status](status.md) instead.
 
+Reach it from the **+** in the top right, from any screen. It is not one of the
+tabs along the bottom, because it is not a place you go and stay: you file the
+day and you leave. Pressing **+** again does exactly that — back to the screen
+you came from, nothing saved.
+
 - **Blood** — a button. Press it if there was any bleeding at all, spotting
   included: spotting is how most periods start, and the derivation has no use
   for a heaviness it never reads.
