@@ -11,8 +11,8 @@
 // already fitted. Nothing is re-estimated, so a status can never disagree with
 // the forecast it came from:
 //
-//   - a day D is inside the next period  ⟺  the period starts on some day in
-//     [D − (periodLength − 1), D]
+//   - a day D is inside the next period  ⟺  the period starts on some day S ≤ D
+//     and runs for at least D − S + 1 days
 //   - a day D is fertile                 ⟺  the period starts on some day in
 //     [D + luteal − after, D + luteal + before]
 //
@@ -20,20 +20,46 @@
 // is `luteal` days before it — which is exactly why the posterior over start
 // days answers both questions.)
 //
+// There is a third case, and it is the one a start-day distribution on its own
+// gets wrong. On the morning you log the first bleeding day of a period, the
+// posterior has already moved on to the *next* onset four weeks out — so it has
+// no mass anywhere near tomorrow, and the rest of the period you are currently
+// having would be painted as empty calendar. That is the days-ahead half of the
+// week row going blank on exactly the day it matters most.
+//
+// The missing piece is not another estimator of the same thing. It is the
+// episode-length distribution `forecastModel.ts` fits alongside the start days:
+// given a period that started on a known day and has been bleeding for `k` days
+// already, the chance it still covers day D is
+//
+//     P(length ≥ index of D | length ≥ k)
+//
+// — a conditional survival, which decays from near-certainty on the day after
+// day 1 to nearly nothing a fortnight in. The current episode and the next one
+// are disjoint, so the chance a day is a period day is simply their sum.
+//
 // Pure and clock-free like the rest of the derivation: `today` is a parameter,
 // and every input is passed in.
 
-import { addDays, type DayKey } from "@niclaslindstedt/oss-framework/calendar";
+import {
+  addDays,
+  daysBetween,
+  type DayKey,
+} from "@niclaslindstedt/oss-framework/calendar";
 
 import type { CycleOptions } from "./cycle.ts";
-import type { ProbabilisticForecast } from "./forecastModel.ts";
+import {
+  periodLengthSurvival,
+  type ProbabilisticForecast,
+} from "./forecastModel.ts";
 import type { AppData } from "./types.ts";
 
 /** The things a day can be, in the order they outrank each other. */
 export type DayStatusKind =
   /** Bleeding was reported. Not a prediction — a fact. */
   | "period"
-  /** The next period is more likely than not to cover this day. */
+  /** A period is more likely than not to cover this day — either the one
+   *  already running or the next one. */
   | "predictedPeriod"
   /** More likely than not inside the fertile window. */
   | "fertile"
@@ -62,7 +88,8 @@ export type DayStatus = {
   reported: boolean;
   /** Posterior probability the day falls inside the fertile window. */
   fertileProbability: number;
-  /** Posterior probability the day falls inside the next period. */
+  /** Posterior probability the day is covered by a period — the one running
+   *  now, or the next one. */
   periodProbability: number;
 };
 
@@ -100,15 +127,81 @@ export function fertileProbability(
   );
 }
 
-/** How likely the day is covered by the next period, given how long one
- *  usually lasts. */
+/**
+ * How likely the day is covered by the **next** period.
+ *
+ * Every candidate start day S at or before `day` could cover it, but only if
+ * the episode runs far enough: S contributes its own posterior mass times the
+ * chance a period lasts at least `day − S + 1` days. Smearing the start-day
+ * distribution over the length distribution like this is what gives the painted
+ * window a soft trailing edge — the fifth day of a predicted period is less
+ * certain than its second, which a fixed span of "N days from the start" could
+ * not express.
+ */
+export function upcomingPeriodProbability(
+  f: ProbabilisticForecast,
+  day: DayKey,
+): number {
+  let sum = 0;
+  for (const d of f.days) {
+    const index = daysBetween(d.day, day) + 1;
+    if (index < 1) continue;
+    const survives = periodLengthSurvival(f.periodLength, index);
+    if (survives === 0) continue;
+    sum += d.probability * survives;
+  }
+  return Math.min(1, sum);
+}
+
+/**
+ * How likely the day is covered by the period **already running**.
+ *
+ * The episode's start is observed, not predicted, and so is the fact that it
+ * has already reached `observedDays` — so the only open question is how much
+ * further it runs, and the answer is the length distribution conditioned on
+ * having got this far. Day 1 of a period therefore paints the next few days
+ * without needing the start-day posterior to say anything about them.
+ *
+ * A day already reported with no bleeding is excluded outright, on the same
+ * rule the forecast rules out impossible start days: a logged "no" is a fact,
+ * and painting a period over it would be the screen contradicting the report it
+ * was given. A day with no report at all stays possible — not logging is not
+ * the same claim as logging a no.
+ */
+export function ongoingPeriodProbability(
+  f: ProbabilisticForecast,
+  day: DayKey,
+  data: AppData,
+): number {
+  const running = f.periodLength.inProgress;
+  if (!running || day < running.start) return 0;
+
+  const entry = data.entries[day];
+  if (entry !== undefined && !entry.bleeding) return 0;
+
+  const index = daysBetween(running.start, day) + 1;
+  if (index <= running.observedDays) return 1;
+
+  // Renormalising on "it already got this far" is the whole conditioning step.
+  // Without it a long episode would read as less and less likely to continue
+  // precisely because it has been running a while, which is backwards.
+  const reached = periodLengthSurvival(f.periodLength, running.observedDays);
+  if (reached <= 0) return 0;
+  return Math.min(1, periodLengthSurvival(f.periodLength, index) / reached);
+}
+
+/** How likely the day is a period day at all — the episode running now, or the
+ *  next one. The two are different episodes a cycle apart and cannot both cover
+ *  a day, so their masses add. */
 export function periodProbability(
   f: ProbabilisticForecast,
   day: DayKey,
-  periodLength: number,
+  data: AppData,
 ): number {
-  const span = Math.max(1, Math.round(periodLength));
-  return startMassBetween(f, addDays(day, -(span - 1)), day);
+  return Math.min(
+    1,
+    ongoingPeriodProbability(f, day, data) + upcomingPeriodProbability(f, day),
+  );
 }
 
 /** Everything a status call needs that isn't the day itself. Bundled because
@@ -119,9 +212,6 @@ export type StatusContext = {
   /** Null until a period has been logged. Every day is then `unknown` except
    *  the ones a report speaks for. */
   forecast: ProbabilisticForecast | null;
-  /** Days a period usually lasts — the observed average, or the configured
-   *  default until one has been logged. */
-  periodLength: number;
   options: CycleOptions;
   /** Whether the fertile window may be named at all. Off for anyone tracking
    *  only their period: the status then reads as period / not, and no
@@ -143,7 +233,7 @@ export function dayStatus(day: DayKey, ctx: StatusContext): DayStatus {
   const f = ctx.forecast;
   const fertile =
     f && ctx.showFertileWindow ? fertileProbability(f, day, ctx.options) : 0;
-  const period = f ? periodProbability(f, day, ctx.periodLength) : 0;
+  const period = f ? periodProbability(f, day, ctx.data) : 0;
   const base = {
     day,
     reported: entry !== undefined,

@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 
 import { addDays } from "@niclaslindstedt/oss-framework/calendar";
 
-import { DEFAULT_CYCLE_OPTIONS, cycleStats } from "../src/app/cycle.ts";
+import { DEFAULT_CYCLE_OPTIONS } from "../src/app/cycle.ts";
 import {
   dayStatus,
   fertileProbability,
+  ongoingPeriodProbability,
   periodProbability,
   statusStrip,
+  upcomingPeriodProbability,
   type StatusContext,
 } from "../src/app/dayStatus.ts";
 import { probabilisticForecast } from "../src/app/forecastModel.ts";
@@ -64,9 +66,6 @@ function contextFor(
       "univariate",
       DEFAULT_CYCLE_OPTIONS,
     ),
-    periodLength:
-      cycleStats(data).averagePeriodLength ??
-      DEFAULT_CYCLE_OPTIONS.defaultPeriodLength,
     options: DEFAULT_CYCLE_OPTIONS,
     showFertileWindow: showFertileWindow,
   };
@@ -150,7 +149,8 @@ describe("dayStatus", () => {
 });
 
 describe("fertileProbability / periodProbability", () => {
-  const ctx = contextFor(steadyDoc(), "2026-06-02");
+  const data = steadyDoc();
+  const ctx = contextFor(data, "2026-06-02");
 
   it("peaks across the window and falls away either side of it", () => {
     const f = ctx.forecast!;
@@ -167,7 +167,7 @@ describe("fertileProbability / periodProbability", () => {
     for (let i = -40; i <= 40; i++) {
       const day = addDays("2026-06-02", i);
       const fertile = fertileProbability(f, day, DEFAULT_CYCLE_OPTIONS);
-      const period = periodProbability(f, day, 5);
+      const period = periodProbability(f, day, data);
       expect(fertile).toBeGreaterThanOrEqual(0);
       expect(fertile).toBeLessThanOrEqual(1);
       expect(period).toBeGreaterThanOrEqual(0);
@@ -175,13 +175,118 @@ describe("fertileProbability / periodProbability", () => {
     }
   });
 
-  it("treats a period as covering `periodLength` days from its start", () => {
+  it("covers the days after a predicted start, with a soft trailing edge", () => {
     const f = ctx.forecast!;
-    // A one-day period is the start-day mass alone; a five-day one adds the
-    // four days behind it, so it can only be larger.
-    expect(periodProbability(f, "2026-06-20", 5)).toBeGreaterThan(
-      periodProbability(f, "2026-06-20", 1),
+    // Five-day periods at a 28-day cycle from 2026-05-21 put the next start on
+    // 2026-06-18. The second day of it is more certain than the fifth, and the
+    // fifth than the tenth — a fixed span could not say that.
+    const second = upcomingPeriodProbability(f, "2026-06-19");
+    const fifth = upcomingPeriodProbability(f, "2026-06-22");
+    const tenth = upcomingPeriodProbability(f, "2026-06-27");
+    expect(second).toBeGreaterThan(fifth);
+    expect(fifth).toBeGreaterThan(tenth);
+    expect(second).toBeGreaterThan(0.5);
+    expect(tenth).toBeLessThan(0.5);
+  });
+});
+
+describe("the period already running", () => {
+  /** The steady history, but with the last period cut back to its first
+   *  `days` reported days — someone who has just logged this morning. */
+  function partialDoc(days: number): AppData {
+    const data = steadyDoc();
+    for (let i = days; i < 5; i++)
+      delete data.entries[addDays("2026-05-21", i)];
+    return data;
+  }
+
+  it("paints the days ahead on the first morning of a period", () => {
+    // The regression this exists for: on cycle day 1 the start-day posterior is
+    // describing an onset four weeks out, so on its own it says nothing at all
+    // about tomorrow — and the week row went blank from today forward.
+    const data = partialDoc(1);
+    const ctx = contextFor(data, "2026-05-21");
+    const f = ctx.forecast!;
+
+    expect(upcomingPeriodProbability(f, "2026-05-22")).toBeLessThan(0.01);
+    for (const day of ["2026-05-22", "2026-05-23", "2026-05-24"]) {
+      expect(dayStatus(day, ctx).kind).toBe("predictedPeriod");
+      expect(ongoingPeriodProbability(f, day, data)).toBeGreaterThan(0.5);
+    }
+  });
+
+  it("runs out as the episode outlasts what history says is typical", () => {
+    const data = partialDoc(1);
+    const f = contextFor(data, "2026-05-21").forecast!;
+    const at = (day: string) => ongoingPeriodProbability(f, day, data);
+    // Day 2 through day 8 of a history of five-day periods.
+    expect(at("2026-05-22")).toBeGreaterThan(at("2026-05-25"));
+    expect(at("2026-05-25")).toBeGreaterThan(at("2026-05-28"));
+    expect(at("2026-05-28")).toBeLessThan(0.5);
+  });
+
+  it("gets more confident about tomorrow the longer the episode has run", () => {
+    // A period already six days in has outlasted the typical one, so the odds
+    // it lasts a seventh are better than the odds a one-day-old period lasts a
+    // seventh — conditioning on how far it has come is what says so.
+    const early = partialDoc(1);
+    const late = partialDoc(5);
+    // Extend the running episode two days past the logged five.
+    for (const day of ["2026-05-26", "2026-05-27"]) {
+      late.entries[day] = {
+        date: day,
+        bleeding: true,
+        moodSwings: false,
+        temperature: null,
+        updatedAt: STAMP,
+      };
+    }
+    const day8 = "2026-05-28";
+    expect(
+      ongoingPeriodProbability(contextFor(late, day8).forecast!, day8, late),
+    ).toBeGreaterThan(
+      ongoingPeriodProbability(
+        contextFor(early, "2026-05-21").forecast!,
+        day8,
+        early,
+      ),
     );
+  });
+
+  it("says nothing once the episode has finished", () => {
+    // The last bleeding day is 2026-05-25 and nothing has been logged since, so
+    // by 2026-05-30 the episode is over — no bleeding day could still join it.
+    const data = steadyDoc();
+    const f = contextFor(data, "2026-05-30").forecast!;
+    expect(f.periodLength.inProgress).toBeNull();
+    expect(ongoingPeriodProbability(f, "2026-05-30", data)).toBe(0);
+  });
+
+  it("never paints a period over a day reported without bleeding", () => {
+    const data = partialDoc(1);
+    data.entries["2026-05-22"] = {
+      date: "2026-05-22",
+      bleeding: false,
+      moodSwings: false,
+      temperature: null,
+      updatedAt: STAMP,
+    };
+    const ctx = contextFor(data, "2026-05-22");
+    expect(ongoingPeriodProbability(ctx.forecast!, "2026-05-22", data)).toBe(0);
+    expect(dayStatus("2026-05-22", ctx).kind).not.toBe("predictedPeriod");
+    // …and the episode is still open, so tomorrow is still a period day: one
+    // dry day inside a period is bridged, not the end of it.
+    expect(dayStatus("2026-05-23", ctx).kind).toBe("predictedPeriod");
+  });
+
+  it("does not let the running episode shorten its own expected length", () => {
+    // Its length is censored — "one day" on the first morning. Averaging it in
+    // is what used to make the model predict a one-day period.
+    const first = contextFor(partialDoc(1), "2026-05-21").forecast!;
+    const whole = contextFor(steadyDoc(), "2026-05-25").forecast!;
+    expect(first.periodLength.observedEpisodes).toBe(5);
+    expect(first.periodLength.typicalLength).toBe(5);
+    expect(whole.periodLength.typicalLength).toBe(5);
   });
 });
 

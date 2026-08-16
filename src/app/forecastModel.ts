@@ -66,6 +66,21 @@
 // The structure generalises. A third symptom is another profile and another
 // factor in the product — nothing about the model is specific to mood swings.
 //
+// ## How long an episode lasts
+//
+// The distribution above is over the day the next period *starts*. A calendar
+// paints the days a period *covers*, and the two are only the same question if
+// you also know how long an episode runs — so a small companion distribution is
+// fitted over episode lengths, from the completed episodes in the history.
+//
+// It answers both of the coverage questions the screens ask, which is the point
+// of keeping it in one place: how far past its start day the next period is
+// likely to reach, and — conditioned on what has already been observed — how
+// much longer the period running *right now* is likely to last. The second one
+// is what puts colour on the days after "cycle day 1", which the start-day
+// distribution alone has nothing to say about: it is busy describing a period
+// four weeks out.
+//
 // Everything here is pure and clock-free, like `cycle.ts`: `today` is always a
 // parameter, so `tests/forecastModel_test.ts` pins real dates without touching
 // the clock.
@@ -77,6 +92,7 @@ import {
   cycleStats,
   DEFAULT_CYCLE_OPTIONS,
   derivePeriods,
+  inProgressPeriod,
   type Confidence,
   type CycleOptions,
   type PeriodSpan,
@@ -85,6 +101,7 @@ import {
   credibleInterval,
   median,
   normalize,
+  pmfMean,
   pmfMode,
   pmfQuantile,
   pmfStdev,
@@ -322,6 +339,10 @@ export type ProbabilisticForecast = {
   lastObservedStart: DayKey;
   /** The per-day distribution, oldest day first. */
   days: ForecastDay[];
+  /** How long an episode lasts, and where the one running now has got to.
+   *  Turns the start-day distribution above into a statement about the days a
+   *  period *covers*, which is what the Status and Calendar screens paint. */
+  periodLength: PeriodLengthModel;
   /**
    * The date the screen names: the posterior **median**, the day with even
    * odds of the period arriving before or after it.
@@ -807,6 +828,194 @@ export function symptomLogLikelihoodRatio(
   );
 }
 
+// --- How long an episode lasts --------------------------------------------
+
+/**
+ * Longest episode the length model represents.
+ *
+ * A fortnight is well past what this app should be modelling as an ordinary
+ * period, and the support has to end somewhere for the survival tail to be
+ * finite. Mass that would fall beyond the cap folds back into it rather than
+ * being dropped, so the distribution still sums to one.
+ */
+export const MAX_PERIOD_LENGTH = 14;
+
+/**
+ * How much the configured default counts for, in episodes.
+ *
+ * One, on the same reasoning as the cycle-length prior: it should lose the
+ * argument as soon as there are real episodes to learn from, but a first-ever
+ * period — where the only observation is censored and worth nothing — still
+ * needs something to be a distribution over.
+ */
+const PERIOD_LENGTH_PRIOR_STRENGTH = 1;
+
+/**
+ * The kernel each observed length is spread over.
+ *
+ * Periods vary by a day either way, and an empirical distribution over four or
+ * five episodes would otherwise put a hard zero on any length it happened not
+ * to have seen — so three episodes of five days would say a sixth day is
+ * *impossible*, and the calendar would stop painting mid-period on the first
+ * cycle that ran long. Smoothing is what turns "never observed" into
+ * "unlikely", which is the honest reading of a handful of episodes.
+ */
+const PERIOD_LENGTH_KERNEL = [
+  [-1, 0.25],
+  [0, 0.5],
+  [1, 0.25],
+] as const;
+
+/**
+ * Share of the distribution spread flat across every length in the support.
+ *
+ * Smoothing widens what the history has seen by a day either way; this is what
+ * keeps the rest of the support from being *zero*. It matters at exactly one
+ * moment, and it is a moment that happens: an episode that runs longer than any
+ * on record. Without a floor the conditional survival divides by zero there, and
+ * the app would answer "how much longer will this last?" with "it already
+ * ended" on the one morning the question is least academic.
+ *
+ * Two percent is deliberately small — inside the observed range it moves
+ * nothing — and flat rather than shaped, because past what the history has shown
+ * there is nothing left to shape it with. The practical effect is that a period
+ * running unusually long keeps its colour for a few more days and then fades,
+ * rather than stopping dead.
+ */
+const PERIOD_LENGTH_FLOOR = 0.02;
+
+/** A bleeding episode that has started and not yet finished. */
+export type InProgressPeriod = {
+  start: DayKey;
+  /** The last day of it reported as bleeding. */
+  lastBleedingDay: DayKey;
+  /** Days from `start` through `lastBleedingDay` inclusive — the length the
+   *  episode is already known to have reached. */
+  observedDays: number;
+};
+
+/**
+ * How long a bleeding episode lasts, as a distribution — and where the current
+ * one has got to.
+ *
+ * `cycleStats().averagePeriodLength` answers the same question with one rounded
+ * number, which is the right thing for the History screen to display and the
+ * wrong thing to paint a calendar with: a single number has a hard edge, and a
+ * hard edge means the day after the average is either certainly a period day or
+ * certainly not. It also counts the episode in progress, whose length is
+ * *censored* — on the first morning of a period it is "one day", which would
+ * drag the average toward one and shrink the very window the screen is being
+ * asked about.
+ *
+ * So this fits on completed episodes only, and keeps the whole distribution.
+ * Two questions come out of it, and both are asked in `dayStatus.ts`:
+ *
+ *   - how much longer the period running right now is likely to last —
+ *     `P(length ≥ n | length ≥ what has already been observed)`, which is why
+ *     the days after "day 1" are painted at all;
+ *   - how far past its start day the *next* period is likely to reach, which
+ *     is the same survival curve smeared over the start-day posterior.
+ */
+export type PeriodLengthModel = {
+  /** P(an episode lasts exactly n days), over n = 1 … {@link
+   *  MAX_PERIOD_LENGTH}. */
+  pmf: Pmf;
+  /** `survival[n]` = P(length ≥ n), for n = 0 … `MAX_PERIOD_LENGTH + 1`.
+   *  Derived from `pmf` once because every consumer wants the tail, never
+   *  fitted separately. */
+  survival: number[];
+  /** Mean of `pmf`, rounded — "a period usually runs about N days". */
+  typicalLength: number;
+  /** Completed episodes behind the fit. Zero during a first-ever period, when
+   *  the distribution is the prior alone. */
+  observedEpisodes: number;
+  /** The episode still running as of `today`, or null when the last one has
+   *  finished. */
+  inProgress: InProgressPeriod | null;
+};
+
+/**
+ * Fit {@link PeriodLengthModel} from the observed episodes.
+ *
+ * The episode in progress is excluded from the fit and reported separately: it
+ * is the thing being asked about, and letting it vote on its own expected
+ * length is how a period on its first day ends up predicting it will last one
+ * day.
+ */
+export function periodLengthModel(
+  periods: readonly PeriodSpan[],
+  today: DayKey,
+  cycle: CycleOptions = DEFAULT_CYCLE_OPTIONS,
+): PeriodLengthModel {
+  const running = inProgressPeriod(periods, today);
+  const completed = periods.filter((p) => p !== running);
+
+  const weights = new Array<number>(MAX_PERIOD_LENGTH + 1).fill(0);
+  const place = (length: number, weight: number) => {
+    for (const [offset, share] of PERIOD_LENGTH_KERNEL) {
+      // Clamping folds the kernel's overhang back into the end bin instead of
+      // letting it fall off, so the weights still total what was placed.
+      const bin = Math.min(
+        MAX_PERIOD_LENGTH,
+        Math.max(1, Math.round(length) + offset),
+      );
+      weights[bin]! += weight * share;
+    }
+  };
+
+  place(cycle.defaultPeriodLength, PERIOD_LENGTH_PRIOR_STRENGTH);
+  for (const period of completed) place(period.length, 1);
+
+  // The prior always places weight, so the normalisation can only fail if it
+  // has been configured away; a flat distribution is the right thing to fall
+  // back to when nothing has an opinion.
+  const uniform = 1 / MAX_PERIOD_LENGTH;
+  const fitted = normalize({ offset: 1, probabilities: weights.slice(1) });
+  const pmf: Pmf = {
+    offset: 1,
+    probabilities: Array.from({ length: MAX_PERIOD_LENGTH }, (_, i) =>
+      fitted
+        ? (1 - PERIOD_LENGTH_FLOOR) * (fitted.probabilities[i] ?? 0) +
+          PERIOD_LENGTH_FLOOR * uniform
+        : uniform,
+    ),
+  };
+
+  // survival[n] = P(length ≥ n): 1 at and below the shortest possible episode,
+  // 0 once past the cap.
+  const survival = new Array<number>(MAX_PERIOD_LENGTH + 2).fill(0);
+  let tail = 0;
+  for (let n = MAX_PERIOD_LENGTH; n >= 0; n--) {
+    tail += pmf.probabilities[n - pmf.offset] ?? 0;
+    survival[n] = Math.min(1, tail);
+  }
+
+  return {
+    pmf,
+    survival,
+    typicalLength: Math.max(1, Math.round(pmfMean(pmf))),
+    observedEpisodes: completed.length,
+    inProgress: running
+      ? {
+          start: running.start,
+          lastBleedingDay: running.end,
+          observedDays: running.length,
+        }
+      : null,
+  };
+}
+
+/** P(an episode lasts at least `days` days), read off the fitted survival
+ *  curve. Days outside the modelled support answer 1 below it and 0 above. */
+export function periodLengthSurvival(
+  model: PeriodLengthModel,
+  days: number,
+): number {
+  const n = Math.round(days);
+  if (n <= 0) return 1;
+  return model.survival[n] ?? 0;
+}
+
 // --- Putting it together --------------------------------------------------
 
 /** What the within-cycle channels have to work with at prediction time. */
@@ -980,6 +1189,7 @@ export function probabilisticForecast(
     anchorStart,
     lastObservedStart: last.start,
     days,
+    periodLength: periodLengthModel(periods, today, cycle),
     expectedDay,
     peakDay: addDays(anchorStart, pmfMode(posterior)),
     daysUntilExpected: daysBetween(today, expectedDay),

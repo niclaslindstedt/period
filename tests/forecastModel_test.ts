@@ -11,7 +11,10 @@ import {
   DEFAULT_MODEL_OPTIONS,
   fitPosterior,
   observationsFrom,
+  periodLengthModel,
+  periodLengthSurvival,
   predictivePmf,
+  MAX_PERIOD_LENGTH,
   probabilisticForecast,
   repairSkippedCycles,
   symptomLogLikelihoodRatio,
@@ -337,6 +340,127 @@ describe("predictivePmf", () => {
     const peak = pmfMode(pmf);
     expect(peak).toBeLessThanOrEqual(pmfQuantile(pmf, 0.5));
     expect(mass(peak + 1, 1000)).toBeGreaterThan(mass(0, peak - 1));
+  });
+});
+
+describe("periodLengthModel", () => {
+  /** Six periods of `periodLength` days at a steady 28-day gap, truncated so
+   *  the last one has only `runningDays` of it logged. */
+  function history(periodLength: number, runningDays = periodLength): AppData {
+    const { data, starts } = build({
+      firstStart: "2026-01-01",
+      cycleLengths: [28, 28, 28, 28, 28],
+      periodLength,
+      logEveryDay: false,
+    });
+    const last = starts[starts.length - 1]!;
+    for (let i = runningDays; i < periodLength; i++) {
+      delete data.entries[addDays(last, i)];
+    }
+    return data;
+  }
+
+  it("is a distribution over 1 … MAX_PERIOD_LENGTH days", () => {
+    const m = periodLengthModel(
+      derivePeriods(history(5)),
+      "2026-06-10",
+      DEFAULT_CYCLE_OPTIONS,
+    );
+    expect(m.pmf.offset).toBe(1);
+    expect(m.pmf.probabilities).toHaveLength(MAX_PERIOD_LENGTH);
+    const total = m.pmf.probabilities.reduce((sum, p) => sum + p, 0);
+    expect(total).toBeCloseTo(1, 12);
+    expect(m.pmf.probabilities.every((p) => p >= 0)).toBe(true);
+  });
+
+  it("centres on the episodes actually logged", () => {
+    const at = (length: number) =>
+      periodLengthModel(
+        derivePeriods(history(length)),
+        "2026-06-10",
+        DEFAULT_CYCLE_OPTIONS,
+      ).typicalLength;
+    expect(at(3)).toBe(3);
+    expect(at(5)).toBe(5);
+    expect(at(7)).toBe(7);
+  });
+
+  it("is the configured default before any episode has finished", () => {
+    const data = emptyDoc();
+    data.entries["2026-03-01"] = {
+      date: "2026-03-01",
+      bleeding: true,
+      moodSwings: false,
+      temperature: null,
+      updatedAt: STAMP,
+    };
+    const m = periodLengthModel(
+      derivePeriods(data),
+      "2026-03-01",
+      DEFAULT_CYCLE_OPTIONS,
+    );
+    expect(m.observedEpisodes).toBe(0);
+    expect(m.typicalLength).toBe(DEFAULT_CYCLE_OPTIONS.defaultPeriodLength);
+  });
+
+  it("reports the episode in progress and leaves it out of the fit", () => {
+    // Five finished five-day periods, plus one a single day old.
+    const data = history(5, 1);
+    const m = periodLengthModel(
+      derivePeriods(data),
+      "2026-05-21",
+      DEFAULT_CYCLE_OPTIONS,
+    );
+    expect(m.observedEpisodes).toBe(5);
+    expect(m.typicalLength).toBe(5);
+    expect(m.inProgress).toEqual({
+      start: "2026-05-21",
+      lastBleedingDay: "2026-05-21",
+      observedDays: 1,
+    });
+  });
+
+  it("has no episode in progress once the last one is over", () => {
+    const m = periodLengthModel(
+      derivePeriods(history(5)),
+      "2026-06-10",
+      DEFAULT_CYCLE_OPTIONS,
+    );
+    expect(m.inProgress).toBeNull();
+  });
+
+  it("never rules a length out entirely", () => {
+    // Six identical five-day periods. Without a floor the distribution would
+    // put a hard zero on a sixth day of bleeding, and the conditional survival
+    // that the calendar reads would divide by it.
+    const m = periodLengthModel(
+      derivePeriods(history(5)),
+      "2026-06-10",
+      DEFAULT_CYCLE_OPTIONS,
+    );
+    for (let n = 1; n <= MAX_PERIOD_LENGTH; n++) {
+      expect(periodLengthSurvival(m, n)).toBeGreaterThan(0);
+    }
+  });
+
+  it("survives monotonically, from certain to impossible", () => {
+    const m = periodLengthModel(
+      derivePeriods(history(5)),
+      "2026-06-10",
+      DEFAULT_CYCLE_OPTIONS,
+    );
+    expect(periodLengthSurvival(m, 0)).toBe(1);
+    expect(periodLengthSurvival(m, 1)).toBeCloseTo(1, 12);
+    expect(periodLengthSurvival(m, MAX_PERIOD_LENGTH + 1)).toBe(0);
+    for (let n = 1; n <= MAX_PERIOD_LENGTH; n++) {
+      expect(periodLengthSurvival(m, n)).toBeLessThanOrEqual(
+        periodLengthSurvival(m, n - 1),
+      );
+    }
+    // Half the mass sits at five days, so five is near-certain and eight is
+    // most of the way gone.
+    expect(periodLengthSurvival(m, 5)).toBeGreaterThan(0.5);
+    expect(periodLengthSurvival(m, 8)).toBeLessThan(0.1);
   });
 });
 

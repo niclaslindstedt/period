@@ -109,7 +109,7 @@ export const DEFAULT_CYCLE_OPTIONS: CycleOptions = {
 /** How many non-bleeding days may sit inside one period before it counts as
  *  two. One day of nothing mid-period is common enough that splitting on it
  *  would invent a phantom cycle of two days. */
-const MAX_GAP_DAYS = 1;
+export const MAX_GAP_DAYS = 1;
 
 /**
  * Group the reported bleeding days into periods. Consecutive bleeding days
@@ -155,6 +155,57 @@ export function derivePeriods(data: AppData): PeriodSpan[] {
     bleedingDays: count,
   });
   return spans;
+}
+
+/**
+ * The period still running as of `today`, if there is one.
+ *
+ * A span is still running while a bleeding day could still join it, which is
+ * the same tolerance {@link derivePeriods} bridges with — so "in progress" and
+ * "one span" can never disagree about where an episode ends. Once the last
+ * reported bleeding day is further back than that, the episode is over and
+ * nothing about it is still open.
+ *
+ * The distinction matters because an episode in progress is *censored*: its
+ * `length` is how far it has got, not how long it will turn out to be. Anything
+ * averaging period lengths, or asking how much longer this one has to run, has
+ * to know the difference — see `forecastModel.ts`'s period-length model.
+ */
+export function inProgressPeriod(
+  periods: readonly PeriodSpan[],
+  today: DayKey,
+): PeriodSpan | null {
+  const last = periods[periods.length - 1];
+  if (!last) return null;
+  const since = daysBetween(last.end, today);
+  // A report dated ahead of `today` (a timezone edge, a corrected future day)
+  // is still an open episode rather than a closed one.
+  if (since < 0) return last;
+  return since <= MAX_GAP_DAYS + 1 ? last : null;
+}
+
+/**
+ * How long to draw a *predicted* period: the mean of the episodes that have
+ * finished, or the configured default while none have.
+ *
+ * {@link cycleStats}'s `averagePeriodLength` deliberately averages every
+ * episode, the one in progress included, because the History screen reports
+ * what was actually logged. A forecast must not. On the first morning of a
+ * period that average is "one day", and predicting one-day periods for the rest
+ * of the year off the back of an episode that has barely started is the
+ * censoring trap — the same one `forecastModel.ts` avoids when it fits the
+ * period-length distribution.
+ */
+export function typicalPeriodLength(
+  periods: readonly PeriodSpan[],
+  today: DayKey,
+  options: CycleOptions = DEFAULT_CYCLE_OPTIONS,
+): number {
+  const running = inProgressPeriod(periods, today);
+  const completed = periods.filter((p) => p !== running);
+  return completed.length > 0
+    ? Math.round(mean(completed.map((p) => p.length)))
+    : options.defaultPeriodLength;
 }
 
 function mean(values: number[]): number {
@@ -239,7 +290,7 @@ export function forecast(
   const stats = cycleStats(data);
   const observed = stats.medianCycle;
   const cycleLength = observed ?? options.defaultCycleLength;
-  const periodLength = stats.averagePeriodLength ?? options.defaultPeriodLength;
+  const periodLength = typicalPeriodLength(stats.periods, today, options);
 
   const last = stats.periods[stats.periods.length - 1];
   if (!last) {
