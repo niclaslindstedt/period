@@ -20,7 +20,8 @@ report is saved there is nothing to derive, so the app opens on
   carries on past the edge of the week; a day you reported nothing on is a dot.
   Filled means the cycle it belongs to has begun, hollow means the cycle is
   itself still a prediction — so everything up to the next expected period is
-  solid and everything past it is outlined.
+  solid and everything past it is outlined. Today's number is a size larger than
+  the rest, and carries the dot under the row.
 
 It is an estimate from your own reports — not medical advice, and not
 contraception.

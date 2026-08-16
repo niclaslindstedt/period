@@ -346,6 +346,23 @@ body {
   isolation: isolate;
 }
 
+/* Today, at a size you can find without looking for it. The framework marks the
+   current day with the accent colour and a semibold weight at the same `text-sm`
+   every other day wears — which on a grid of forty-two numbers, several of them
+   already sitting on a rose stroke, is a difference you have to hunt for. Size
+   is the one channel nothing else in the grid is using, so today gets it.
+
+   The rule is here rather than in `CalendarScreen.tsx` for the same reason the
+   one above it is: the cell is the framework's `MonthGrid` to render, and
+   `aria-current="date"` is the hook it already puts on today. Scoped to
+   `.app-cycle-calendar` so the Report screen's date picker — where the
+   highlight that matters is the day you *picked* — keeps the framework's
+   sizing. */
+.app-cycle-calendar [role="gridcell"] > button[aria-current="date"] {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
 /* ── Forecast chart ──────────────────────────────────────────────────────────
    The animations for the probability chart on the Forecast screen. They live
    here rather than inline because keyframes are not expressible as Tailwind

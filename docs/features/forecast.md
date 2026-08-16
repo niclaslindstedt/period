@@ -52,14 +52,16 @@ keys — and the row above it reads out that day: the chance it starts then, and
 the chance it has started by then. With nothing under the pointer the row shows
 the day the forecast names.
 
-Four chips underneath change how it is drawn, and nothing else:
+Four controls underneath change how it is drawn, and nothing else. The first two
+are either/or choices, shown as a pair you pick from; the last two are overlays
+you switch on and off:
 
-| Chip                     | What it does                                                                |
-| ------------------------ | --------------------------------------------------------------------------- |
-| **Columns** / **Curve**  | One bar per day, or the shape they trace                                    |
-| **Per day** / **By day** | The chance for each day, or the chance it has started by each day           |
-| **Bands**                | Show or hide the 50 / 80 / 95% credible bands                               |
-| **Compare**              | Overlay what the cycle history alone predicted, before this cycle's reports |
+| Control                       | What it does                                                                |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| **Columns** \| **Curve**      | One bar per day, or the shape they trace                                    |
+| **Per day** \| **Cumulative** | The chance for each day, or the chance it has started by each day           |
+| **Bands**                     | Show or hide the 50 / 80 / 95% credible bands                               |
+| **Compare**                   | Overlay what the cycle history alone predicted, before this cycle's reports |
 
 **Compare** is the interesting one: the dashed line is the forecast without this
 cycle's reports at all, so the gap between the two is exactly what they changed.

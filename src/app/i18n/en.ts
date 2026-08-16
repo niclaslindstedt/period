@@ -208,11 +208,23 @@ export const en = {
       ruledOutLegend: "Ruled out",
       bandLabel: "{percent}% likely",
       historyOnly: "Cycle history only",
-      look: "Chart",
+
+      // The chart's controls. `marksLabel` and `viewLabel` name the two
+      // either/or groups for a screen reader, which a sighted reader gets for
+      // free from seeing both options side by side.
+      //
+      // "Cumulative" rather than the "By day" it used to be: the two views sat
+      // one under the other as "Per day" and "By day", which are the same three
+      // syllables in the same order and told nobody which was which. The word
+      // is a little more technical and exactly clear, and the headline above the
+      // chart already spells out what it means — "chance it has started by
+      // then".
+      marksLabel: "Chart shape",
       marksBars: "Columns",
       marksCurve: "Curve",
+      viewLabel: "What the chart measures",
       viewDaily: "Per day",
-      viewCumulative: "By day",
+      viewCumulative: "Cumulative",
       bands: "Bands",
       compare: "Compare",
     },

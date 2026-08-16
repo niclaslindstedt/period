@@ -27,6 +27,15 @@ filled for the fertile window of a cycle a real period opened and blue hollow fo
 the window of a cycle no period has opened yet. A hollow mark is the drawing
 saying "this is where it will be" without claiming the day.
 
+The two halves of a pair are exactly the same colour — a predicted period is the
+rose a reported one is, drawn as an outline instead of a fill. Nothing but the
+fill separates them, which is the whole of the rule above: four marks, two
+colours, one question each.
+
+**Today** is a size larger than the days around it, as well as bolder and in the
+accent colour. Several days in any given month are already sitting on a coloured
+stroke, so colour on its own was not enough to find today at a glance.
+
 In practice the whole calendar turns over at one point — **the next predicted
 period**. Everything up to it is solid, because it belongs to cycles that
 actually started, the one you are in now included. Everything past it is

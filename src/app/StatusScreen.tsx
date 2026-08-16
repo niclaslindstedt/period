@@ -199,8 +199,13 @@ function WeekRow({ strip, today }: { strip: DayStatus[]; today: DayKey }) {
                 else. */}
             <span
               aria-label={`${formatDay(status.day)}: ${statusLabel(t, status.kind)}`}
-              className={`relative isolate flex aspect-square w-full items-center justify-center rounded-full text-sm tabular-nums ${
-                isToday ? "font-bold text-accent" : "text-fg"
+              // Today is a size larger as well as bolder and accented. Colour
+              // alone was doing all the work, and on a row where three of the
+              // seven days can already be sitting on a rose stroke it was not
+              // enough to find at a glance — the Calendar screen's grid grows
+              // today for the same reason (see styles.css).
+              className={`relative isolate flex aspect-square w-full items-center justify-center rounded-full tabular-nums ${
+                isToday ? "text-lg font-bold text-accent" : "text-sm text-fg"
               }`}
             >
               <DayMark {...markFor(status.day, toneAt)} />
