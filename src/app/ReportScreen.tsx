@@ -13,9 +13,11 @@ import {
 import {
   Button,
   CalendarIcon,
+  CloudUploadIcon,
   HeartIcon,
   Modal,
   SegmentedControl,
+  TrashIcon,
 } from "@niclaslindstedt/oss-framework/components";
 
 import {
@@ -27,6 +29,7 @@ import {
   rangeLength,
 } from "./bulk.ts";
 import {
+  DiskIcon,
   DropletIcon,
   RingsIcon,
   TestStripIcon,
@@ -34,7 +37,7 @@ import {
   WaveIcon,
 } from "./icons.tsx";
 import { MonthCalendar } from "./MonthCalendar.tsx";
-import { formatDay, formatFullDay, formatShortDay } from "./format.ts";
+import { formatDay, formatFullDay } from "./format.ts";
 import { useT, type TFn } from "./i18n/index.ts";
 import {
   SLIDER_MAX_INDEX,
@@ -104,6 +107,11 @@ type Props = {
   today: DayKey;
   weekStartsOn: WeekStart;
   temperatureUnit: TemperatureUnit;
+  /** True when a cloud account is connected, so Save can say where the report
+   *  is going. It changes the glyph on the button and nothing else — the save
+   *  itself is the same write to the same local document either way, and the
+   *  push to the cloud is the sync engine's business afterwards. */
+  cloudBacked: boolean;
   onSaved: (message: string) => void;
 };
 
@@ -112,6 +120,7 @@ export function ReportScreen({
   today,
   weekStartsOn,
   temperatureUnit,
+  cloudBacked,
   onSaved,
 }: Props) {
   const t = useT();
@@ -230,19 +239,28 @@ export function ReportScreen({
           type="button"
           onClick={openPicker}
           aria-label={t("report.pickDate")}
-          className="flex w-full flex-col items-center gap-0.5 rounded-lg border border-line bg-surface-3 px-4 py-3 transition-colors hover:border-accent/60 hover:bg-surface-2"
+          className="flex w-full items-center gap-3.5 rounded-2xl border border-line bg-surface-3 px-4 py-3 text-left transition-colors hover:border-accent/60 hover:bg-surface-2"
         >
-          <span className="flex items-center gap-1.5 text-[0.7rem] font-medium tracking-wide text-muted uppercase">
-            <CalendarIcon className="h-3.5 w-3.5" />
-            {t("report.forDay")}
-          </span>
-          <span className="text-xl leading-tight font-bold text-fg-bright">
-            {headlineFor(t, span, today)}
-          </span>
-          <span className="text-xs text-muted">
-            {multi
-              ? t("report.rangeSpan", { count: String(spanDays) })
-              : formatFullDay(day)}
+          {/* The glyph is as tall as the three lines beside it and sits to
+              their left, so the card reads as one object with a mark on it
+              rather than as a caption with a decoration in the middle of it.
+              At 56px the shared 2px stroke would draw a 4.7px outline — a
+              different weight of glyph from every other one in the app — so
+              the stroke is thinned back to something like its usual optical
+              weight on the way up. */}
+          <CalendarIcon className="h-14 w-14 shrink-0 stroke-[1.1] text-muted" />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[0.7rem] font-medium tracking-wide text-muted uppercase">
+              {t("report.forDay")}
+            </span>
+            <span className="text-xl leading-tight font-bold text-fg-bright">
+              {headlineFor(t, span, today)}
+            </span>
+            <span className="text-xs text-muted">
+              {multi
+                ? t("report.rangeSpan", { count: String(spanDays) })
+                : formatFullDay(day)}
+            </span>
           </span>
         </button>
         {/* Whether this day already carries a report — the answer to "did I
@@ -327,26 +345,42 @@ export function ReportScreen({
             a 375×667 screen. */}
         <Button
           variant="primary"
-          className="h-[4.25rem] w-full text-base font-semibold"
+          className="h-[4.25rem] w-full rounded-2xl text-base font-semibold"
           onClick={save}
         >
-          {multi
-            ? // The count is on the button because it is the one gesture on
-              // this screen that writes more than the day on display, and the
-              // number of days it writes is the thing worth being sure of.
-              t("report.saveRange", { count: String(spanDays) })
-            : stored
-              ? t("report.saveExisting")
-              : t("report.saveNew")}
+          {/* The glyph says where the report is going, which is the one thing
+              about Save that is not already obvious from the word: a disk
+              while the document lives on this device only, a cloud once an
+              account is connected. It is decorative — the button already says
+              what it does in words — so it carries no label of its own. */}
+          <span className="flex items-center justify-center gap-2">
+            {cloudBacked ? (
+              <CloudUploadIcon className="h-5 w-5" />
+            ) : (
+              <DiskIcon className="h-5 w-5" />
+            )}
+            {multi
+              ? // The count is on the button because it is the one gesture on
+                // this screen that writes more than the day on display, and
+                // the number of days it writes is the thing worth being sure
+                // of.
+                t("report.saveRange", { count: String(spanDays) })
+              : stored
+                ? t("report.saveExisting")
+                : t("report.saveNew")}
+          </span>
         </Button>
         {/* Clearing is rarer than saving and destructive, so it reads as a
-            link under the button rather than a second button beside it. */}
+            link under the button rather than a second button beside it. The
+            bin is what tells the two apart at a glance, which matters most in
+            the half-second before the tap rather than after it. */}
         {(multi ? spanLogged > 0 : stored !== null) && (
           <button
             type="button"
             onClick={clear}
-            className="px-2 py-1 text-xs text-muted hover:text-danger"
+            className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs text-muted hover:text-danger"
           >
+            <TrashIcon className="h-3.5 w-3.5" />
             {multi ? t("report.clearRange") : t("report.clear")}
           </button>
         )}
@@ -435,7 +469,7 @@ export function ReportScreen({
  *  375px screen, and the day count sits underneath it. */
 function headlineFor(t: TFn, span: DayRange, today: DayKey): string {
   if (!isSingleDay(span)) {
-    return `${formatShortDay(span.start)} – ${formatShortDay(span.end)}`;
+    return `${formatDay(span.start)} – ${formatDay(span.end)}`;
   }
   const day = span.start;
   if (day === today) return t("common.today");
@@ -616,7 +650,7 @@ function Temperature({
             someone who types the 3 out of habit is not fighting it. */}
         <label
           data-flag={low ? "low" : undefined}
-          className="temperature-box flex h-11 shrink-0 items-center gap-1 rounded-md border border-line bg-surface-3 px-2.5 focus-within:border-accent"
+          className="temperature-box flex h-11 shrink-0 items-center gap-1 rounded-lg border border-line bg-surface-3 px-2.5 focus-within:border-accent"
         >
           <input
             type="text"

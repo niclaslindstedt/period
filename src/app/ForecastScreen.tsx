@@ -6,7 +6,14 @@ import {
   daysBetween,
   type DayKey,
 } from "@niclaslindstedt/oss-framework/calendar";
-import { Section } from "@niclaslindstedt/oss-framework/components";
+import {
+  CalendarIcon,
+  HeartIcon,
+  InfoIcon,
+  Section,
+  SlidersIcon,
+  SparklesIcon,
+} from "@niclaslindstedt/oss-framework/components";
 
 import {
   cycleStats,
@@ -28,8 +35,25 @@ import {
   type ForecastModelKind,
   type ProbabilisticForecast,
 } from "./forecastModel.ts";
-import { formatDay, formatShortDay, probabilityPercent } from "./format.ts";
-import { ForecastIcon } from "./icons.tsx";
+import { formatDay, probabilityPercent } from "./format.ts";
+import {
+  BandsIcon,
+  ChartIcon,
+  ColumnsIcon,
+  CompareIcon,
+  CumulativeIcon,
+  CurveIcon,
+  DropletIcon,
+  ForecastIcon,
+  OvumIcon,
+  PerDayIcon,
+  RangeIcon,
+  RingsIcon,
+  TargetIcon,
+  TestStripIcon,
+  ThermometerIcon,
+  WaveIcon,
+} from "./icons.tsx";
 import { useT, type TFn } from "./i18n/index.ts";
 import {
   BinaryProfileChart,
@@ -62,6 +86,14 @@ import type { AppData } from "./types.ts";
 // them. The chart's appearance chips stay here, because they change how the
 // chart is drawn rather than what is said, and nothing behind them moves a
 // number.
+//
+// The screen is written in sentences, because a forecast that does not qualify
+// itself is a forecast that overclaims — and a page of qualified sentences is
+// also a page where the one thing everybody came for, a date, is the hardest
+// thing to find. So the dates come out of the prose and into pills, each row
+// keeps the glyph of what it is about, and the sentence around them is still
+// there to be read. Nothing about that is load-bearing for the numbers: every
+// figure on screen is the same figure it was before it was set in a shape.
 //
 // Everything is derived on the fly from the reports, so there is nothing to
 // refresh and nothing that can go stale. The confidence line is not decoration:
@@ -130,7 +162,10 @@ export function ForecastScreen({
         usingDefault={f.usingDefault}
       />
 
-      <Section title={t("forecast.chart.title")}>
+      <Section
+        title={t("forecast.chart.title")}
+        icon={<ForecastIcon className="h-3.5 w-3.5" />}
+      >
         <ForecastChart forecast={probabilistic} today={today} look={look} />
         <ChartChips look={look} onChange={onLookChange} />
       </Section>
@@ -149,31 +184,38 @@ export function ForecastScreen({
       )}
 
       {showFertileWindow && f.fertileStart && f.fertileEnd && f.ovulation && (
-        <Section title={t("forecast.fertileWindow")}>
-          <p className="text-sm text-fg">
-            {formatDay(f.fertileStart)} — {formatDay(f.fertileEnd)}
-          </p>
-          <p className="text-xs text-muted">
+        <Section
+          title={t("forecast.fertileWindow")}
+          icon={<SparklesIcon className="h-3.5 w-3.5" />}
+        >
+          <DateSpan start={f.fertileStart} end={f.fertileEnd} />
+          <p className="flex items-center gap-1.5 text-xs text-muted">
+            <OvumIcon className="h-3.5 w-3.5 shrink-0" />
             {t("forecast.ovulation", { date: formatDay(f.ovulation) })}
           </p>
         </Section>
       )}
 
       {upcoming.length > 1 && (
-        <Section title={t("history.periods")}>
-          <ul className="flex flex-col gap-1 text-sm">
+        <Section
+          title={t("history.periods")}
+          icon={<DropletIcon className="h-3.5 w-3.5" />}
+        >
+          <ul className="flex flex-col gap-2 text-sm">
             {upcoming.map((span) => (
               <li
                 key={span.start}
-                className="flex justify-between gap-2 text-muted"
+                className="flex flex-wrap items-center justify-between gap-2"
               >
-                <span className="text-fg">
-                  {t("history.periodRow", {
-                    start: formatShortDay(span.start),
-                    end: formatShortDay(span.end),
+                <DateSpan
+                  start={span.start}
+                  end={span.end}
+                  label={t("history.periodRow", {
+                    start: formatDay(span.start),
+                    end: formatDay(span.end),
                   })}
-                </span>
-                <span>
+                />
+                <span className="text-xs text-muted">
                   {t("forecast.inDays", {
                     count: String(daysBetween(today, span.start)),
                   })}
@@ -184,7 +226,8 @@ export function ForecastScreen({
         </Section>
       )}
 
-      <p className="px-1 text-xs leading-snug text-muted">
+      <p className="flex gap-1.5 px-1 text-xs leading-snug text-muted">
+        <InfoIcon className="mt-px h-3.5 w-3.5 shrink-0" />
         {t("forecast.disclaimer")}
       </p>
     </div>
@@ -217,33 +260,58 @@ function Headline({
           : t("forecast.overdue", { count: String(-days) });
 
   return (
-    <div className="rounded-md border border-accent/40 bg-accent/10 p-4">
-      <div className="flex items-center gap-2 text-accent">
-        <ForecastIcon className="h-4 w-4" />
-        <span className="text-xs font-bold tracking-wide uppercase">
-          {t(`forecast.confidence.${f.confidence}` as const)}
-        </span>
-      </div>
-      <p className="mt-2 text-2xl font-bold text-fg-bright">
+    <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4">
+      {/* The confidence label is a pill rather than a line of small caps: it
+          is a badge on the forecast — the qualifier the whole card is read
+          through — and a shape that closes around it says that better than
+          type size does. */}
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-2.5 py-1 text-xs font-bold tracking-wide text-accent uppercase">
+        <ForecastIcon className="h-3.5 w-3.5" />
+        {t(`forecast.confidence.${f.confidence}` as const)}
+      </span>
+      <p className="mt-2.5 text-2xl font-bold text-fg-bright">
         {t("forecast.cycleDay", { day: String(cycleDay) })}
       </p>
-      <p className="mt-1 text-sm text-fg">
-        {t("forecast.nextPeriod")}: {formatDay(f.expectedDay)} — {whenLine}
-      </p>
-      {/* The range is the honest half of the sentence above it. It is not
-          behind the advanced toggle for exactly that reason. */}
-      <p className="mt-1 text-sm text-fg">
-        {t("forecast.likelyBetween", {
-          start: formatShortDay(ci80.start),
-          end: formatShortDay(ci80.end),
-        })}
-      </p>
-      <p className="mt-2 text-xs text-muted">
+
+      {/* The date and the countdown are the two things anyone opens this
+          screen for, so they are lifted out of the sentence they used to sit
+          in and set as pills — the eye finds them without reading the line.
+          The label keeps its glyph so the row still says *what* the date is
+          the date of. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="flex items-center gap-1.5 text-sm text-fg">
+          <DropletIcon className="h-4 w-4 shrink-0 text-accent" />
+          {t("forecast.nextPeriod")}
+        </span>
+        <Pill tone="solid">{formatDay(f.expectedDay)}</Pill>
+        <Pill tone="muted">{whenLine}</Pill>
+      </div>
+
+      {/* The range is the honest half of the line above it. It is not behind
+          the advanced toggle for exactly that reason. */}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span className="flex items-center gap-1.5 text-sm text-fg">
+          <RangeIcon className="h-4 w-4 shrink-0 text-accent" />
+          {t("forecast.likelyLabel")}
+        </span>
+        <DateSpan
+          start={ci80.start}
+          end={ci80.end}
+          label={t("forecast.likelyBetween", {
+            start: formatDay(ci80.start),
+            end: formatDay(ci80.end),
+          })}
+        />
+      </div>
+
+      <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+        <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
         {t("forecast.chanceWithinWeek", {
           percent: probabilityPercent(f.probabilityWithinWeek),
         })}
       </p>
-      <p className="mt-0.5 text-xs text-muted">
+      <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
+        <ChartIcon className="h-3.5 w-3.5 shrink-0" />
         {usingDefault
           ? t("forecast.basedOnDefault", {
               length: String(Math.round(f.params.typicalLength)),
@@ -254,6 +322,77 @@ function Headline({
             })}
       </p>
     </div>
+  );
+}
+
+/**
+ * A date, or a short phrase about one, set apart from the prose around it.
+ *
+ * The screen is mostly sentences — it has to be, because a forecast that does
+ * not qualify itself is a forecast that overclaims — and a date buried in one
+ * takes a moment to find. A pill is the smallest thing that makes it findable
+ * without shouting: same type size, closed shape, `tabular-nums` so a column
+ * of them does not jitter as the digits change.
+ *
+ * Three tones, and they mean three different things rather than being three
+ * decorations: `solid` is the one date the screen is actually claiming,
+ * `accent` is a date that qualifies it (the ends of a range, a period further
+ * out), `muted` is a phrase about a date rather than a date.
+ */
+function Pill({
+  tone = "accent",
+  children,
+}: {
+  tone?: "solid" | "accent" | "muted";
+  children: ReactNode;
+}) {
+  const toneClass =
+    tone === "solid"
+      ? "bg-accent font-semibold text-page-bg"
+      : tone === "accent"
+        ? "border border-accent/35 bg-accent/10 font-semibold text-fg-bright"
+        : "border border-muted/30 text-muted";
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-sm leading-none tabular-nums ${toneClass}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * The two ends of a span, as a pair of pills.
+ *
+ * A range is one fact, so it is read out as one: `label` is the whole sentence
+ * the catalog holds ("Most likely 5 Sep — 12 Sep"), and the pills that draw it
+ * are hidden from the accessibility tree. Without that a screen reader would
+ * hear two dates with a dash between them and have to infer the rest — and the
+ * catalog would have to be broken into fragments a translator cannot reorder.
+ * Where the span has no sentence of its own (the fertile window, which is
+ * already under a heading that names it) the pills speak for themselves.
+ */
+function DateSpan({
+  start,
+  end,
+  label,
+}: {
+  start: DayKey;
+  end: DayKey;
+  label?: string;
+}) {
+  return (
+    <span className="flex items-center gap-1.5">
+      {label && <span className="sr-only">{label}</span>}
+      <span
+        aria-hidden={label ? "true" : undefined}
+        className="flex items-center gap-1.5"
+      >
+        <Pill>{formatDay(start)}</Pill>
+        <span className="text-xs text-muted">—</span>
+        <Pill>{formatDay(end)}</Pill>
+      </span>
+    </span>
   );
 }
 
@@ -270,8 +409,12 @@ function ChartChips({
   const t = useT();
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
+      {/* Each chip's glyph names the state the chart is *in*, not the one the
+          tap switches to — same rule its label already follows, so the mark
+          and the word never describe two different charts. */}
       <Chip
         active={look.mark === "curve"}
+        icon={look.mark === "bars" ? <ColumnsIcon /> : <CurveIcon />}
         onClick={() =>
           onChange({
             mark: (look.mark === "bars" ? "curve" : "bars") as ChartMark,
@@ -284,6 +427,7 @@ function ChartChips({
       </Chip>
       <Chip
         active={look.view === "cumulative"}
+        icon={look.view === "daily" ? <PerDayIcon /> : <CumulativeIcon />}
         onClick={() =>
           onChange({
             view: (look.view === "daily" ? "cumulative" : "daily") as ChartView,
@@ -296,12 +440,14 @@ function ChartChips({
       </Chip>
       <Chip
         active={look.showBands}
+        icon={<BandsIcon />}
         onClick={() => onChange({ showBands: !look.showBands })}
       >
         {t("forecast.chart.bands")}
       </Chip>
       <Chip
         active={look.showPrior}
+        icon={<CompareIcon />}
         onClick={() => onChange({ showPrior: !look.showPrior })}
       >
         {t("forecast.chart.compare")}
@@ -312,10 +458,15 @@ function ChartChips({
 
 function Chip({
   active,
+  icon,
   onClick,
   children,
 }: {
   active: boolean;
+  /** The mark for the state the chip is in. Decorative — the label beside it
+   *  is the accessible name — so it is sized here rather than at each call
+   *  site, and every chip's glyph lands on the same line. */
+  icon: ReactNode;
   onClick: () => void;
   children: ReactNode;
 }) {
@@ -329,12 +480,15 @@ function Chip({
       // *between* surfaces rather than an outline *on* one — in the light theme
       // it disappears against its own background and the chip stops reading as
       // a control at all.
-      className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+      className={`flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium transition-colors ${
         active
           ? "border-accent/60 bg-accent/15 text-accent"
           : "border-muted/30 bg-surface text-muted hover:border-accent/40 hover:text-fg"
       }`}
     >
+      <span aria-hidden="true" className="[&>svg]:h-3.5 [&>svg]:w-3.5">
+        {icon}
+      </span>
       {children}
     </button>
   );
@@ -351,7 +505,10 @@ function ModelPanel({
   const t = useT();
   const usesReports = f.symptoms !== null || f.temperature !== null;
   return (
-    <Section title={t("forecast.model.title")}>
+    <Section
+      title={t("forecast.model.title")}
+      icon={<SlidersIcon className="h-3.5 w-3.5" />}
+    >
       <dl className="grid grid-cols-2 gap-2">
         <Figure
           label={t("forecast.model.typicalLength")}
@@ -386,21 +543,26 @@ function ModelPanel({
       <p className="mt-2 text-xs font-medium tracking-wide text-muted uppercase">
         {t("forecast.model.intervals")}
       </p>
-      <ul className="flex flex-col gap-1 text-sm">
+      <ul className="flex flex-col gap-2 text-sm">
         {f.intervals.map((interval) => (
           <li
             key={interval.mass}
-            className="flex flex-wrap items-baseline justify-between gap-x-3"
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5"
           >
-            <span className="text-fg">
-              {t("forecast.model.intervalRow", {
-                percent: String(interval.mass * 100),
-              })}
-              {": "}
-              {t("forecast.model.intervalRange", {
-                start: formatShortDay(interval.start),
-                end: formatShortDay(interval.end),
-              })}
+            <span className="flex flex-wrap items-center gap-2">
+              <Pill tone="muted">
+                {t("forecast.model.intervalRow", {
+                  percent: String(interval.mass * 100),
+                })}
+              </Pill>
+              <DateSpan
+                start={interval.start}
+                end={interval.end}
+                label={t("forecast.model.intervalRange", {
+                  start: formatDay(interval.start),
+                  end: formatDay(interval.end),
+                })}
+              />
             </span>
             <span className="text-xs text-muted">
               {t("forecast.model.intervalWidth", {
@@ -464,25 +626,34 @@ function PatternPanels({
   const t = useT();
   return (
     <>
+      {/* Each channel wears the same mark it wears on the Report screen's
+          row of four, so a panel here and the button that fills it are
+          recognisably the same question. */}
       <BinaryPanel
         profile={f.symptoms}
+        icon={<WaveIcon className="h-3.5 w-3.5" />}
         title={t("forecast.moodProfile.title")}
         desc={t("forecast.moodProfile.chartDesc")}
       />
       <BinaryPanel
         profile={f.lust}
+        icon={<HeartIcon className="h-3.5 w-3.5" />}
         title={t("forecast.lustProfile.title")}
         desc={t("forecast.lustProfile.chartDesc")}
       />
       <BinaryPanel
         profile={f.sex}
+        icon={<RingsIcon className="h-3.5 w-3.5" />}
         title={t("forecast.sexProfile.title")}
         desc={t("forecast.sexProfile.chartDesc")}
         note={t("forecast.sexProfile.confounded")}
       />
       <FertilityTestPanel profile={f.fertilityTest} />
 
-      <Section title={t("forecast.temperatureProfile.title")}>
+      <Section
+        title={t("forecast.temperatureProfile.title")}
+        icon={<ThermometerIcon className="h-3.5 w-3.5" />}
+      >
         {f.temperature === null ? (
           <p className="text-sm text-muted">
             {t("forecast.temperatureProfile.none")}
@@ -522,9 +693,9 @@ function PatternPanels({
           (f.thermalShift.detectedDay ? (
             <p className="mt-2 text-sm text-fg">
               {t("forecast.thermalShift.detected", {
-                date: formatShortDay(f.thermalShift.detectedDay),
+                date: formatDay(f.thermalShift.detectedDay),
                 count: String(Math.round(f.thermalShift.leadDays)),
-                onset: formatShortDay(
+                onset: formatDay(
                   addDays(
                     f.thermalShift.detectedDay,
                     Math.round(f.thermalShift.leadDays),
@@ -555,11 +726,14 @@ function PatternPanels({
  *  screen entirely rather than shown as an empty box. */
 function BinaryPanel({
   profile,
+  icon,
   title,
   desc,
   note,
 }: {
   profile: BinaryProfile | null;
+  /** The channel's own mark, for the section heading. */
+  icon: ReactNode;
   title: string;
   desc: string;
   /** An extra line under the chart, for a channel whose flatness means
@@ -569,7 +743,7 @@ function BinaryPanel({
   const t = useT();
   if (!profile) return null;
   return (
-    <Section title={title}>
+    <Section title={title} icon={icon}>
       {profile.informative ? (
         <>
           <BinaryProfileChart profile={profile} title={title} desc={desc} />
@@ -611,7 +785,10 @@ function FertilityTestPanel({
   const t = useT();
   if (!profile) {
     return (
-      <Section title={t("forecast.fertilityTestProfile.title")}>
+      <Section
+        title={t("forecast.fertilityTestProfile.title")}
+        icon={<TestStripIcon className="h-3.5 w-3.5" />}
+      >
         <p className="text-sm text-muted">
           {t("forecast.fertilityTestProfile.none")}
         </p>
@@ -619,7 +796,10 @@ function FertilityTestPanel({
     );
   }
   return (
-    <Section title={t("forecast.fertilityTestProfile.title")}>
+    <Section
+      title={t("forecast.fertilityTestProfile.title")}
+      icon={<TestStripIcon className="h-3.5 w-3.5" />}
+    >
       <BinaryProfileChart
         profile={profile}
         title={t("forecast.fertilityTestProfile.title")}
@@ -676,7 +856,10 @@ function AccuracyPanel({
   );
 
   return (
-    <Section title={t("forecast.accuracy.title")}>
+    <Section
+      title={t("forecast.accuracy.title")}
+      icon={<TargetIcon className="h-3.5 w-3.5" />}
+    >
       {result.meanAbsoluteError === null ? (
         <p className="text-sm text-muted">{t("forecast.accuracy.needsMore")}</p>
       ) : (
@@ -729,7 +912,7 @@ function Figure({
   hint?: string;
 }) {
   return (
-    <div className="rounded-md border border-line bg-surface-3 p-2.5">
+    <div className="rounded-xl border border-line bg-surface-3 p-2.5">
       <dt className="text-[0.7rem] tracking-wide text-muted uppercase">
         {label}
       </dt>
@@ -745,7 +928,7 @@ function Figure({
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-md border border-line bg-surface-3 p-6 text-center">
+    <div className="rounded-2xl border border-line bg-surface-3 p-6 text-center">
       <ForecastIcon className="mx-auto h-8 w-8 text-muted" />
       <p className="mt-3 text-sm text-muted">{message}</p>
     </div>

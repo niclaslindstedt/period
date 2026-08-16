@@ -179,6 +179,7 @@ export function App() {
               today={today}
               weekStartsOn={settings.weekStartsOn}
               temperatureUnit={settings.temperatureUnit}
+              cloudBacked={sync.backend !== "local"}
               onSaved={notice}
             />
           )}
@@ -264,7 +265,7 @@ export function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed inset-x-3 bottom-[4.25rem] z-[60] mx-auto flex max-w-md items-center gap-3 rounded-md border border-line bg-surface px-3 py-2.5 text-fg shadow-md"
+          className="fixed inset-x-3 bottom-[4.25rem] z-[60] mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-2.5 text-fg shadow-md"
         >
           <SpinnerIcon className="h-5 w-5 animate-spin text-accent" />
           <span className="text-sm font-medium">{t("update.reload")}</span>

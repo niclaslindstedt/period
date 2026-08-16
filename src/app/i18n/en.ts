@@ -176,6 +176,13 @@ export const en = {
       usingBoth: "Reading your mood swings and temperatures",
     },
 
+    // The 80% range, twice. `likelyLabel` is what the headline prints beside
+    // the two date pills; `likelyBetween` is the same fact as one sentence, and
+    // it is what a screen reader is given in place of them — a range is one
+    // claim, and hearing "Most likely" then two dates with a dash between them
+    // is not that claim. The sentence stays whole in the catalog for the same
+    // reason it always does: a translator needs to be able to move its words.
+    likelyLabel: "Most likely",
     likelyBetween: "Most likely {start} — {end}",
     chanceWithinWeek: "{percent} chance it starts within a week",
     plusMinus: "±{days} days",

@@ -21,6 +21,12 @@ day has been reported the app opens on [Status](status.md) instead.
 Each button lights up in the app's red when it happened and sits dimmed when it
 did not, so one glance at the row is the whole answer.
 
+**Save** carries a mark saying where the report is going: a disk while the
+document lives on this device only, and a cloud once you have connected a
+[cloud account](cloud-sync.md). **Clear this day** sits under it with a bin, so
+the destructive one of the two is the one you can tell apart before the tap
+rather than after it.
+
 Leaving them all dim is a real answer. **Save** is what files the report, so a
 day saved with no button lit records that you checked and there was nothing —
 which the cycle derivation treats differently from a day you simply didn't log.

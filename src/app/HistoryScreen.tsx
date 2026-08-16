@@ -5,7 +5,7 @@ import { BarChart, LineChart } from "@niclaslindstedt/oss-framework/charts";
 import { Section } from "@niclaslindstedt/oss-framework/components";
 
 import { cycleStats, type CycleOptions } from "./cycle.ts";
-import { formatShortDay } from "./format.ts";
+import { formatDay } from "./format.ts";
 import { ChartIcon } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
 import { phaseLabel } from "./labels.ts";
@@ -56,7 +56,7 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
         const value = reading(e);
         return value === null ? null : inUnit(value, temperatureUnit);
       }),
-      labels: recent.map((e) => formatShortDay(e.date)),
+      labels: recent.map((e) => formatDay(e.date)),
       count: readings.length,
     };
   }, [data, temperatureUnit]);
@@ -64,7 +64,7 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
   if (stats.periods.length === 0) {
     return (
       <div className="px-3 py-3">
-        <div className="rounded-md border border-line bg-surface-3 p-6 text-center">
+        <div className="rounded-2xl border border-line bg-surface-3 p-6 text-center">
           <ChartIcon className="mx-auto h-8 w-8 text-muted" />
           <p className="mt-3 text-sm text-muted">{t("history.empty")}</p>
         </div>
@@ -110,9 +110,7 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
             x={{
               // Each point is the cycle that *started* with that period, so
               // the label is the period's start date.
-              labels: stats.periods
-                .slice(0, -1)
-                .map((p) => formatShortDay(p.start)),
+              labels: stats.periods.slice(0, -1).map((p) => formatDay(p.start)),
             }}
             height={160}
             showDots
@@ -172,8 +170,8 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
               >
                 <span className="text-fg">
                   {t("history.periodRow", {
-                    start: formatShortDay(period.start),
-                    end: formatShortDay(period.end),
+                    start: formatDay(period.start),
+                    end: formatDay(period.end),
                   })}
                 </span>
                 <span className="text-xs text-muted">
@@ -192,7 +190,7 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-md border border-line bg-surface-3 p-3">
+    <div className="rounded-2xl border border-line bg-surface-3 p-3">
       <p className="text-xs tracking-wide text-muted uppercase">{label}</p>
       <p className="mt-1 text-lg font-bold text-fg-bright">{value}</p>
     </div>

@@ -33,30 +33,41 @@ export function toDate(day: DayKey): Date | null {
   return parts ? new Date(parts.year, parts.month - 1, parts.day) : null;
 }
 
-/** "5 July" — the everyday form, used wherever the year is obvious. */
+/**
+ * "5 Jul" — how this app names a date. **The only way it names one.**
+ *
+ * There used to be two: a long form ("5 July") for headlines and a short one
+ * for list rows and chart ticks. They met on the Forecast screen, where the
+ * headline read "Next period: September 8" with "Most likely Sep 5 — Sep 12"
+ * directly under it — two spellings of the same month, one line apart, with
+ * nothing to tell the reader why. The abbreviation is the form that survived,
+ * because it is the one a 20px-wide axis tick and a two-date range can carry;
+ * "September" cannot be short, but "Sep" can be a headline.
+ *
+ * So there is one function rather than a pair with a rule about which to reach
+ * for — the mix is not a thing to remember to avoid, it is a thing that cannot
+ * be written.
+ */
 export function formatDay(day: DayKey): string {
   const date = toDate(day);
-  return date ? formatter({ day: "numeric", month: "long" }).format(date) : day;
+  return date
+    ? formatter({ day: "numeric", month: "short" }).format(date)
+    : day;
 }
 
-/** "Sun 5 July 2026" — the unambiguous form for a report's own heading. */
+/** "Sun, 5 Jul 2026" — the same date with the weekday and the year, for the
+ *  one place a report's own heading has to be unambiguous. The month is
+ *  abbreviated here too: it is the same date vocabulary, spelled out further,
+ *  not a second one. */
 export function formatFullDay(day: DayKey): string {
   const date = toDate(day);
   return date
     ? formatter({
         weekday: "short",
         day: "numeric",
-        month: "long",
+        month: "short",
         year: "numeric",
       }).format(date)
-    : day;
-}
-
-/** "5 Jul" — the compact form for list rows and chart ticks. */
-export function formatShortDay(day: DayKey): string {
-  const date = toDate(day);
-  return date
-    ? formatter({ day: "numeric", month: "short" }).format(date)
     : day;
 }
 
@@ -66,7 +77,10 @@ export function formatWeekday(day: DayKey): string {
   return date ? formatter({ weekday: "short" }).format(date) : day;
 }
 
-/** "July 2026" — a month grid's heading. */
+/** "July 2026" — a month grid's heading. The long name survives here and only
+ *  here, because this is the one string that names a *month* rather than a
+ *  date: it is the grid's title, it sits alone at the top of it, and "Jul
+ *  2026" over a calendar page reads as an abbreviation of nothing. */
 export function formatMonth(year: number, month: number): string {
   return formatter({ month: "long", year: "numeric" }).format(
     new Date(year, month - 1, 1),
