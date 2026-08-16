@@ -9,7 +9,7 @@ import {
 // the sync engine and the storage adapters write their diagnostics into it.
 // There is no server to ship logs to and nowhere else to look, so "what did
 // the app just do?" has to be answerable on-device.
-export const logStore = createLogStore({ logsKey: "period:logs" });
+export const logStore = createLogStore({ logsKey: "cycle:logs" });
 logStore.setEnabled(true);
 logStore.setCaptureEnabled(true);
 

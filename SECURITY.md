@@ -1,4 +1,4 @@
-# Security policy for period
+# Security policy for cycle
 
 ## Supported versions
 
@@ -24,7 +24,7 @@ reporter and credit them in the release notes (unless they request otherwise).
 
 ## Scope
 
-In scope: any vulnerability in the published release of period. This app holds
+In scope: any vulnerability in the published release of cycle. This app holds
 health data, so the paths that decide who can read it are the ones that matter
 most — the OAuth token handling for the cloud backends
 (`src/app/useSyncEngine.ts`), what the synced document contains, and anything

@@ -50,7 +50,7 @@ import {
   type TemperatureUnit,
 } from "./temperature.ts";
 import { blankEntry, type DayEntry, type FertilityTest } from "./types.ts";
-import type { PeriodStore } from "./usePeriodStore.ts";
+import type { DocStore } from "./useDocStore.ts";
 
 // The screen the app opens on: one day, four taps, one Save — and the whole of
 // it on one phone screen, without scrolling, on the smallest phone worth
@@ -100,7 +100,7 @@ import type { PeriodStore } from "./usePeriodStore.ts";
 type PickerMode = "day" | "range";
 
 type Props = {
-  store: PeriodStore;
+  store: DocStore;
   today: DayKey;
   weekStartsOn: WeekStart;
   temperatureUnit: TemperatureUnit;

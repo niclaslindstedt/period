@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Generate the PWA install icons and the social-preview image from the same
-// geometry as public/icons/icon.svg — a normal curve coming to a point, with a
-// drop of blood hanging from it, drawn as a gradient mark on the app's dark
-// surface. Pure Node (zlib + a minimal PNG encoder),
-// so the pipeline needs no native image dependencies. Rerun with
-// `npm run icons` / `make icons` after changing the mark.
+// geometry as public/icons/icon.svg — a ring open at the top with an arrowhead
+// carrying it back round, drawn in flat mint on the app's dark surface. Pure
+// Node (zlib + a minimal PNG encoder), so the pipeline needs no native image
+// dependencies. Rerun with `npm run icons` / `make icons` after changing the
+// mark.
 import { deflateSync } from "node:zlib";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -15,28 +15,12 @@ const iconsDir = join(root, "public", "icons");
 mkdirSync(iconsDir, { recursive: true });
 
 // The install tile's surface (the manifest's background/theme colour, see
-// pwa-plugin.ts) and the mark's rose gradient — a distinct hue from the
-// green-marked checklist and the blue-marked contacts app. Kept in lockstep
-// with the <linearGradient> stops in public/icons/icon.svg.
+// pwa-plugin.ts) and the mark's ink — flat mint, the same treatment as the
+// sibling checklist and notes apps, so the three read as one family on a home
+// screen. Kept in lockstep with the fill/stroke colours in
+// public/icons/icon.svg.
 const BG = [18, 16, 26]; // #12101a
-const GRAD_TOP = [253, 164, 175]; // #fda4af
-const GRAD_BOT = [225, 29, 72]; // #e11d48
-// The gradient runs top-to-bottom over the mark's vertical extent (unit
-// space): the top of the tip down to the underside of the flat, matching the
-// userSpaceOnUse
-// y1=20 / y2=70 span in the SVG.
-const GRAD_Y0 = 0.2;
-const GRAD_Y1 = 0.7;
-
-// The stroke ink at unit-space height `y`, interpolated along the gradient.
-function markInk(y) {
-  const t = Math.max(0, Math.min(1, (y - GRAD_Y0) / (GRAD_Y1 - GRAD_Y0)));
-  return [
-    GRAD_TOP[0] + (GRAD_BOT[0] - GRAD_TOP[0]) * t,
-    GRAD_TOP[1] + (GRAD_BOT[1] - GRAD_TOP[1]) * t,
-    GRAD_TOP[2] + (GRAD_BOT[2] - GRAD_TOP[2]) * t,
-  ];
-}
+const INK = [110, 231, 165]; // #6ee7a5
 
 // --- minimal PNG encoder ----------------------------------------------------
 
@@ -108,118 +92,97 @@ function encodePng(width, height, rgba) {
 
 // --- the mark ----------------------------------------------------------------
 
-// The mark: one line, flat, that turns up, eases, comes to a point, and turns
-// back down to flat — the top of a drop of blood, drawn the only way a curve
-// read left to right is allowed to draw one.
+// The mark: a ring open at the top, with an arrowhead carrying it back round —
+// a cycle, drawn as the one shape that says "this comes round again" without
+// saying anything else. The app is named for the cycle rather than for one
+// phase of it, and the mark follows: what it draws is the return, not the
+// bleeding.
 //
-// A drop's outline turns back under itself at its widest, and a line with one
-// height per place cannot turn back. So the mark is the half of a drop a
-// distribution can draw: the point, and the flanks flaring out of it into the
-// baseline they rose from.
+// Unlike the traced curve it replaces, this shape is analytic, so `inStroke`
+// below is the definition rather than a sampling of one: a pixel is on the
+// mark if it lies within half a stroke of the ring (at an angle outside the
+// gap), or within half a stroke of either arc end (the round caps), or inside
+// the arrowhead triangle. That is what an SVG renderer does with
+// public/icons/icon.svg too, which is why the .ico and the .svg agree.
 //
-// Traced rather than derived. A density function was the obvious way to draw
-// this and it is the wrong one: every distribution with a cusp (Laplace) eases
-// into its tails, and every one that meets its baseline sharply (a gaussian)
-// peaks in a bump. The shape wants both ends sharp with the middle eased, which
-// is four control points and no formula.
-//
-// It stays a *line*. A filled area under the same curve reads as a hill — the
-// drop is in the turn at the top, not in the mass underneath it, and the peak
-// is only ever as sharp as a stroked line can be: the round join at the tip is
-// a semicircle of half the stroke's width, and that blunt spot is the mark's,
-// not a failure of the drawing.
-//
-// The right half, in unit space; the left is its mirror. Everything below is
-// stated once here and mirrored into public/icons/icon.svg by hand — the two
-// files carry the same seven points.
-const TIP = [0.5, 0.24];
-/** The flank: the two sides leave the tip close enough together to read as
- *  one stroke — that near-parallel run *is* the drop's spire, since a line
- *  drawing cannot show a narrow point any other way — and separate on the way
- *  down into the knee. */
-const FLANK_C1 = [0.508, 0.4];
-const FLANK_C2 = [0.57, 0.52];
-/** The knee, where the flank turns out to the baseline. */
-const KNEE = [0.64, 0.62];
-/** The fillet rounding that knee: 0.025 along the tangent either side of it,
- *  which is a couple of degrees short of a corner. */
-const FILLET_C1 = [0.6543, 0.6405];
-const FILLET_C2 = [0.675, 0.66];
-/** Where the run-out becomes flat, the baseline, and the end of the line. */
-const RUNOUT = [0.7, 0.66];
-const BASE_Y = 0.66;
-const LINE_END = 0.86;
-/** Half the stroke width in unit space (SVG stroke-width 8 on the 100
- *  viewBox). */
-const STROKE_HALF = 0.04;
+// Everything below is unit space — the 100 viewBox divided by 100 — and is
+// mirrored into public/icons/icon.svg by hand.
 
-/** Mirror a right-half point into the left half. */
-function mirror([x, y]) {
-  return [1 - x, y];
+/** The ring. `CY` sits below dead centre on purpose: the arrowhead overhangs
+ *  the top of the ring, so a circle centred on 0.5 would hang the finished
+ *  mark high in the tile. The offset puts the *mark's* bounding box back in
+ *  the middle, which is what the eye reads. */
+const CX = 0.5;
+const CY = 0.524;
+const R = 0.23;
+/** Half the stroke width (SVG stroke-width 11 on the 100 viewBox). */
+const STROKE_HALF = 0.055;
+/** The gap the arrowhead points into: 90° centred on straight up, in degrees
+ *  measured counter-clockwise from due east. The arc is every other angle.
+ *  A quarter of the ring is a lot to give away, and it is the 16 px favicon
+ *  that asks for it — at that size a tighter gap closes up under rounding and
+ *  the mark stops reading as a ring that goes somewhere. */
+const GAP_FROM = 45;
+const GAP_TO = 135;
+
+/** The unit-space point at angle `deg` and radius `r`. */
+function at(deg, r) {
+  const a = (deg * Math.PI) / 180;
+  return [CX + r * Math.cos(a), CY - r * Math.sin(a)];
 }
 
-function cubicAt(p0, p1, p2, p3, t) {
-  const u = 1 - t;
-  return [0, 1].map(
-    (i) =>
-      u ** 3 * p0[i] +
-      3 * u * u * t * p1[i] +
-      3 * u * t * t * p2[i] +
-      t ** 3 * p3[i],
-  );
-}
+/** The arc's two ends. Travel round the ring is clockwise, which means it
+ *  *starts* at `GAP_FROM` and *ends* at `GAP_TO` — so the plain round cap is
+ *  the one at `GAP_FROM`, and the head goes on the other. */
+const CAP_END = at(GAP_FROM, R);
 
-// The line, sampled into points so a pixel's distance to it can be measured
-// rather than estimated — which is what an SVG renderer does anyway, and the
-// reason the .ico and the .svg agree. Round caps and the round join at the tip
-// come for free: the nearest sample to a point beyond either end, or above the
-// peak, is the end point itself.
-//
-// Emitted left to right, which is also x-sorted, because the whole shape is
-// built around having one height per place. That is what makes the distance
-// test cheap: only samples within a stroke's width in x can be within one in
-// distance, and they are a contiguous slice.
-const SAMPLES = (() => {
-  const pts = [[1 - LINE_END, BASE_Y]];
-  const push = (p) => {
-    if (p[0] > pts[pts.length - 1][0]) pts.push(p);
-  };
-  const curve = (p0, p1, p2, p3, steps) => {
-    for (let i = 1; i <= steps; i++) push(cubicAt(p0, p1, p2, p3, i / steps));
-  };
-  const line = (to, steps) => {
-    const from = pts[pts.length - 1];
-    for (let i = 1; i <= steps; i++) {
-      push([from[0] + ((to[0] - from[0]) * i) / steps, to[1]]);
-    }
-  };
-  line(mirror(RUNOUT), 48);
-  curve(mirror(RUNOUT), mirror(FILLET_C2), mirror(FILLET_C1), mirror(KNEE), 64);
-  curve(mirror(KNEE), mirror(FLANK_C2), mirror(FLANK_C1), TIP, 192);
-  curve(TIP, FLANK_C1, FLANK_C2, KNEE, 192);
-  curve(KNEE, FILLET_C1, FILLET_C2, RUNOUT, 64);
-  line([LINE_END, BASE_Y], 48);
-  return pts;
+/** The arrowhead's length from its base and its half-width. Both are generous
+ *  for the size the mark is drawn at, because this is the one detail that has
+ *  to survive being resampled to 16 px: a head scaled to look right at 512 px
+ *  resolves to a blunt stub there, and the mark reads as a power symbol. */
+const HEAD_LEN = 0.24;
+const HEAD_HALF_WIDTH = 0.13;
+
+/** The head's three corners: an isoceles triangle on the tangent at the arc's
+ *  finishing end, and centred on the stroke, so it flares by the same amount
+ *  either side of the line it finishes. That tangent points up and to the
+ *  right, into the gap — which is what makes the eye close the circle the way
+ *  the arrow travels. */
+const HEAD = (() => {
+  const a = (GAP_TO * Math.PI) / 180;
+  const t = [Math.sin(a), Math.cos(a)]; // the clockwise tangent, screen coords
+  const n = [-t[1], t[0]];
+  const base = at(GAP_TO, R);
+  return [
+    [base[0] + HEAD_LEN * t[0], base[1] + HEAD_LEN * t[1]],
+    [base[0] + HEAD_HALF_WIDTH * n[0], base[1] + HEAD_HALF_WIDTH * n[1]],
+    [base[0] - HEAD_HALF_WIDTH * n[0], base[1] - HEAD_HALF_WIDTH * n[1]],
+  ];
 })();
 
-/** Whether unit-space point (x, y) lands on the mark. Mirrors the single
- *  <path> in public/icons/icon.svg. */
+/** Whether unit-space point (x, y) lands on the mark. Mirrors the two <path>
+ *  elements in public/icons/icon.svg. */
 function inStroke(x, y) {
-  let lo = 0;
-  let hi = SAMPLES.length;
-  while (hi - lo > 1) {
-    const mid = (lo + hi) >> 1;
-    if (SAMPLES[mid][0] <= x - STROKE_HALF) lo = mid;
-    else hi = mid;
+  // The ring band, at every angle the gap does not claim.
+  const dx = x - CX;
+  const dy = CY - y; // flip so the angle reads counter-clockwise from east
+  if (Math.abs(Math.hypot(dx, dy) - R) < STROKE_HALF) {
+    let deg = (Math.atan2(dy, dx) * 180) / Math.PI;
+    if (deg < 0) deg += 360;
+    if (deg <= GAP_FROM || deg >= GAP_TO) return true;
   }
-  const limit = STROKE_HALF * STROKE_HALF;
-  for (let i = lo; i < SAMPLES.length; i++) {
-    const dx = x - SAMPLES[i][0];
-    if (dx < -STROKE_HALF) break;
-    const dy = y - SAMPLES[i][1];
-    if (dx * dx + dy * dy < limit) return true;
-  }
-  return false;
+  // The round cap finishing the arc where it starts. The other end needs none
+  // — the head is set flush on it and swallows it whole.
+  if (Math.hypot(x - CAP_END[0], y - CAP_END[1]) < STROKE_HALF) return true;
+  // The arrowhead: inside iff the point falls on the same side of all three
+  // edges, which is sign-agnostic and so needs no winding convention.
+  const [a, b, c] = HEAD;
+  const side = (p, q) =>
+    (q[0] - p[0]) * (y - p[1]) - (x - p[0]) * (q[1] - p[1]);
+  const s1 = side(a, b);
+  const s2 = side(b, c);
+  const s3 = side(c, a);
+  return (s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0);
 }
 
 // Render size×size RGBA. `pad` insets the mark (maskable icons need a safe
@@ -235,9 +198,8 @@ function renderIcon(size, { pad = 0.12, radius = 0.2 } = {}) {
       const dy = Math.max(r - py, py - (size - 1 - r), 0);
       const outside = Math.hypot(dx, dy) - r;
       const bgAlpha = Math.max(0, Math.min(1, 0.5 - outside));
-      // Stroke coverage in padded unit space, 3×3 supersampled for smooth
-      // edges on the thin outline. The gradient ink is sampled at the pixel's
-      // own height so the stroke shades top-to-bottom.
+      // Mark coverage in padded unit space, 3×3 supersampled so the ring's
+      // curve and the arrowhead's edges stay smooth at every size.
       let hit = 0;
       for (const oy of [1 / 6, 0.5, 5 / 6]) {
         for (const ox of [1 / 6, 0.5, 5 / 6]) {
@@ -247,8 +209,7 @@ function renderIcon(size, { pad = 0.12, radius = 0.2 } = {}) {
         }
       }
       const [br, bg2, bb] = BG;
-      const sy = ((py + 0.5) / size - pad) / (1 - 2 * pad);
-      const [fr, fg2, fb] = markInk(sy);
+      const [fr, fg2, fb] = INK;
       rgba[i] = Math.round(br + (fr - br) * hit);
       rgba[i + 1] = Math.round(bg2 + (fg2 - bg2) * hit);
       rgba[i + 2] = Math.round(bb + (fb - bb) * hit);
@@ -267,7 +228,6 @@ function renderOg() {
   const markSize = 440;
   const markX = 110;
   const markY = (h - markSize) / 2;
-  const INK = markInk(0.5);
 
   // A 7×4 grid of day cells. The filled run is a period; the ringed cells are
   // the predicted next one, matching the Forecast screen's calendar legend.
@@ -291,7 +251,7 @@ function renderOg() {
       ) {
         const sx = (px - markX) / markSize;
         const sy = (py - markY) / markSize;
-        if (inStroke(sx, sy)) [cr, cg, cb] = markInk(sy).map(Math.round);
+        if (inStroke(sx, sy)) [cr, cg, cb] = INK;
       }
 
       const col = Math.floor((px - gridX) / (CELL + GAP));
@@ -343,7 +303,7 @@ writeFileSync(join(root, "public", "og.png"), renderOg());
 // favicon.ico — the browser-tab fallback for engines that ignore the SVG
 // favicon (Safari, search crawlers) and for the implicit /favicon.ico request.
 // Packs the mark at the three classic tab sizes; a hair less padding than the
-// install icons so the thin outline stays legible at 16 px. Lives at the public
+// install icons so the ring's gap stays legible at 16 px. Lives at the public
 // root so it deploys as `<base>favicon.ico` (see pwa-plugin.ts link tag).
 writeFileSync(
   join(root, "public", "favicon.ico"),

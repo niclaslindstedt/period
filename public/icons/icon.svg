@@ -1,32 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- The app mark: one line, flat, that turns up, eases, comes to a point,
-       and turns back down to flat — the top of a drop of blood, drawn the only
-       way a curve read left to right is allowed to draw one.
+  <!-- The app mark: a ring open at the top, with an arrowhead carrying it back
+       round — a cycle, drawn as the one shape that says "this comes round
+       again" without saying anything else. The app is named for the cycle
+       rather than for one phase of it, and the mark follows: what it draws is
+       the return, not the bleeding.
 
-       A drop's outline turns back under itself at its widest, and a line with
-       one height per place cannot turn back. So this is the half of a drop a
-       distribution can draw: the point, and the flanks flaring out of it into
-       the baseline they rose from. Rose, as the sibling notes and contacts
-       apps are green and blue.
+       Flat mint on the dark install surface, thick stroke, round cap — the
+       same treatment as the sibling checklist and notes apps, so the three
+       read as one family on a home screen.
 
-       Traced, not plotted from a density: every distribution with a cusp eases
-       into its tails, and every one that meets its baseline sharply peaks in a
-       bump, and this shape needs both ends sharp with the middle eased. It
-       stays a line — filled, the same curve reads as a hill — so the peak is
-       only ever as sharp as a stroked line can be: `stroke-linejoin="round"`
-       finishes the tip with a semicircle of half the stroke's width. The same
-       points are rasterised into the PNG install icons by
-       scripts/generate-icons.mjs (`npm run icons`). -->
-  <defs>
-    <linearGradient id="mark" x1="0" y1="20" x2="0" y2="70" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#fda4af"/>
-      <stop offset="100%" stop-color="#e11d48"/>
-    </linearGradient>
-  </defs>
-  <rect width="100" height="100" rx="20" fill="#12101a"/>
-  <!-- Flat to (30, 66); the knee's fillet up to (36, 62); the flank to the tip
-       at (50, 24) — leaving it close enough to its mirror that the two read as
-       one stroke, which is the drop's spire — and mirrored back down. -->
-  <path d="M14 66 L30 66 C32.5 66 34.57 64.05 36 62 C43 52 49.2 40 50 24 C50.8 40 57 52 64 62 C65.43 64.05 67.5 66 70 66 L86 66"
-        fill="none" stroke="url(#mark)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+       Geometry, in the 100 viewBox: a circle of radius 23 stroked at 11, with
+       a 90° gap centred on straight up, so the arc runs from 45° clockwise the
+       long way round to 135°. The arrowhead is an isoceles triangle 24 long
+       and 26 wide, set on the tangent at that finishing end and centred on the
+       stroke, so it flares by the same amount either side of the line it
+       finishes. It points into the gap, so the eye closes the circle the way
+       the arrow travels.
+
+       Two of those numbers look wrong until you shrink the mark. The gap gives
+       away a quarter of the ring, and the head is bigger than it needs to be
+       at 512 px — both are sized for the 16 px favicon, where a tighter gap
+       closes up under rounding and a head scaled to look right when large
+       resolves to a blunt stub that reads as a power symbol. The circle also
+       sits at y=52.4 rather than 50: the head overhangs the top of the ring,
+       and dropping the circle puts the *mark's* bounding box in the middle of
+       the tile, which is what the eye actually reads.
+
+       The same numbers are rasterised into the PNG install icons, the favicon
+       and the social card by scripts/generate-icons.mjs (`npm run icons`) —
+       the two files are kept in step by hand. -->
+  <rect width="100" height="100" rx="20" fill="#12101a" />
+  <path
+    d="M66.26 36.14 A23 23 0 1 1 33.74 36.14"
+    fill="none"
+    stroke="#6ee7a5"
+    stroke-width="11"
+    stroke-linecap="round"
+  />
+  <path d="M50.71 19.17 L42.93 45.33 L24.54 26.94 Z" fill="#6ee7a5" />
 </svg>

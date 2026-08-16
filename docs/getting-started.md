@@ -11,7 +11,7 @@ npm run dev
 ```
 
 Open the printed URL. Everything you log is written to your browser's
-localStorage under the `period:doc` key and nothing else happens: no request
+localStorage under the `cycle:doc` key and nothing else happens: no request
 leaves the page until you connect a cloud backend yourself.
 
 ### The GitHub Packages token

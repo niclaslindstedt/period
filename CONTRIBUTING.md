@@ -1,4 +1,4 @@
-# Contributing to period
+# Contributing to cycle
 
 Thanks for your interest! This document describes how to set up a dev
 environment, the conventions we follow, and how to get a change merged.

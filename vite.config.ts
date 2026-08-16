@@ -11,7 +11,7 @@ import { defineConfig } from "vite";
 import { appPwa } from "./pwa-plugin.ts";
 
 // The base path is injected by the deploy workflow via VITE_BASE, one per
-// release channel on the custom domain (period.niclaslindstedt.se): the
+// release channel on the custom domain (cycle.niclaslindstedt.se): the
 // released app at `/` and the rolling main build at `/preview/`. Defaults to
 // `/` for local dev and preview builds.
 const base = process.env.VITE_BASE ?? "/";

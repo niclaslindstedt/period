@@ -1,8 +1,8 @@
 {
-  "name": "period",
+  "name": "cycle",
   "version": "0.1.0",
   "private": true,
-  "description": "A local-first period tracking PWA built on @niclaslindstedt/oss-framework — log bleeding and mood each day, then read your cycle history and a forecast of the next period and fertile window.",
+  "description": "A local-first cycle tracking PWA built on @niclaslindstedt/oss-framework — log bleeding and mood each day, then read your cycle history and a forecast of the next period and fertile window.",
   "license": "PolyForm-Noncommercial-1.0.0",
   "author": "Niclas Lindstedt <niclas@agilator.se>",
   "type": "module",

@@ -55,16 +55,16 @@ const PUBLIC_SKIP = new Set([
 
 // Per-release-channel PWA display name. The three Pages channels share one
 // origin, so a channel-specific name installs the preview/branch builds as
-// visibly separate home-screen tiles instead of three identical "Period"
+// visibly separate home-screen tiles instead of three identical "Cycle"
 // icons that are impossible to tell apart once installed.
 function channelName(base: string): { name: string; short_name: string } {
   if (base === "/preview/")
-    return { name: "Period (preview)", short_name: "Period pre" };
+    return { name: "Cycle (preview)", short_name: "Cycle pre" };
   if (base === "/branch/")
-    return { name: "Period (branch)", short_name: "Period br" };
+    return { name: "Cycle (branch)", short_name: "Cycle br" };
   return {
-    name: "Period — a local-first cycle tracker",
-    short_name: "Period",
+    name: "Cycle — a local-first period tracker",
+    short_name: "Cycle",
   };
 }
 
@@ -83,7 +83,7 @@ export function buildManifest(base: string): string {
     name,
     short_name,
     description:
-      "A privacy-first period tracker PWA: log bleeding, mood, lust, sex, temperature and ovulation tests daily, read your cycle history, and see a forecast of the next period and fertile window. Local-only or cloud-synced (Dropbox, Google Drive).",
+      "A privacy-first cycle tracker PWA: log bleeding, mood, lust, sex, temperature and ovulation tests daily, read your cycle history, and see a forecast of the next period and fertile window. Local-only or cloud-synced (Dropbox, Google Drive).",
     id: base,
     start_url: base,
     scope: base,
@@ -134,7 +134,7 @@ export function buildServiceWorker(
 ): string {
   const cacheName = `${cacheId}-precache`;
   return `// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-// GENERATED — do not edit. Emitted by pwa-plugin.ts for the Period PWA.
+// GENERATED — do not edit. Emitted by pwa-plugin.ts for the Cycle PWA.
 // A minimal "prompt to update" precaching worker: it installs the build's
 // assets, parks in \`waiting\` (never auto-skipWaiting — a silent swap would
 // discard an in-progress edit), and applies on a SKIP_WAITING message from the
@@ -312,7 +312,7 @@ export function appPwa({
         },
         {
           tag: "meta",
-          attrs: { name: "apple-mobile-web-app-title", content: "Period" },
+          attrs: { name: "apple-mobile-web-app-title", content: "Cycle" },
           injectTo: "head",
         },
       ];

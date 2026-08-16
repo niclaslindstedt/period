@@ -1,4 +1,4 @@
-# Period
+# Cycle
 
 > A local-first period tracking PWA built on @niclaslindstedt/oss-framework.
 > One report per day — four yes/no answers (blood, mood swings, lust, sex) plus
@@ -7,7 +7,7 @@
 > Dropbox or Google Drive. Cycles, averages, and the next-period forecast are
 > derived from those reports at read time; nothing about a cycle is stored.
 
-- App: https://period.niclaslindstedt.se/
+- App: https://cycle.niclaslindstedt.se/
 - Source: https://github.com/niclaslindstedt/period
 - Framework: https://github.com/niclaslindstedt/oss-framework
 

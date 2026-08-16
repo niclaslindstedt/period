@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-// The hook behind the developer "Demo data" toggle. When it is on, the period
+// The hook behind the developer "Demo data" toggle. When it is on, the document
 // store loads a throwaway in-memory document — a year of invented reports (see
 // `demoData.ts`) — instead of the real localStorage one, and the sync engine is
 // paused so none of it can reach a connected cloud account. Turning it off

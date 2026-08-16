@@ -10,7 +10,7 @@
 
 export const en = {
   app: {
-    name: "Period",
+    name: "Cycle",
     tagline: "Your cycle, on your device",
   },
 
