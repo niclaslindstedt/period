@@ -30,8 +30,9 @@ import type { AppData } from "./types.ts";
 // destination from here on should replace one, not be squeezed in.
 //
 // The bar is the last thing above the screen edge and clears the iOS home
-// indicator with a flat 10px (see `styles.css`) rather than the full
-// `env(safe-area-inset-bottom)` — the indicator floats over the bar happily,
+// indicator with a flat 10px — 15px in the installed iOS PWA, where nothing
+// else sits below it (see `styles.css`) — rather than the full
+// `env(safe-area-inset-bottom)`: the indicator floats over the bar happily,
 // and the inset spent a tab's worth of height on empty surface.
 
 export type Tab =
