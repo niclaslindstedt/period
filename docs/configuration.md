@@ -50,7 +50,8 @@ hand-edited blob can't produce a forecast that divides by zero.
 | Default period length   | 5       | 1–15                  | Used only until a period is logged.                                                                                                                                                          |
 | Luteal phase            | 14      | 8–20                  | How far _before_ the next period ovulation is estimated. The forecast counts back from the predicted start, because the luteal phase is far steadier between people than the follicular one. |
 | Show the fertile window | On      | on / off              | Off keeps the app to periods only — no fertility estimate anywhere in the UI.                                                                                                                |
-| Developer mode          | Off     | on / off              | Reveals the sync log and the raw document size.                                                                                                                                              |
+| Developer mode          | Off     | on / off              | Reveals everything below it: demo data, log capture, the sync log, and the raw document size. Off, the Developer section is just this one switch.                                            |
+| Demo data               | Off     | on / off              | Replaces your reports with a year of invented ones. In memory only — never saved, never synced, and gone on reload, so it is deliberately _not_ one of the persisted settings.               |
 | Capture console output  | Off     | on / off              | Mirrors `console.*` into the in-app log buffer.                                                                                                                                              |
 
 The fertile window's _width_ (5 days before ovulation, 1 after) is not

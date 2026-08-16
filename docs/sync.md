@@ -80,6 +80,11 @@ and until the first pull has established the backend's revision — pushing on a
 unknown revision is what produces phantom conflicts. Your edit is safe in
 localStorage the whole time.
 
+Sync is suspended entirely — no pull, no push — while the developer **Demo
+data** switch is on, because the reports on screen then are invented ones. The
+credentials and the copy already in the cloud are untouched, and turning the
+switch off (or reloading) resumes from your real document.
+
 ## Reading the status
 
 The cloud glyph in the header is the whole state machine, and tapping it always

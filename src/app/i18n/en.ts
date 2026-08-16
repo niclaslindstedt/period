@@ -412,8 +412,15 @@ export const en = {
     deleted: "All reports deleted",
     developer: "Developer",
     devMode: "Developer mode",
-    devModeHint: "Shows the sync log and the raw document size.",
+    devModeHint:
+      "Shows the demo document, the log capture switch, the sync log, and the raw document size.",
+    demoData: "Demo data",
+    demoDataHint:
+      "Swap your reports for a year of invented ones — a full cycle history, mood swings before each period, and six months of waking temperatures and ovulation tests. It lives in memory only: nothing is saved, nothing is synced, and reloading the page brings your own reports back.",
+    demoDataOn: "Showing demo reports — reload to get yours back",
+    demoDataOff: "Back to your own reports",
     captureLogs: "Capture console output",
+    captureLogsHint: "Records diagnostic lines so the log below can show them.",
     logs: "Logs",
     documentSize: "Document size",
     about: "About",
