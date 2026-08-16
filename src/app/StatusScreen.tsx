@@ -7,7 +7,13 @@ import {
 } from "@niclaslindstedt/oss-framework/calendar";
 
 import { forecast, type CycleOptions } from "./cycle.ts";
-import { DayCircle, DayLegend, toneFor } from "./DayCircle.tsx";
+import {
+  DayLegend,
+  DayMark,
+  markFor,
+  toneFor,
+  type DayTone,
+} from "./DayMark.tsx";
 import {
   dayStatus,
   statusStrip,
@@ -45,6 +51,12 @@ import type { AppData } from "./types.ts";
 const DAYS_BACK = 3;
 const DAYS_AHEAD = 3;
 
+/** The row is derived one day wider at each end than it is drawn. A period is
+ *  painted as one stroke across the days it covers, and whether the last cell
+ *  gets a rounded cap or runs on off the edge of the week depends on a day the
+ *  row does not show — so it is computed and then dropped. */
+const PADDING_DAYS = 1;
+
 type Props = {
   data: AppData;
   today: DayKey;
@@ -81,7 +93,13 @@ export function StatusScreen({
   );
 
   const strip = useMemo(
-    () => statusStrip(today, DAYS_BACK, DAYS_AHEAD, ctx),
+    () =>
+      statusStrip(
+        today,
+        DAYS_BACK + PADDING_DAYS,
+        DAYS_AHEAD + PADDING_DAYS,
+        ctx,
+      ),
     [today, ctx],
   );
   const now = useMemo(() => dayStatus(today, ctx), [today, ctx]);
@@ -151,12 +169,21 @@ export function StatusScreen({
 
 /** The days either side of today, each painted the colour its status earns.
  *  Read-only: the row is a readout, and the Report screen is where a day is
- *  edited. */
+ *  edited.
+ *
+ *  `strip` arrives a day longer at each end than the row shows (see
+ *  `PADDING_DAYS`): the extra days are what tell the visible ends whether their
+ *  stroke stops there or carries on past the week, and they are dropped before
+ *  anything is drawn. */
 function WeekRow({ strip, today }: { strip: DayStatus[]; today: DayKey }) {
   const t = useT();
+  const tones = new Map<DayKey, DayTone>(
+    strip.map((status) => [status.day, toneFor(status)]),
+  );
+  const toneAt = (day: DayKey): DayTone => tones.get(day) ?? "none";
   return (
     <ul className="mt-2 grid grid-cols-7 gap-1">
-      {strip.map((status) => {
+      {strip.slice(PADDING_DAYS, strip.length - PADDING_DAYS).map((status) => {
         const isToday = status.day === today;
         const dayOfMonth = parseDayKey(status.day)?.day ?? "";
         return (
@@ -167,7 +194,7 @@ function WeekRow({ strip, today }: { strip: DayStatus[]; today: DayKey }) {
             <span className="text-[0.65rem] leading-none text-muted">
               {formatWeekday(status.day)}
             </span>
-            {/* `isolate` gives the cell a stacking context so the circle's
+            {/* `isolate` gives the cell a stacking context so the mark's
                 negative stack level stays under this number and nothing
                 else. */}
             <span
@@ -176,7 +203,7 @@ function WeekRow({ strip, today }: { strip: DayStatus[]; today: DayKey }) {
                 isToday ? "font-bold text-accent" : "text-fg"
               }`}
             >
-              <DayCircle tone={toneFor(status)} />
+              <DayMark {...markFor(status.day, toneAt)} />
               {dayOfMonth}
             </span>
             <span
