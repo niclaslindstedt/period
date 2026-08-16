@@ -9,6 +9,7 @@ import {
 
 import { ChartIcon, DropletIcon, ForecastIcon } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
+import type { AppData } from "./types.ts";
 
 // The app's navigation: six tabs pinned to the bottom of the screen.
 //
@@ -44,6 +45,31 @@ export const TABS: Tab[] = [
   "history",
   "settings",
 ];
+
+/**
+ * Which tab the app opens on, given the document it booted with.
+ *
+ * Status normally, because it answers the question the app was picked up to
+ * answer. But every word on it is derived from reports, and on a document with
+ * none there is nothing to derive: the screen can only say it doesn't know
+ * yet. So a document with no reports opens on Report instead — the one screen
+ * that is useful before there is any history, and the only thing that turns an
+ * empty install into a working one.
+ *
+ * "No reports" is exactly that: a day answered entirely `no` is a report, and
+ * it moves the app off this branch, because "I checked and nothing happened"
+ * is a claim the derivation reads.
+ *
+ * Decided once, from the document present on the first render — `useDocStore`
+ * reads localStorage synchronously, so that document is the real one. Reports
+ * that arrive later from a cloud adopt or a backup restore do not move the
+ * tab: by then someone may be part-way through filling the report in, and
+ * pulling the screen out from under a half-answered day costs more than the
+ * hop to Status is worth.
+ */
+export function initialTab(data: AppData): Tab {
+  return Object.keys(data.entries).length === 0 ? "report" : "status";
+}
 
 const ICONS: Record<Tab, (props: { className?: string }) => ReactNode> = {
   status: HeartIcon,

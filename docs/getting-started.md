@@ -29,7 +29,9 @@ web sessions do it from `.claude/hooks/session-start.sh`.
 
 ## Log your first day
 
-The app opens on the **Report** tab with today selected.
+With nothing reported yet, the app opens on the **Report** tab with today
+selected. (Once there is a report to derive from, it opens on **Status**
+instead — Report is always a tap away on the bottom bar.)
 
 1. Answer **Blood** — yes or no. Any bleeding counts, spotting included. `No`
    is a real answer: it records "I checked and there was nothing", which is
