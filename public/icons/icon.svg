@@ -5,14 +5,18 @@
        rather than for one phase of it, and the mark follows: what it draws is
        the return, not the bleeding.
 
-       Flat mint on the dark install surface, thick stroke, round cap — the
+       Flat green on the dark install surface, thick stroke, round cap — the
        same treatment as the sibling checklist and notes apps, so the three
-       read as one family on a home screen.
+       read as one family on a home screen. Flat means flat: one fill, no
+       gradient, no bevel, no inner shadow. The mark is drawn big enough that
+       the tile reads as green from across a home screen rather than as a dark
+       square with a small glyph on it — which is the whole job an icon has at
+       thumbnail size.
 
-       Geometry, in the 100 viewBox: a circle of radius 23 stroked at 11, with
+       Geometry, in the 100 viewBox: a circle of radius 30 stroked at 15, with
        a 90° gap centred on straight up, so the arc runs from 45° clockwise the
-       long way round to 135°. The arrowhead is an isoceles triangle 24 long
-       and 26 wide, set on the tangent at that finishing end and centred on the
+       long way round to 135°. The arrowhead is an isoceles triangle 26 long
+       and 34 wide, set on the tangent at that finishing end and centred on the
        stroke, so it flares by the same amount either side of the line it
        finishes. It points into the gap, so the eye closes the circle the way
        the arrow travels.
@@ -22,7 +26,7 @@
        at 512 px — both are sized for the 16 px favicon, where a tighter gap
        closes up under rounding and a head scaled to look right when large
        resolves to a blunt stub that reads as a power symbol. The circle also
-       sits at y=52.4 rather than 50: the head overhangs the top of the ring,
+       sits at y=51.1 rather than 50: the head overhangs the top of the ring,
        and dropping the circle puts the *mark's* bounding box in the middle of
        the tile, which is what the eye actually reads.
 
@@ -31,11 +35,11 @@
        the two files are kept in step by hand. -->
   <rect width="100" height="100" rx="20" fill="#12101a" />
   <path
-    d="M66.26 36.14 A23 23 0 1 1 33.74 36.14"
+    d="M71.21 29.89 A30 30 0 1 1 28.79 29.89"
     fill="none"
-    stroke="#6ee7a5"
-    stroke-width="11"
+    stroke="#3ef07f"
+    stroke-width="15"
     stroke-linecap="round"
   />
-  <path d="M50.71 19.17 L42.93 45.33 L24.54 26.94 Z" fill="#6ee7a5" />
+  <path d="M47.17 11.50 L40.81 41.91 L16.77 17.87 Z" fill="#3ef07f" />
 </svg>

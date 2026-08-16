@@ -18,10 +18,13 @@
 @source "../node_modules/@niclaslindstedt/oss-framework/dist";
 
 /* ── Accent ──────────────────────────────────────────────────────────────────
-   The framework's GitHub palettes carry a green accent; this app wears rose,
-   the colour of its own mark (see public/icons/icon.svg). Only the accent slot
-   is overridden — every other token stays the framework's, so contrast and the
-   semantic colours (danger, link, success) keep their vetted values.
+   The framework's GitHub palettes carry a green accent; this app wears rose in
+   the UI. The install mark is green (see public/icons/icon.svg) and stays that
+   way on purpose: the icon's job is to be found on a home screen next to its
+   sibling apps, the accent's is to mark what you can touch inside this one.
+   Only the accent slot is overridden — every other token stays the
+   framework's, so contrast and the semantic colours (danger, link, success)
+   keep their vetted values.
 
    `--success` deliberately keeps the palette's green: with a rose accent it is
    the only thing left distinguishing "this worked" from "this is the app's

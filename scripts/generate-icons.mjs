@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Generate the PWA install icons and the social-preview image from the same
 // geometry as public/icons/icon.svg — a ring open at the top with an arrowhead
-// carrying it back round, drawn in flat mint on the app's dark surface. Pure
+// carrying it back round, drawn in flat green on the app's dark surface. Pure
 // Node (zlib + a minimal PNG encoder), so the pipeline needs no native image
 // dependencies. Rerun with `npm run icons` / `make icons` after changing the
 // mark.
@@ -15,12 +15,18 @@ const iconsDir = join(root, "public", "icons");
 mkdirSync(iconsDir, { recursive: true });
 
 // The install tile's surface (the manifest's background/theme colour, see
-// pwa-plugin.ts) and the mark's ink — flat mint, the same treatment as the
+// pwa-plugin.ts) and the mark's ink — flat green, the same treatment as the
 // sibling checklist and notes apps, so the three read as one family on a home
 // screen. Kept in lockstep with the fill/stroke colours in
 // public/icons/icon.svg.
+//
+// Flat is the whole treatment: one ink, painted at full strength wherever the
+// mark covers a pixel and not at all where it doesn't. The only intermediate
+// values in the output are antialiasing along an edge. No gradient, no bevel,
+// no drop shadow — a home screen already lights icons its own way, and a mark
+// carrying its own fake light reads as muddy next to one that doesn't.
 const BG = [18, 16, 26]; // #12101a
-const INK = [110, 231, 165]; // #6ee7a5
+const INK = [62, 240, 127]; // #3ef07f
 
 // --- minimal PNG encoder ----------------------------------------------------
 
@@ -108,15 +114,23 @@ function encodePng(width, height, rgba) {
 // Everything below is unit space — the 100 viewBox divided by 100 — and is
 // mirrored into public/icons/icon.svg by hand.
 
-/** The ring. `CY` sits below dead centre on purpose: the arrowhead overhangs
- *  the top of the ring, so a circle centred on 0.5 would hang the finished
- *  mark high in the tile. The offset puts the *mark's* bounding box back in
- *  the middle, which is what the eye reads. */
+/** The ring. It is sized to fill the tile rather than to sit politely in the
+ *  middle of it: outer radius `R + STROKE_HALF` = 0.375, so the mark spans
+ *  three quarters of the box it is drawn in. That is what makes the tile read
+ *  as *green* at thumbnail size — a thinner ring on the same dark surface
+ *  averages out to a dark square long before it gets small enough to be a
+ *  favicon.
+ *
+ *  `CY` sits below dead centre on purpose: the arrowhead overhangs the top of
+ *  the ring, so a circle centred on 0.5 would hang the finished mark high in
+ *  the tile. The offset puts the *mark's* bounding box back in the middle,
+ *  which is what the eye reads. Recompute it when the head changes size: it is
+ *  half the head's overhang past the ring's top. */
 const CX = 0.5;
-const CY = 0.524;
-const R = 0.23;
-/** Half the stroke width (SVG stroke-width 11 on the 100 viewBox). */
-const STROKE_HALF = 0.055;
+const CY = 0.511;
+const R = 0.3;
+/** Half the stroke width (SVG stroke-width 15 on the 100 viewBox). */
+const STROKE_HALF = 0.075;
 /** The gap the arrowhead points into: 90° centred on straight up, in degrees
  *  measured counter-clockwise from due east. The arc is every other angle.
  *  A quarter of the ring is a lot to give away, and it is the 16 px favicon
@@ -140,8 +154,8 @@ const CAP_END = at(GAP_FROM, R);
  *  for the size the mark is drawn at, because this is the one detail that has
  *  to survive being resampled to 16 px: a head scaled to look right at 512 px
  *  resolves to a blunt stub there, and the mark reads as a power symbol. */
-const HEAD_LEN = 0.24;
-const HEAD_HALF_WIDTH = 0.13;
+const HEAD_LEN = 0.26;
+const HEAD_HALF_WIDTH = 0.17;
 
 /** The head's three corners: an isoceles triangle on the tangent at the arc's
  *  finishing end, and centred on the stroke, so it flares by the same amount
@@ -187,16 +201,29 @@ function inStroke(x, y) {
 
 // Render size×size RGBA. `pad` insets the mark (maskable icons need a safe
 // zone); `radius` rounds the background corners (0 = square, for maskable).
-function renderIcon(size, { pad = 0.12, radius = 0.2 } = {}) {
+// The default is deliberately tight — the mark is drawn to fill its tile, and
+// the padding an install icon needs is the launcher's margin, not a second one
+// on top of it.
+function renderIcon(size, { pad = 0.08, radius = 0.2 } = {}) {
   const rgba = Buffer.alloc(size * size * 4);
   const r = radius * size;
   for (let py = 0; py < size; py++) {
     for (let px = 0; px < size; px++) {
       const i = (py * size + px) * 4;
-      // Rounded-rect background coverage.
-      const dx = Math.max(r - px, px - (size - 1 - r), 0);
-      const dy = Math.max(r - py, py - (size - 1 - r), 0);
-      const outside = Math.hypot(dx, dy) - r;
+      // Rounded-rect background coverage, as the signed distance from the
+      // pixel's centre to the tile's edge: negative inside, positive outside,
+      // so half a pixel either side of zero is the antialiased rim. The
+      // `min(max(qx, qy), 0)` term is what makes it hold up in the middle of
+      // the tile as well as at a corner — without it the interior distance
+      // collapses to −r, which is fine while the corners are round and puts
+      // the *whole* square tile on 50% alpha the moment `radius` is 0.
+      const half = size / 2;
+      const qx = Math.abs(px + 0.5 - half) - (half - r);
+      const qy = Math.abs(py + 0.5 - half) - (half - r);
+      const outside =
+        Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) +
+        Math.min(Math.max(qx, qy), 0) -
+        r;
       const bgAlpha = Math.max(0, Math.min(1, 0.5 - outside));
       // Mark coverage in padded unit space, 3×3 supersampled so the ring's
       // curve and the arrowhead's edges stay smooth at every size.
@@ -292,25 +319,30 @@ writeFileSync(join(iconsDir, "pwa-192.png"), renderIcon(192));
 writeFileSync(join(iconsDir, "pwa-512.png"), renderIcon(512));
 writeFileSync(
   join(iconsDir, "pwa-512-maskable.png"),
-  renderIcon(512, { pad: 0.22, radius: 0 }),
+  // The maskable safe zone is the centre circle of 80% diameter, i.e. radius
+  // 0.4. The mark's furthest ink from centre — the arrowhead's outer corner —
+  // sits at radius 0.462 of the padded square, so this inset puts it at 0.351
+  // and the launcher can crop to any shape it likes without clipping the head.
+  renderIcon(512, { pad: 0.12, radius: 0 }),
 );
 writeFileSync(
   join(iconsDir, "apple-touch-icon-180.png"),
-  renderIcon(180, { pad: 0.12, radius: 0 }),
+  renderIcon(180, { pad: 0.1, radius: 0 }),
 );
 writeFileSync(join(root, "public", "og.png"), renderOg());
 
 // favicon.ico — the browser-tab fallback for engines that ignore the SVG
 // favicon (Safari, search crawlers) and for the implicit /favicon.ico request.
 // Packs the mark at the three classic tab sizes; a hair less padding than the
-// install icons so the ring's gap stays legible at 16 px. Lives at the public
+// install icons, because a tab favicon is drawn small and unrounded and every
+// pixel spent on margin is one not spent on the ring. Lives at the public
 // root so it deploys as `<base>favicon.ico` (see pwa-plugin.ts link tag).
 writeFileSync(
   join(root, "public", "favicon.ico"),
   encodeIco(
     [16, 32, 48].map((size) => ({
       size,
-      data: renderIcon(size, { pad: 0.08 }),
+      data: renderIcon(size, { pad: 0.06 }),
     })),
   ),
 );
