@@ -579,10 +579,14 @@ export type ProbabilisticForecast = {
    * Every period start observed in the reports, oldest first — the days the
    * derivation actually saw bleeding begin on.
    *
-   * Not a forecast, which is the point of exposing it: a fertile window is
-   * dated backwards from an onset, so the ones behind these starts are anchored
-   * to something that happened, while the ones behind {@link upcomingStarts}
-   * are anchored to something predicted. `dayStatus.ts` draws the difference.
+   * Not a forecast, which is the point of exposing it. An onset is where one
+   * cycle ends and the next begins, so these are the cycle boundaries that
+   * *happened*, and {@link upcomingStarts} are the ones that have not. Which
+   * side of the last real one a day falls on is what tells `dayStatus.ts`
+   * whether the cycle that day belongs to has begun.
+   *
+   * Every entry is before every entry of `upcomingStarts`: the posterior is
+   * measured forward from an anchor at or after the last of these.
    */
   observedStarts: DayKey[];
   /** The per-day distribution, oldest day first. */

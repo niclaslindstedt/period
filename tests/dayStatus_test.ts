@@ -343,29 +343,50 @@ describe("the cycles after the next one", () => {
     expect(dayStatus(addDays(second, -12), ctx).expectedFertile).toBe(false);
   });
 
-  it("fills the fertile window behind a period that did start", () => {
+  it("fills the fertile window of the cycle that is under way", () => {
     const ctx = contextFor(steadyDoc(), "2026-06-01");
-    // The last logged onset is 2026-05-21, so ovulation was 2026-05-07 and the
-    // window ran 2026-05-02 — 2026-05-08. It rests on a day bleeding was
-    // actually reported to have begun, which is what fills it in.
-    const logged = dayStatus("2026-05-05", ctx);
-    expect(logged.observedFertile).toBe(true);
-    expect(logged.expectedFertile).toBe(false);
-    expect(toneFor(logged)).toBe("fertile");
+    // The cycle running now opened with the period logged on 2026-05-21 and
+    // will close with the one expected on 2026-06-18, putting ovulation on
+    // 2026-06-04 and the window at 2026-05-30 — 2026-06-05. The onset it points
+    // at has not arrived, but the cycle carrying it is dated by a report — so
+    // it is filled.
+    const current = dayStatus("2026-06-02", ctx);
+    expect(current.startedFertile).toBe(true);
+    expect(current.expectedFertile).toBe(false);
+    expect(toneFor(current)).toBe("fertile");
 
-    // The window in front of the next period rests on a predicted onset, and
-    // is drawn hollow for exactly that reason.
-    const coming = dayStatus("2026-06-02", ctx);
-    expect(coming.observedFertile).toBe(false);
-    expect(coming.expectedFertile).toBe(true);
-    expect(toneFor(coming)).toBe("predictedFertile");
+    // The window one cycle further on sits in a cycle only a projected onset
+    // opens, and is drawn hollow for exactly that reason.
+    const later = dayStatus("2026-06-30", ctx);
+    expect(later.startedFertile).toBe(false);
+    expect(later.expectedFertile).toBe(true);
+    expect(toneFor(later)).toBe("predictedFertile");
+  });
+
+  it("fills the windows of cycles already behind it", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    // The cycle that opened 2026-04-23 closed with the period on 2026-05-21,
+    // so its window ran 2026-05-02 — 2026-05-08. Both ends happened.
+    const past = dayStatus("2026-05-05", ctx);
+    expect(past.startedFertile).toBe(true);
+    expect(toneFor(past)).toBe("fertile");
+  });
+
+  it("says nothing about a window before the first period ever logged", () => {
+    const ctx = contextFor(steadyDoc(), "2026-06-01");
+    // A fortnight before 2026-01-01 is a cycle the app never saw open, so it
+    // gets neither mark rather than a guess about a month it has no report for.
+    const before = dayStatus("2025-12-15", ctx);
+    expect(before.startedFertile).toBe(false);
+    expect(before.expectedFertile).toBe(false);
+    expect(toneFor(before)).toBe("none");
   });
 
   it("says nothing about the fertile window when it is turned off", () => {
     const ctx = contextFor(steadyDoc(), "2026-06-01", false);
     const second = ctx.forecast!.upcomingStarts[1]!;
     expect(dayStatus(addDays(second, -14), ctx).expectedFertile).toBe(false);
-    expect(dayStatus("2026-05-05", ctx).observedFertile).toBe(false);
+    expect(dayStatus("2026-05-05", ctx).startedFertile).toBe(false);
     expect(dayStatus(addDays(second, 1), ctx).expectedPeriod).toBe(true);
   });
 
@@ -398,7 +419,7 @@ describe("the cycles after the next one", () => {
     const past = addDays(starts[starts.length - 1]!, 60);
     expect(dayStatus(past, ctx).expectedPeriod).toBe(false);
     expect(dayStatus(past, ctx).expectedFertile).toBe(false);
-    expect(dayStatus(past, ctx).observedFertile).toBe(false);
+    expect(dayStatus(past, ctx).startedFertile).toBe(false);
   });
 });
 

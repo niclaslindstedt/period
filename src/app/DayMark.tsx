@@ -67,14 +67,15 @@ type ToneStyle = {
  *  or the accent on today), and a tint keeps all of them legible in both themes
  *  without this module having to reach in and restyle text it does not own.
  *
- *  Hue says *what*, fill says *whether it has happened*. So each of the two
- *  things a cycle is made of comes in a pair: rose filled for the bleeding you
- *  reported and rose hollow for a period still expected, blue filled for the
- *  fertile window of a period that started and blue hollow for the window of one
- *  that has not. An outline is how a drawing says "this is where it will be"
- *  without claiming the day the way a filled stroke does — and a fertile window
- *  in front of a predicted period is exactly as provisional as the period it is
- *  counted back from, which a filled stroke there would quietly deny.
+ *  Hue says *what*, fill says *whether the cycle it belongs to has happened*. So
+ *  each of the two things a cycle is made of comes in a pair: rose filled for
+ *  the bleeding you reported and rose hollow for a period still expected, blue
+ *  filled for the fertile window of a cycle a real period opened and blue hollow
+ *  for the window of a cycle no period has opened yet. An outline is how a
+ *  drawing says "this is where it will be" without claiming the day the way a
+ *  filled stroke does — and a window in a cycle that only a projected onset
+ *  starts is a guess resting on a guess, which a filled stroke there would
+ *  quietly deny.
  *
  *  Running `predicted` in the same `period` run as the reported days is what
  *  makes those two read as one period whose far end has not happened yet: the
@@ -112,7 +113,7 @@ function continues(here: RunKind, there: DayTone): boolean {
  * Which tone a status wears. Reported-but-quiet days come last so a logged
  * fertile day still reads as fertile.
  *
- * `expectedPeriod` and `expectedFertile` sit alongside the calls they echo
+ * `expectedPeriod` and the two fertile flags sit alongside the calls they echo
  * rather than below them, and they are what puts the months after next on the
  * calendar at all. A day is *called* a period day when it is more likely than
  * not one, which stops being true of any single day a few cycles out — but the
@@ -121,21 +122,22 @@ function continues(here: RunKind, there: DayTone): boolean {
  * mark for it (see `expectedPeriod` in `dayStatus.ts`). The word and the
  * percentage on the Status screen keep the stricter rule; only the paint reads
  * these.
+ *
+ * The blue is decided by the flags alone, without consulting `kind`. They are
+ * the same window seen twice — the flags place it around each projected
+ * ovulation, `kind` asks whether a given day clears a half — and only the flags
+ * can say which cycle it belongs to, which is what chooses between the two
+ * blues. Reading both would let one window come out part filled and part
+ * hollow, and a stroke that changes fill halfway means something here (see the
+ * period pair above); it must not happen by accident.
  */
 export function toneFor(status: DayStatus): DayTone {
   if (status.kind === "period") return "period";
   if (status.kind === "predictedPeriod" || status.expectedPeriod) {
     return "predicted";
   }
-  // The filled fertile window comes first because it is the one anchored to a
-  // day that actually happened. The two only ever compete where a projected
-  // onset lands a cycle away from a logged one, and there the logged one is the
-  // better claim — the same reason a reported bleeding day outranks everything
-  // above.
-  if (status.observedFertile) return "fertile";
-  if (status.kind === "fertile" || status.expectedFertile) {
-    return "predictedFertile";
-  }
+  if (status.startedFertile) return "fertile";
+  if (status.expectedFertile) return "predictedFertile";
   if (status.reported) return "reported";
   return "none";
 }

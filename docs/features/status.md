@@ -18,8 +18,9 @@ report is saved there is nothing to derive, so the app opens on
   [Calendar](calendar.md) uses: a period or a fertile window is one stroke
   across the days it covers, capped at its ends and cut straight where it
   carries on past the edge of the week; a day you reported nothing on is a dot.
-  Filled means it happened, hollow means it is expected — so the week ahead is
-  drawn in outlines and the week behind in fills.
+  Filled means the cycle it belongs to has begun, hollow means the cycle is
+  itself still a prediction — so everything up to the next expected period is
+  solid and everything past it is outlined.
 
 It is an estimate from your own reports — not medical advice, and not
 contraception.

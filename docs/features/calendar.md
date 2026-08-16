@@ -15,19 +15,23 @@ Each day's number sits on a coloured mark that says what kind of day it is:
 | Faint grey dot     | **Reported, no bleeding** — you checked in, nothing happened                  |
 | Nothing            | Nothing logged, and nothing predicted                                         |
 
-Colour says _what_, and fill says _whether it has happened yet_. Each of the two
-things a cycle is made of therefore comes as a pair: rose filled for bleeding you
-reported and rose hollow for a period still expected, blue filled for the fertile
-window in front of a period that started and blue hollow for the window in front
-of one that has not. A hollow mark is the drawing saying "this is where it will
-be" without claiming the day.
+Colour says _what_, and fill says _whether the cycle it belongs to has begun_.
+Each of the two things a cycle is made of therefore comes as a pair: rose filled
+for bleeding you reported and rose hollow for a period still expected, blue
+filled for the fertile window of a cycle a real period opened and blue hollow for
+the window of a cycle no period has opened yet. A hollow mark is the drawing
+saying "this is where it will be" without claiming the day.
 
-That matters most for the blue. A fertile window is counted backwards from an
-onset — ovulation is a luteal phase before a period starts — so a window in front
-of a _predicted_ period is exactly as provisional as that prediction, and drawing
-it filled beside the hollow period it belongs to would quietly claim more about
-the fortnight before a period than about the period itself. Behind an onset you
-actually logged, the same window rests on a day that happened, and fills in.
+In practice the whole calendar turns over at one point — **the next predicted
+period**. Everything up to it is solid, because it belongs to cycles that
+actually started, the one you are in now included. Everything past it is
+outlined, because it belongs to cycles only a predicted period would open.
+
+That is why the fertile window you are heading into is filled even though the
+period it points at has not arrived: it sits in a cycle dated by a report, and
+the ovulation it marks has either just happened or is about to. The window a
+month later is hollow, because both ends of it are guesses — the onset that would
+open that cycle, and the onset it points at.
 
 The shape says as much as the colour. A period and a fertile window are
 stretches of days, so they are drawn as one stroke running from the first day to

@@ -114,25 +114,26 @@ export type DayStatus = {
    */
   expectedPeriod: boolean;
   /**
-   * The day falls in the fertile window of a period that has **not started**:
-   * a fortnight before one of the projected onsets.
+   * The day is in a fertile window, and the cycle carrying it has **begun** —
+   * a period was reported to open it.
    *
-   * The window rests on a date the model predicted, so the calendar draws it
-   * hollow — the same grammar the period pair uses, where a fill is something
-   * that happened and an outline is something expected. Always false when the
-   * fertile window is turned off.
+   * Still an estimate: ovulation is inferred from the luteal phase, never
+   * logged. But it is an estimate placed inside a cycle whose start is a fact,
+   * which is what earns it the filled mark. The cycle you are in right now
+   * counts, so its window fills even though the period it points at has not
+   * arrived yet. Always false when the fertile window is turned off.
+   */
+  startedFertile: boolean;
+  /**
+   * The day is in a fertile window of a cycle that has **not begun** — one a
+   * projected onset would open, some way ahead.
+   *
+   * Both ends of it are predictions, so the calendar draws it hollow: the same
+   * grammar the period pair uses, where a fill is something that happened and
+   * an outline is something expected. Always false when the fertile window is
+   * turned off.
    */
   expectedFertile: boolean;
-  /**
-   * The day falls in the fertile window of a period that **did** start: a
-   * fortnight before an onset the reports actually recorded.
-   *
-   * Still an estimate — ovulation is inferred from the luteal phase, never
-   * logged — but it is inferred from a day that was, which is what separates it
-   * from the one above and what earns it the filled mark. Always false when the
-   * fertile window is turned off.
-   */
-  observedFertile: boolean;
 };
 
 /** Above this, a probability is stated as the day's status rather than as its
@@ -301,14 +302,6 @@ function inExpectedPeriod(f: ProbabilisticForecast, day: DayKey): boolean {
  * so it cannot land anywhere other than a fortnight before whatever the calendar
  * drew for that period.
  *
- * Which list of starts is passed is the whole of the difference between a
- * fertile window the app *fills* and one it *outlines*. Run over the onsets that
- * were actually logged, this dates a window backwards from a day bleeding was
- * reported to have begun. Run over the projected ones, it dates a window
- * backwards from a day that has not happened yet — the same window a fortnight
- * earlier, but resting on a prediction, and the calendar says so by drawing it
- * hollow.
- *
  * `starts` is oldest first, so the scan stops as soon as one is far enough past
  * the day that its window cannot reach back to it.
  */
@@ -325,6 +318,38 @@ function inFertileWindow(
     if (lead >= earliest) return true;
   }
   return false;
+}
+
+/**
+ * Whether the cycle `day` belongs to has begun.
+ *
+ * An onset is where one cycle ends and the next starts, so the cycle a day is
+ * in is the one opened by the last onset at or before it — and whether that
+ * cycle has *begun* is simply whether that onset was reported or is still only
+ * projected. Every projected onset comes after every observed one, so the first
+ * projected onset is the whole boundary: on this side of it a real period
+ * opened the cycle, on the far side a predicted one did.
+ *
+ * This is what decides whether a fertile window is filled or outlined. The
+ * window sits roughly midway through the cycle it belongs to, a fortnight
+ * *after* the onset that opened it and a fortnight *before* the one that will
+ * close it — so a window in the cycle you are in now is filled even though the
+ * period it points at has not arrived, because the cycle carrying it is
+ * underway and dated by a report. The windows of cycles that no period has
+ * opened yet are the projections, and they are the ones drawn hollow.
+ *
+ * Null before the first logged period: there is no cycle to be in, and a window
+ * there would be an invention about a month the app never saw.
+ */
+function cycleBeganWith(
+  f: ProbabilisticForecast,
+  day: DayKey,
+): "reported" | "projected" | null {
+  const projected = f.upcomingStarts[0];
+  if (projected !== undefined && day >= projected) return "projected";
+  const reported = f.observedStarts[0];
+  if (reported !== undefined && day >= reported) return "reported";
+  return null;
 }
 
 /** Everything a status call needs that isn't the day itself. Bundled because
@@ -357,6 +382,15 @@ export function dayStatus(day: DayKey, ctx: StatusContext): DayStatus {
   const fertile =
     f && ctx.showFertileWindow ? fertileProbability(f, day, ctx.options) : 0;
   const period = f ? periodProbability(f, day, ctx.data) : 0;
+  // A fertile window is a fortnight before *some* onset, whichever list that
+  // onset came from; which of the two marks it wears is a separate question,
+  // answered by the cycle it sits in rather than by the onset it points at.
+  const inWindow =
+    f !== null &&
+    ctx.showFertileWindow &&
+    (inFertileWindow(f.upcomingStarts, day, ctx.options) ||
+      inFertileWindow(f.observedStarts, day, ctx.options));
+  const began = f !== null ? cycleBeganWith(f, day) : null;
   const base = {
     day,
     reported: entry !== undefined,
@@ -369,14 +403,8 @@ export function dayStatus(day: DayKey, ctx: StatusContext): DayStatus {
       f !== null &&
       !(entry !== undefined && !entry.bleeding) &&
       inExpectedPeriod(f, day),
-    expectedFertile:
-      f !== null &&
-      ctx.showFertileWindow &&
-      inFertileWindow(f.upcomingStarts, day, ctx.options),
-    observedFertile:
-      f !== null &&
-      ctx.showFertileWindow &&
-      inFertileWindow(f.observedStarts, day, ctx.options),
+    startedFertile: inWindow && began === "reported",
+    expectedFertile: inWindow && began === "projected",
   };
 
   if (entry?.bleeding) {

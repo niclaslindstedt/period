@@ -3,4 +3,4 @@ type: Added
 title: A hollow mark for a fertile window still to come
 ---
 
-The fertile window in front of a period that has not started is now drawn as a blue outline, matching the outlined period it belongs to; the filled blue is kept for the window behind a period you actually logged. [Learn more](feature:calendar)
+Fertile windows are now drawn solid up to the next expected period and outlined past it, so a window that rests on a period nobody has had yet looks like the prediction it is. [Learn more](feature:calendar)
