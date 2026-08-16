@@ -26,11 +26,11 @@ import type {
 import { logStore } from "./log.ts";
 import { mergeDocs } from "./merge.ts";
 import { parseDoc, serializeDoc } from "./migrations.ts";
-import type { PeriodStore } from "./usePeriodStore.ts";
+import type { DocStore } from "./useDocStore.ts";
 
 // The app's sync engine — the state machine the framework's `SyncStatus` glyph
 // and `SyncDetailsModal` command centre paint over. The local document
-// (localStorage, written by `usePeriodStore`) is always the working copy; when
+// (localStorage, written by `useDocStore`) is always the working copy; when
 // a cloud backend is connected the engine pushes the serialized document there
 // (debounced on the store's edit counter) and pulls the backend's copy on
 // mount. Dropbox and Google Drive both ride the framework's storage adapters,
@@ -46,16 +46,16 @@ const syncLog = logStore.createLogger("sync");
 
 export type SyncBackendId = "local" | "dropbox" | "gdrive";
 
-const BACKEND_KEY = "period:sync:backend";
-const DROPBOX_TOKENS_KEY = "period:sync:dropbox";
-const GDRIVE_TOKEN_KEY = "period:sync:gdrive";
+const BACKEND_KEY = "cycle:sync:backend";
+const DROPBOX_TOKENS_KEY = "cycle:sync:dropbox";
+const GDRIVE_TOKEN_KEY = "cycle:sync:gdrive";
 
 /** How long after the last edit a push is sent. Long enough to coalesce a
  *  burst of taps on the report screen into one request. */
 const SAVE_DEBOUNCE_MS = 1200;
 
 /** The document's file name on a cloud backend. */
-const CLOUD_FILE_NAME = "period.json";
+const CLOUD_FILE_NAME = "cycle.json";
 
 // OAuth app identities, injected at build time. Without them the matching
 // backend is hidden rather than offered and then failing at connect time.
@@ -66,17 +66,17 @@ export const GOOGLE_CLIENT_ID: string =
 
 // Dropbox fixes the app-folder name from the app's own configuration (an
 // "App folder"-scoped app lives under `Apps/<name>/`), so it isn't always
-// "Period". Inject the real name at build time so the displayed location
+// "Cycle". Inject the real name at build time so the displayed location
 // points at the folder that actually exists.
 export const DROPBOX_APP_FOLDER: string =
   (import.meta.env.VITE_DROPBOX_APP_FOLDER as string | undefined)?.trim() ||
-  "Period";
+  "Cycle";
 
 // Google Drive's folder, unlike Dropbox's, is created by us — this is the
 // folder made in the user's My Drive.
 export const GDRIVE_APP_FOLDER: string =
   (import.meta.env.VITE_GDRIVE_APP_FOLDER as string | undefined)?.trim() ||
-  "Period";
+  "Cycle";
 
 export const PROVIDER_NAMES: Record<SyncBackendId, string> = {
   local: "This device",
@@ -154,7 +154,7 @@ export type SyncEngine = {
 };
 
 export function useSyncEngine(
-  store: PeriodStore,
+  store: DocStore,
   // Suspend every read and write against the backend. Set while the developer
   // "Demo data" backend has taken over storage, so a year of invented reports
   // is never pushed up to — or merged with — a connected cloud copy. Demo data
@@ -210,7 +210,7 @@ export function useSyncEngine(
       });
       return withLocalCache(cloud, {
         storage: localStorage,
-        key: localCacheKey("dropbox", "period"),
+        key: localCacheKey("dropbox", "cycle"),
       });
     }
     if (backend === "gdrive" && gdriveToken) {
@@ -221,7 +221,7 @@ export function useSyncEngine(
       });
       return withLocalCache(cloud, {
         storage: localStorage,
-        key: localCacheKey("gdrive", "period"),
+        key: localCacheKey("gdrive", "cycle"),
       });
     }
     return null;

@@ -1,6 +1,6 @@
-# period
+# cycle
 
-> A local-first period tracking PWA — two taps a day, then read your cycle history and a forecast of the next period and fertile window. No account, no server.
+> A local-first cycle tracking PWA — two taps a day, then read your cycle history and a forecast of the next period and fertile window. No account, no server.
 
 [![ci](https://github.com/niclaslindstedt/period/actions/workflows/ci.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/ci.yml)
 [![seo](https://github.com/niclaslindstedt/period/actions/workflows/seo.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/seo.yml)
@@ -9,7 +9,7 @@
 
 ## What
 
-**period** is a period tracker that runs entirely in your browser. Each day you
+**cycle** is a period tracker that runs entirely in your browser. Each day you
 tap four buttons — blood, mood swings, lust, sex — and optionally add your
 waking temperature and what an ovulation test said, on a screen that fits a
 phone without scrolling. The app derives everything else from those reports:
@@ -71,7 +71,7 @@ npm install
 ```
 
 Or just open the hosted app at
-[period.niclaslindstedt.se](https://period.niclaslindstedt.se/) and install it
+[cycle.niclaslindstedt.se](https://cycle.niclaslindstedt.se/) and install it
 from your browser's "Add to Home Screen" / install prompt — it is a PWA and
 works fully offline.
 
@@ -110,13 +110,13 @@ The app needs no configuration to run. Two build-time variables switch cloud
 sync on; both are public OAuth client identifiers (the flows are PKCE, so there
 is no secret to protect), and leaving either unset simply hides that provider:
 
-| Variable                  | Effect                                                      |
-| ------------------------- | ----------------------------------------------------------- |
-| `VITE_DROPBOX_APP_KEY`    | Enables the Dropbox backend.                                |
-| `VITE_GOOGLE_CLIENT_ID`   | Enables the Google Drive backend.                           |
-| `VITE_DROPBOX_APP_FOLDER` | Folder name the document is filed under (default `Period`). |
-| `VITE_GDRIVE_APP_FOLDER`  | Folder name in My Drive (default `Period`).                 |
-| `VITE_BASE`               | Deploy base path (default `/`).                             |
+| Variable                  | Effect                                                     |
+| ------------------------- | ---------------------------------------------------------- |
+| `VITE_DROPBOX_APP_KEY`    | Enables the Dropbox backend.                               |
+| `VITE_GOOGLE_CLIENT_ID`   | Enables the Google Drive backend.                          |
+| `VITE_DROPBOX_APP_FOLDER` | Folder name the document is filed under (default `Cycle`). |
+| `VITE_GDRIVE_APP_FOLDER`  | Folder name in My Drive (default `Cycle`).                 |
+| `VITE_BASE`               | Deploy base path (default `/`).                            |
 
 See [`docs/configuration.md`](docs/configuration.md) for the details.
 

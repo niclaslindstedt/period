@@ -110,7 +110,7 @@ force each direction.
 
 **"Couldn't read the reports saved on this device"**
 The stored document couldn't be parsed. The original bytes are left untouched
-and a copy is quarantined under `period:doc:unreadable`. The usual cause is a
+and a copy is quarantined under `cycle:doc:unreadable`. The usual cause is a
 stale, service-worker-cached build reading a document a newer build already
 upgraded — it resolves itself once the update finishes. If it persists, export
 the quarantined value from devtools and open an issue.

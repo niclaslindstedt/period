@@ -1,4 +1,4 @@
-# Agent guidance for period
+# Agent guidance for cycle
 
 This file is the canonical source of truth for AI coding agents working in this
 repo. `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `GEMINI.md`, and
@@ -136,7 +136,7 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   cloud sync and backup restore run through.
 - `src/app/migrations.ts` — parse / normalise / serialize; the only module that
   trusts stored bytes.
-- `src/app/usePeriodStore.ts` — the document store, over a `DocBackend` seam
+- `src/app/useDocStore.ts` — the document store, over a `DocBackend` seam
   rather than `localStorage` directly (which is what demo data swaps).
 - `src/app/useSyncEngine.ts` — the sync engine over the framework's storage
   adapters (debounced push, conflict / auth / throttle handling). Suspended

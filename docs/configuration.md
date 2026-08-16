@@ -8,14 +8,14 @@ is offered at all) and the runtime settings a user can change.
 
 All optional. The app builds and runs with none of them set.
 
-| Variable                  | Default  | Effect                                                                                                                                                                                                                             |
-| ------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_BASE`               | `/`      | Deploy base path. Drives the bundler base, the service-worker scope, and the PWA install identity. The Pages workflow sets `/` for the released build and `/preview/` for main.                                                    |
-| `VITE_PWA_IGNORE_PATHS`   | —        | Comma-separated absolute paths this build's service worker must disown. Only the root release sets it (`/preview/`), because a scope is a path prefix and the root worker would otherwise claim the preview channel's navigations. |
-| `VITE_DROPBOX_APP_KEY`    | —        | Dropbox OAuth app key (PKCE public client). Unset ⇒ the Dropbox backend is hidden from Settings → Sync rather than offered and then failing.                                                                                       |
-| `VITE_GOOGLE_CLIENT_ID`   | —        | Google OAuth client id (GIS token client). Unset ⇒ the Google Drive backend is hidden.                                                                                                                                             |
-| `VITE_DROPBOX_APP_FOLDER` | `Period` | The app-folder name shown as the file's location. Dropbox fixes this from the OAuth app's own configuration, so it has to be told what the folder is actually called.                                                              |
-| `VITE_GDRIVE_APP_FOLDER`  | `Period` | The folder the app creates in the user's My Drive.                                                                                                                                                                                 |
+| Variable                  | Default | Effect                                                                                                                                                                                                                             |
+| ------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_BASE`               | `/`     | Deploy base path. Drives the bundler base, the service-worker scope, and the PWA install identity. The Pages workflow sets `/` for the released build and `/preview/` for main.                                                    |
+| `VITE_PWA_IGNORE_PATHS`   | —       | Comma-separated absolute paths this build's service worker must disown. Only the root release sets it (`/preview/`), because a scope is a path prefix and the root worker would otherwise claim the preview channel's navigations. |
+| `VITE_DROPBOX_APP_KEY`    | —       | Dropbox OAuth app key (PKCE public client). Unset ⇒ the Dropbox backend is hidden from Settings → Sync rather than offered and then failing.                                                                                       |
+| `VITE_GOOGLE_CLIENT_ID`   | —       | Google OAuth client id (GIS token client). Unset ⇒ the Google Drive backend is hidden.                                                                                                                                             |
+| `VITE_DROPBOX_APP_FOLDER` | `Cycle` | The app-folder name shown as the file's location. Dropbox fixes this from the OAuth app's own configuration, so it has to be told what the folder is actually called.                                                              |
+| `VITE_GDRIVE_APP_FOLDER`  | `Cycle` | The folder the app creates in the user's My Drive.                                                                                                                                                                                 |
 
 Both OAuth identifiers are **public**: the flows are PKCE with no client
 secret, so they are supplied as repository _variables_ (not secrets) and
@@ -38,7 +38,7 @@ The declarations live in `src/vite-env.d.ts`; the consumers are
 
 ## Runtime settings
 
-Everything under Settings persists to localStorage (`period:settings`) and
+Everything under Settings persists to localStorage (`cycle:settings`) and
 applies immediately. Stored values are range-clamped on read, so a
 hand-edited blob can't produce a forecast that divides by zero.
 
@@ -61,15 +61,15 @@ adjustable: it is sperm and egg viability, not a preference.
 
 Everything the app persists, all under one origin:
 
-| Key                                         | Holds                                                       |
-| ------------------------------------------- | ----------------------------------------------------------- |
-| `period:doc`                                | The document — every day report.                            |
-| `period:settings`                           | The settings above.                                         |
-| `period:logs`                               | The in-app log buffer.                                      |
-| `period:language`                           | The active UI language.                                     |
-| `period:sync:backend`                       | Which backend is selected (`local` / `dropbox` / `gdrive`). |
-| `period:sync:dropbox`, `period:sync:gdrive` | OAuth tokens for the connected backend.                     |
-| `oss:cache:<backend>:period`                | The framework's offline mirror of the cloud copy.           |
+| Key                                       | Holds                                                       |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `cycle:doc`                               | The document — every day report.                            |
+| `cycle:settings`                          | The settings above.                                         |
+| `cycle:logs`                              | The in-app log buffer.                                      |
+| `cycle:language`                          | The active UI language.                                     |
+| `cycle:sync:backend`                      | Which backend is selected (`local` / `dropbox` / `gdrive`). |
+| `cycle:sync:dropbox`, `cycle:sync:gdrive` | OAuth tokens for the connected backend.                     |
+| `oss:cache:<backend>:cycle`               | The framework's offline mirror of the cloud copy.           |
 
 Clearing site data removes all of it. That is the whole uninstall procedure —
 there is nothing on a server to delete.

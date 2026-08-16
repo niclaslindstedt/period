@@ -32,7 +32,7 @@ import {
   cycleOptions,
   useAppSettings,
 } from "./app/useAppSettings.ts";
-import { localDocBackend, usePeriodStore } from "./app/usePeriodStore.ts";
+import { localDocBackend, useDocStore } from "./app/useDocStore.ts";
 import { useSyncEngine } from "./app/useSyncEngine.ts";
 import { status } from "./output.ts";
 
@@ -82,7 +82,7 @@ export function App() {
     if (demo.on && module) return module.createDemoBackend();
     return localDocBackend;
   }, [demo.on]);
-  const store = usePeriodStore(backend);
+  const store = useDocStore(backend);
   const sync = useSyncEngine(store, demo.on);
   const options = useMemo(() => cycleOptions(settings), [settings]);
   const look = useMemo(() => chartLook(settings), [settings]);

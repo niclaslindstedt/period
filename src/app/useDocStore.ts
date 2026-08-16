@@ -17,7 +17,7 @@ import * as output from "../output.ts";
 // reads and writes *around* this hook rather than through it, so losing the
 // network never costs an edit.
 
-const DOC_KEY = "period:doc";
+const DOC_KEY = "cycle:doc";
 
 /** The document storage seam. The store never touches `localStorage` directly
  *  — it reads and writes through a `DocBackend`, so a test (or a future
@@ -84,7 +84,7 @@ export const localDocBackend: DocBackend = {
   },
 };
 
-export type PeriodStore = {
+export type DocStore = {
   data: AppData;
   /** Upsert a day's report. A report with both answers no is still a report —
    *  "I checked in, nothing happened" is a claim, and only `deleteEntry`
@@ -112,9 +112,7 @@ export type PeriodStore = {
   loaded: boolean;
 };
 
-export function usePeriodStore(
-  backend: DocBackend = localDocBackend,
-): PeriodStore {
+export function useDocStore(backend: DocBackend = localDocBackend): DocStore {
   // Read synchronously on the first render: localStorage can answer before the
   // first paint, so there is no empty-state flash to design around.
   const [data, setData] = useState<AppData>(() => backend.load());

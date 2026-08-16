@@ -9,10 +9,10 @@ Dropbox or Google Drive directly from the page.
 
 One JSON file — the same document the app keeps locally, byte for byte:
 
-| Backend      | Path                             |
-| ------------ | -------------------------------- |
-| Dropbox      | `Apps/Period/period.json`        |
-| Google Drive | `Period/period.json` in My Drive |
+| Backend      | Path                           |
+| ------------ | ------------------------------ |
+| Dropbox      | `Apps/Cycle/cycle.json`        |
+| Google Drive | `Cycle/cycle.json` in My Drive |
 
 You can open it, read it, back it up, or delete it from the provider's own file
 browser. It is the format documented in

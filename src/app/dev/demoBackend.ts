@@ -14,7 +14,7 @@
 import { dayKeyOf } from "@niclaslindstedt/oss-framework/calendar";
 
 import type { AppData } from "../types.ts";
-import type { DocBackend } from "../usePeriodStore.ts";
+import type { DocBackend } from "../useDocStore.ts";
 import { buildDemoData } from "./demoData.ts";
 
 /**

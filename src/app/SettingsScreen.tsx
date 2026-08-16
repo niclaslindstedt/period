@@ -28,7 +28,7 @@ import type { ForecastModelKind } from "./forecastModel.ts";
 import type { TemperatureUnit } from "./temperature.ts";
 import { emptyDoc } from "./types.ts";
 import type { AppSettings, ThemeChoice } from "./useAppSettings.ts";
-import type { PeriodStore } from "./usePeriodStore.ts";
+import type { DocStore } from "./useDocStore.ts";
 import {
   AVAILABLE_BACKENDS,
   PROVIDER_NAMES,
@@ -47,7 +47,7 @@ import {
 type Props = {
   settings: AppSettings;
   update: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
-  store: PeriodStore;
+  store: DocStore;
   sync: SyncEngine;
   /** The in-memory demo-data takeover. Not part of `settings` on purpose: it
    *  is never persisted, so a reload always lands back on the real document. */

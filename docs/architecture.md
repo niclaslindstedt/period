@@ -25,7 +25,7 @@ src/app/
   bulk.ts           a day span → the reports it expands to  (pure, clock-free)
   merge.ts          two documents → one                     (pure)
   migrations.ts     bytes ⇄ AppData, with validation
-  usePeriodStore.ts the document in state, persisted to localStorage
+  useDocStore.ts    the document in state, persisted to localStorage
   useSyncEngine.ts  the cloud copy: pull on open, debounced push on edit
   useAppSettings.ts the settings blob
   backup.ts         export / restore a JSON file
@@ -129,7 +129,7 @@ because they were never anything but functions of the reports.
 
 ## Demo data
 
-`usePeriodStore` reads and writes through a `DocBackend` rather than touching
+`useDocStore` reads and writes through a `DocBackend` rather than touching
 `localStorage` itself. That seam is what the developer **Demo data** switch
 uses: while it is on, `App` hands the store an in-memory backend seeded with a
 year of invented reports instead of the real `localDocBackend`, so a demo needs

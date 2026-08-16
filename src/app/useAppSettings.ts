@@ -89,7 +89,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   captureLogs: false,
 };
 
-const STORAGE_KEY = "period:settings";
+const STORAGE_KEY = "cycle:settings";
 
 /** Clamp a stored number into a sane range, falling back when it isn't one.
  *  A hand-edited (or partially synced) settings blob must never be able to
