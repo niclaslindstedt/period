@@ -126,13 +126,13 @@ The app needs no configuration to run. Two build-time variables switch cloud
 sync on; both are public OAuth client identifiers (the flows are PKCE, so there
 is no secret to protect), and leaving either unset simply hides that provider:
 
-| Variable                  | Effect                                                     |
-| ------------------------- | ---------------------------------------------------------- |
-| `VITE_DROPBOX_APP_KEY`    | Enables the Dropbox backend.                               |
-| `VITE_GOOGLE_CLIENT_ID`   | Enables the Google Drive backend.                          |
-| `VITE_DROPBOX_APP_FOLDER` | Folder name the document is filed under (default `Cycle`). |
-| `VITE_GDRIVE_APP_FOLDER`  | Folder name in My Drive (default `Cycle`).                 |
-| `VITE_BASE`               | Deploy base path (default `/`).                            |
+| Variable                  | Effect                                                          |
+| ------------------------- | --------------------------------------------------------------- |
+| `VITE_DROPBOX_APP_KEY`    | Enables the Dropbox backend.                                    |
+| `VITE_GOOGLE_CLIENT_ID`   | Enables the Google Drive backend.                               |
+| `VITE_DROPBOX_APP_FOLDER` | Folder name the document is filed under (default `nird-cycle`). |
+| `VITE_GDRIVE_APP_FOLDER`  | Folder name in My Drive (default `nird-cycle`).                 |
+| `VITE_BASE`               | Deploy base path (default `/`).                                 |
 
 See [`docs/configuration.md`](docs/configuration.md) for the details.
 

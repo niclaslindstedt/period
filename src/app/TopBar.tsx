@@ -82,10 +82,14 @@ export function TopBar({ active, onOpen, syncSlot }: Props) {
           aria-label={t("nav.settings")}
           aria-current={onSettings ? "page" : undefined}
           title={t("nav.settings")}
-          className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
-            onSettings
-              ? "bg-accent/15 text-accent"
-              : "text-muted hover:bg-surface-2 hover:text-fg"
+          // Accent at rest as well as on the Settings screen, so the row reads
+          // as one colour: the mark, the name, the cog and the `+` are the four
+          // things in it, and three of them being rose left the cog looking
+          // switched off rather than quiet. The lit state is the tinted fill
+          // behind it instead of a change of ink — which is the same "filled
+          // means happening" grammar the `+` and the calendar's marks use.
+          className={`flex h-9 w-9 items-center justify-center rounded-md text-accent transition-colors ${
+            onSettings ? "bg-accent/15" : "hover:bg-surface-2"
           }`}
         >
           <CogIcon className="h-5 w-5" />
