@@ -55,8 +55,16 @@ the tenth of a point would move if one report from last spring were corrected.
 Floored so the number is one the arithmetic can back: 63% means at least 63,
 and the figure can only ever understate. Capped at 99% because flooring leaves
 exactly one way to overstate — a genuine 99.6% would print as a flat "100%",
-and the app claiming certainty is the one thing this line exists to avoid. The
-same rule governs every percentage the [Forecast](forecast.md) screen quotes.
+and the app claiming certainty is the one thing this line exists to avoid.
+
+The bottom of the scale gets the same guard for the mirror-image reason: a
+chance under one percent reads **"<1%"**, not "0%". A floor is a lower bound
+everywhere else on the scale, but at the very bottom the digit it prints is
+also the number zero — and a day the model gives a small chance is not a day it
+has ruled out. A flat "0%" is kept for a probability that genuinely is zero.
+
+The same rules govern every percentage the [Forecast](forecast.md) screen
+quotes.
 
 ## The period you are having right now
 

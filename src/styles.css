@@ -319,6 +319,71 @@ body {
   min-height: 3rem;
 }
 
+/* ── Moving between screens ──────────────────────────────────────────────────
+   The bottom bar is four destinations in a fixed left-to-right order and a
+   swipe moves one step along it (see `useSwipeNav.ts`). Without motion the
+   screen simply replaces itself, which leaves the gesture unanswered: the
+   finger says "the next one, that way" and the app gives no sign that a *row*
+   is what it moved along. So the arriving screen comes in from the side it
+   lives on — from the right going forward, from the left going back — and the
+   direction is the bar's, not the gesture's, so tapping a tab two along looks
+   like the same move as swiping to it (see `screenEnter` in `BottomNav.tsx`).
+
+   Only the incoming screen animates; the outgoing one is gone the moment the
+   tab changes. A true two-up page transition would have to keep the old screen
+   mounted and slide the pair, which on this app means holding a second copy of
+   the forecast chart on screen to be scrolled off it. The short offset is
+   chosen for that: at 100% width the trailing edge would expose a screen-wide
+   strip of empty page, while `1.5rem` reads as the screen catching up with the
+   swipe rather than as a gap.
+
+   Transform and opacity only — both composited, so this stays off the main
+   thread on a phone. */
+.app-screen[data-enter="forward"] {
+  animation: screen-in-right 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-screen[data-enter="back"] {
+  animation: screen-in-left 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Report and Settings have no place in the row, so they arrive from nowhere:
+   a fade is a change of screen with no direction claimed, which is what
+   pressing a top-bar button is. It is also what the app's very first paint
+   gets, which is the right nothing-in-particular for a screen that did not
+   come from another one. */
+.app-screen[data-enter="none"] {
+  animation: screen-fade-in 160ms ease-out;
+}
+
+@keyframes screen-in-right {
+  from {
+    transform: translate3d(1.5rem, 0, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes screen-in-left {
+  from {
+    transform: translate3d(-1.5rem, 0, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes screen-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The tab still changes, instantly — the motion was only ever the explanation
+   of a change that happens either way. */
+@media (prefers-reduced-motion: reduce) {
+  .app-screen[data-enter] {
+    animation: none;
+  }
+}
+
 /* ── The cycle calendar ──────────────────────────────────────────────────────
    The Calendar screen paints a day by putting a coloured mark *behind* its
    number, and the Report screen's date picker paints a selected span the same

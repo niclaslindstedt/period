@@ -55,6 +55,32 @@ export function isNavTab(tab: Tab): tab is NavTab {
   return (TABS as Tab[]).includes(tab);
 }
 
+/** Which way an arriving screen travels: `forward` in from the right,
+ *  `back` in from the left, or `none` for a change with no direction to it. */
+export type ScreenEnter = "forward" | "back" | "none";
+
+/**
+ * How a move from one screen to another should animate.
+ *
+ * The bar's order is the app's only left-to-right claim, and a swipe already
+ * moves along it — so the screens have to arrive from the side the gesture
+ * came from, or the motion contradicts the finger that asked for it. The same
+ * order answers a tap on a tab, because a tap two tabs to the right is the
+ * same move as two swipes and should not look like a different one.
+ *
+ * `none` for everything else, and that is a claim rather than a fallback:
+ * Report and Settings are not on the bar (see `TopBar.tsx`), they have no
+ * neighbours, and sliding them in from a side would invent a position for
+ * them the rest of the app then has to keep pretending is there. They cross
+ * fade instead — a change of screen without a direction, which is exactly
+ * what pressing a top-bar button is.
+ */
+export function screenEnter(from: Tab, to: Tab): ScreenEnter {
+  if (from === to) return "none";
+  if (!isNavTab(from) || !isNavTab(to)) return "none";
+  return TABS.indexOf(to) > TABS.indexOf(from) ? "forward" : "back";
+}
+
 /**
  * Which tab the app opens on, given the document it booted with.
  *
