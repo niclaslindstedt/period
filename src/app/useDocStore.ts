@@ -26,8 +26,12 @@ export type DocBackend = {
   readonly id: string;
   /** The current document, or an empty one when nothing is stored. */
   load(): AppData;
-  /** Persist the document. A best-effort sink — it must not throw. */
-  save(doc: AppData): void;
+  /** Persist the document, answering whether the bytes actually landed. Still
+   *  a best-effort sink — it must not throw — but the answer is what lets the
+   *  Report screen's Save tell a write that happened from one that didn't. A
+   *  checkmark over a document that never reached the disk is the one piece of
+   *  feedback worse than none. */
+  save(doc: AppData): boolean;
 };
 
 /**
@@ -74,12 +78,14 @@ export const localDocBackend: DocBackend = {
   save(doc) {
     try {
       localStorage.setItem(DOC_KEY, serializeDoc(doc));
+      return true;
     } catch (err) {
       output.error(
         `Couldn't save to this device — ${
           err instanceof Error ? err.message : String(err)
         }.`,
       );
+      return false;
     }
   },
 };
@@ -110,6 +116,11 @@ export type DocStore = {
    *  refuses to write before it, so a slow read can never be overwritten by
    *  the empty document that preceded it. */
   loaded: boolean;
+  /** How many write-throughs have failed. A counter rather than a flag so a
+   *  second failure raises a second warning: the toast for the first one has
+   *  usually gone by then, and "it didn't save" is worth saying every time it
+   *  is true. */
+  writeFailures: number;
 };
 
 export function useDocStore(backend: DocBackend = localDocBackend): DocStore {
@@ -117,6 +128,7 @@ export function useDocStore(backend: DocBackend = localDocBackend): DocStore {
   // first paint, so there is no empty-state flash to design around.
   const [data, setData] = useState<AppData>(() => backend.load());
   const [editCount, setEditCount] = useState(0);
+  const [writeFailures, setWriteFailures] = useState(0);
   const loadedRef = useRef(true);
 
   // A backend swap (only tests do this today) adopts the new backend's
@@ -131,7 +143,7 @@ export function useDocStore(backend: DocBackend = localDocBackend): DocStore {
   // only ever persisted after a load has been applied.
   useEffect(() => {
     if (!loadedRef.current) return;
-    backend.save(data);
+    if (!backend.save(data)) setWriteFailures((n) => n + 1);
   }, [backend, data]);
 
   const saveEntry = useCallback((entry: DayEntry) => {
@@ -190,6 +202,7 @@ export function useDocStore(backend: DocBackend = localDocBackend): DocStore {
       replaceAll,
       editCount,
       loaded: loadedRef.current,
+      writeFailures,
     }),
     [
       data,
@@ -199,6 +212,7 @@ export function useDocStore(backend: DocBackend = localDocBackend): DocStore {
       deleteEntries,
       replaceAll,
       editCount,
+      writeFailures,
     ],
   );
 }

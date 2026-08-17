@@ -155,6 +155,22 @@ export function App() {
     toasts.push({ message, kind: "success", durationMs: 2500 });
   }, []);
 
+  // A refused write. The Report screen confirms a save on its own button and
+  // never raises a toast for one, precisely so that the toast is left free to
+  // mean this: the document did not reach the disk, the screen looks exactly
+  // as it does on success, and the only honest thing to do is say so. It gets
+  // longer on screen than a confirmation would, because it is asking for
+  // something to be done about it.
+  useEffect(() => {
+    if (store.writeFailures === 0) return;
+    toasts.clear();
+    toasts.push({
+      message: t("report.saveFailed"),
+      kind: "danger",
+      durationMs: 8000,
+    });
+  }, [store.writeFailures, t]);
+
   const pwa = usePwaUpdate({
     base: import.meta.env.BASE_URL,
     cacheId: cacheIdForBase(import.meta.env.BASE_URL),
@@ -223,7 +239,7 @@ export function App() {
               weekStartsOn={settings.weekStartsOn}
               temperatureUnit={settings.temperatureUnit}
               cloudBacked={sync.backend !== "local"}
-              onSaved={notice}
+              onNotice={notice}
             />
           )}
           {tab === "calendar" && (

@@ -106,7 +106,7 @@ export function StatusScreen({
 
   if (!probabilistic) {
     return (
-      <div className="flex flex-col gap-3 px-3 py-3">
+      <div className="flex flex-1 flex-col justify-center gap-3 px-3 py-3">
         <div className="rounded-2xl border border-line bg-surface-3 p-6 text-center">
           <HeartIcon className="mx-auto h-8 w-8 text-muted" />
           <p className="mt-3 text-sm text-muted">{t("status.noHistory")}</p>
@@ -116,7 +116,12 @@ export function StatusScreen({
   }
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-3">
+    // `flex-1` + `justify-center`: the screen is three short cards, and left at
+    // the top of a tall phone they strand a hand's worth of empty surface under
+    // the disclaimer. Centred in the leftover height, the word this screen
+    // exists to say lands where the eye already is. The Report screen centres
+    // its card in the same way — see `App.tsx`'s `min-h-full` scroller.
+    <div className="flex flex-1 flex-col justify-center gap-3 px-3 py-3">
       <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4">
         <p className="text-xs font-bold tracking-wide text-accent uppercase">
           {t("status.today")}

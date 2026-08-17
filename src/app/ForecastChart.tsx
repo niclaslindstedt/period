@@ -347,38 +347,15 @@ export function ForecastChart({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />,
-                // One circle per day, on the curve. The curve is drawn through
-                // the days rather than sampled from a continuous thing, and a
-                // bare line hides that: it invites reading a value off the
-                // slope halfway between two dates, which the model does not
-                // have. A dot at each day is where the numbers actually are —
-                // the same days the columns draw, marked rather than filled —
-                // and it doubles as the target the readout is quoting, so the
-                // cursor has something to land on. A ruled-out day gets no
-                // dot: its mark is the stop on the baseline, and a circle at
-                // zero would read as a measurement of zero rather than as a
-                // day removed from the distribution.
-                <g key="points">
-                  {visible.map((day, i) =>
-                    day.excluded ? null : (
-                      <circle
-                        key={day.day}
-                        className="forecast-marker"
-                        cx={centreOf(i)}
-                        cy={y(valueOf(day))}
-                        r={cursor === i ? 4 : 2.6}
-                        fill="var(--color-accent)"
-                        stroke="var(--color-page-bg)"
-                        strokeWidth={1.5}
-                        opacity={cursor === null || cursor === i ? 1 : 0.5}
-                        style={{
-                          animationDelay: `${260 + i * 14}ms`,
-                          transition: "opacity 120ms ease-out",
-                        }}
-                      />
-                    ),
-                  )}
-                </g>,
+                // No dot per day. The curve carries the shape and nothing
+                // else: the days the numbers actually sit on are the columns'
+                // job (`bars`), the date ticks below say where the window
+                // runs, and the day under the pointer is called out by the
+                // cursor rule and spelled out in the readout above — so a comb
+                // of markers along the line only crowds it. The one circle
+                // that remains is the labelled expected day, drawn below in
+                // both marks because it is an annotation rather than a
+                // datum.
               ]}
 
           {/* Days already logged without bleeding: they carry no probability,

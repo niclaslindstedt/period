@@ -91,8 +91,17 @@ export const en = {
     saveRange: "Save {count} days",
     clear: "Clear this day",
     clearRange: "Clear these days",
-    saved: "Report saved",
-    savedRange: "Saved to {count} days",
+    // Save's own label for the moment after it is pressed, so it is read where
+    // the tap happened rather than in a card at the top of the screen. Past
+    // tense and short: it replaces the label on the button it confirms, and
+    // the day it is about is already named on the card above.
+    saved: "Saved",
+    savedRange: "Saved {count} days",
+    // The one thing about saving that does need a toast — the write was
+    // refused (no room, or storage switched off), and nothing on the screen
+    // would show it otherwise.
+    saveFailed:
+      "Couldn't save to this device — check the browser's storage settings.",
     cleared: "Report cleared",
     clearedRange: "Cleared {count} days",
     logged: "Logged",

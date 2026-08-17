@@ -28,9 +28,18 @@ did not, so one glance at the row is the whole answer.
 
 **Save** carries a mark saying where the report is going: a disk while the
 document lives on this device only, and a cloud once you have connected a
-[cloud account](cloud-sync.md). **Clear this day** sits under it with a bin, so
-the destructive one of the two is the one you can tell apart before the tap
-rather than after it.
+[cloud account](cloud-sync.md). Press it and the button itself confirms — the
+mark becomes a checkmark and the label reads **Saved** for a moment, then goes
+back to naming the action. There is nothing to wait for: the report is written
+to this device as you press. Touch any answer again and the checkmark drops,
+because what is on screen is no longer what was saved. The only time saving
+raises a message of its own is when the write is refused — no room, or storage
+switched off in the browser — since nothing else on the screen would show it.
+
+**Clear this day** sits under **Save** with a bin, so the destructive one of the
+two is the one you can tell apart before the tap rather than after it. Clearing
+does say so in a passing message, because it takes reports away and the count it
+took is worth naming.
 
 Leaving them all dim is a real answer. **Save** is what files the report, so a
 day saved with no button lit records that you checked and there was nothing —
