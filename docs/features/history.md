@@ -43,7 +43,9 @@ the chart exists to show would be a flat line.
   The readout also says how many reported days each share rests on.
 - **Periods** — every period, newest first, with its length and the cycle it
   closed, its dates set in the same pills the Forecast screen quotes its
-  upcoming periods with.
+  upcoming periods with. The list is ruled into columns: every start sits under
+  the starts and every end under the ends, however many digits a date has, so
+  reading down it does not mean re-finding the second date on every row.
 
 That last list matters as much as the charts: it is exactly the input every
 average was computed from, so a number that looks wrong can be traced to the

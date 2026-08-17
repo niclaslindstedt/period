@@ -56,7 +56,7 @@ import {
   WaveIcon,
 } from "./icons.tsx";
 import { useT, type TFn } from "./i18n/index.ts";
-import { DateSpan, Pill } from "./Pill.tsx";
+import { DateSpan, DateSpanList, DateSpanRow, Pill } from "./Pill.tsx";
 import {
   BinaryProfileChart,
   TemperatureProfileChart,
@@ -203,13 +203,11 @@ export function ForecastScreen({
           title={t("history.periods")}
           icon={<DropletIcon className="h-3.5 w-3.5" />}
         >
-          <ul className="flex flex-col gap-2 text-sm">
+          <DateSpanList>
             {upcoming.map((span) => (
-              <li
-                key={span.start}
-                className="flex flex-wrap items-center justify-between gap-2"
-              >
+              <DateSpanRow key={span.start}>
                 <DateSpan
+                  columns
                   start={span.start}
                   end={span.end}
                   label={t("history.periodRow", {
@@ -217,14 +215,14 @@ export function ForecastScreen({
                     end: formatDay(span.end),
                   })}
                 />
-                <span className="text-xs text-muted">
+                <span className="justify-self-end text-right text-xs text-muted">
                   {t("forecast.inDays", {
                     count: String(daysBetween(today, span.start)),
                   })}
                 </span>
-              </li>
+              </DateSpanRow>
             ))}
-          </ul>
+          </DateSpanList>
         </Section>
       )}
 
@@ -533,35 +531,31 @@ function ModelPanel({
       <p className="mt-2 text-xs font-medium tracking-wide text-muted uppercase">
         {t("forecast.model.intervals")}
       </p>
-      <ul className="flex flex-col gap-2 text-sm">
+      <DateSpanList lead>
         {f.intervals.map((interval) => (
-          <li
-            key={interval.mass}
-            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5"
-          >
-            <span className="flex flex-wrap items-center gap-2">
-              <Pill tone="muted">
-                {t("forecast.model.intervalRow", {
-                  percent: String(interval.mass * 100),
-                })}
-              </Pill>
-              <DateSpan
-                start={interval.start}
-                end={interval.end}
-                label={t("forecast.model.intervalRange", {
-                  start: formatDay(interval.start),
-                  end: formatDay(interval.end),
-                })}
-              />
-            </span>
-            <span className="text-xs text-muted">
+          <DateSpanRow key={interval.mass}>
+            <Pill tone="muted">
+              {t("forecast.model.intervalRow", {
+                percent: String(interval.mass * 100),
+              })}
+            </Pill>
+            <DateSpan
+              columns
+              start={interval.start}
+              end={interval.end}
+              label={t("forecast.model.intervalRange", {
+                start: formatDay(interval.start),
+                end: formatDay(interval.end),
+              })}
+            />
+            <span className="justify-self-end text-right text-xs text-muted">
               {t("forecast.model.intervalWidth", {
                 count: String(interval.widthDays),
               })}
             </span>
-          </li>
+          </DateSpanRow>
         ))}
-      </ul>
+      </DateSpanList>
 
       <p className="mt-2 text-xs font-medium tracking-wide text-muted uppercase">
         {t("forecast.observations.title")}
