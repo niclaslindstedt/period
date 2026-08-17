@@ -11,6 +11,7 @@ import {
 } from "@niclaslindstedt/oss-framework/charts";
 import { useMeasuredSize } from "@niclaslindstedt/oss-framework/hooks";
 
+import { niceTicks } from "./chartAxis.ts";
 import { useT } from "./i18n/index.ts";
 
 // The History screen's chart, drawn the way the Forecast screen draws its own.
@@ -31,6 +32,17 @@ import { useT } from "./i18n/index.ts";
 // a reading with a gap on both sides, which would otherwise vanish entirely:
 // it gets a short round-capped stroke, a mark for "measured, alone", not a
 // decoration on a line that exists anyway.
+//
+// It does have a y axis, which the Forecast chart does not, and the difference
+// is the data rather than the taste. The Forecast chart plots a probability:
+// its shape is the whole message, the peak is labelled outright and every
+// number is a hover away, so a scale of bare decimals would be furniture. A
+// History series plots a quantity in a unit someone knows — 29 days, 36.4 °C,
+// 45% — where the height of a column means nothing until the reader can price
+// it. Three or four gridlines are what turn "taller than last cycle" into
+// "31 days". They are drawn behind the marks in the frame's own hairline, and
+// the axis hugs its data exactly as the marks do, so the labels never claim a
+// range the series never covered.
 
 /** How a series is drawn: one rounded column per point, or the line they
  *  trace. The Forecast chart's two marks, with the same names. */
@@ -55,6 +67,11 @@ type Props = {
   desc: string;
   /** The readout's rendering of one value, unit and all. */
   formatValue: (value: number) => string;
+  /** The y axis's rendering of one gridline value. Terser than `formatValue`
+   *  on purpose: a tick is read at a glance and out of the corner of an eye,
+   *  and the unit is already in the section title and spelled out in full in
+   *  the readout. Defaults to the number at the axis's own precision. */
+  formatTick?: (value: number) => string;
   /** An optional muted second phrase per point (a sample size, a span). */
   details?: (string | undefined)[];
 };
@@ -65,6 +82,18 @@ const DEFAULT_HEIGHT = 170;
  *  Roughly a phone's content width, so the first frame is never wildly wrong. */
 const FALLBACK_WIDTH = 340;
 
+/** Most gridlines a plot may carry. Five over ~130px is a line every 30-odd
+ *  pixels at worst — enough to read a height off, few enough that the axis
+ *  doesn't become the picture. */
+const MAX_TICKS = 5;
+/** Space between a y label and the plot's left edge. */
+const TICK_GAP = 6;
+/** Roughly one 10px digit's advance in the app's font. The gutter has to be
+ *  reserved before the labels exist to measure, and a character count is close
+ *  enough for text this short — erring wide costs a couple of pixels of plot,
+ *  erring narrow would print the axis into the marks. */
+const TICK_CHAR_WIDTH = 6;
+
 export function HistoryChart({
   values,
   labels,
@@ -74,6 +103,7 @@ export function HistoryChart({
   ariaLabel,
   desc,
   formatValue,
+  formatTick,
   details,
 }: Props) {
   const t = useT();
@@ -86,10 +116,34 @@ export function HistoryChart({
   // about.
   const [cursor, setCursor] = useState<number | null>(null);
 
+  const measured = values.filter((v): v is number => v !== null);
+  const max = Math.max(...measured, Number.MIN_VALUE);
+  const min = Math.min(...measured, Number.MAX_VALUE);
+  // Data-hugging axes keep a margin so the extremes never sit on the frame;
+  // a flat series (every value equal) still gets a band to sit inside.
+  const margin = Math.max((max - min) * 0.18, Math.abs(max) * 0.02, 0.05);
+  const domain: [number, number] = zeroBased
+    ? [0, max * 1.15]
+    : [min - margin, max + margin];
+
+  // The axis comes before the frame, because the frame depends on it: the
+  // gutter is however wide the widest label turns out to be, and the labels
+  // are fixed by the domain alone, which owes nothing to the pixels.
+  const axis = niceTicks(domain[0], domain[1], MAX_TICKS);
+  const tickLabel = (value: number) =>
+    formatTick ? formatTick(value) : value.toFixed(axis.decimals);
+  const gutter =
+    axis.values.length === 0
+      ? 0
+      : Math.ceil(
+          Math.max(...axis.values.map((v) => tickLabel(v).length)) *
+            TICK_CHAR_WIDTH,
+        ) + TICK_GAP;
+
   const plot = {
-    left: PAD.left,
+    left: PAD.left + gutter,
     top: PAD.top,
-    width: Math.max(1, width - PAD.left - PAD.right),
+    width: Math.max(1, width - PAD.left - gutter - PAD.right),
     height: Math.max(1, height - PAD.top - PAD.bottom),
   };
   const baseline = plot.top + plot.height;
@@ -100,16 +154,7 @@ export function HistoryChart({
   const step = values.length > 0 ? plot.width / values.length : plot.width;
   const centreOf = (i: number) => bands.position(i) + bands.bandwidth / 2;
 
-  const measured = values.filter((v): v is number => v !== null);
-  const max = Math.max(...measured, Number.MIN_VALUE);
-  const min = Math.min(...measured, Number.MAX_VALUE);
-  // Data-hugging axes keep a margin so the extremes never sit on the frame;
-  // a flat series (every value equal) still gets a band to sit inside.
-  const margin = Math.max((max - min) * 0.18, Math.abs(max) * 0.02, 0.05);
-  const y = linearScale(
-    zeroBased ? [0, max * 1.15] : [min - margin, max + margin],
-    [baseline, plot.top],
-  );
+  const y = linearScale(domain, [baseline, plot.top]);
 
   // Consecutive runs of measured points, so the curve breaks at every gap.
   const segments = useMemo(() => {
@@ -205,6 +250,38 @@ export function HistoryChart({
           className="block touch-pan-y select-none"
         >
           <desc>{desc}</desc>
+
+          {/* The y axis: a hairline per tick, in the baseline's own ink, drawn
+              first so every mark sits over it rather than under it. The tick
+              that lands on the baseline is left to the baseline — two strokes
+              on one pixel row only print the frame twice. */}
+          {axis.values.map((value) => {
+            const ty = y(value);
+            return (
+              <g key={`y-${value}`}>
+                {Math.abs(ty - baseline) > 0.5 && (
+                  <line
+                    x1={plot.left}
+                    x2={plot.left + plot.width}
+                    y1={ty}
+                    y2={ty}
+                    stroke="var(--color-line)"
+                    strokeWidth={1}
+                    opacity={0.5}
+                  />
+                )}
+                <text
+                  x={plot.left - TICK_GAP}
+                  y={ty}
+                  dy="0.32em"
+                  textAnchor="end"
+                  className="fill-muted text-[10px] tabular-nums"
+                >
+                  {tickLabel(value)}
+                </text>
+              </g>
+            );
+          })}
 
           {mark === "bars"
             ? values.map((value, i) => {

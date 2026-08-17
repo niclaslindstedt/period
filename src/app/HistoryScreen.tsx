@@ -207,6 +207,9 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
             formatValue={(v) =>
               t("history.swingShare", { percent: `${Math.round(v)}%` })
             }
+            // A share is only a share against its sign — 45 next to 20 could
+            // be days as easily as percent.
+            formatTick={(v) => `${Math.round(v)}%`}
             details={phases.map((p) =>
               t("history.swingSample", { count: String(p.days) }),
             )}

@@ -129,6 +129,11 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   incomplete beta, weighted moments, discrete distributions). Textbook
   definitions with textbook-value tests.
 - `src/app/temperature.ts` — °C ⇄ °F, parsing, two-decimal formatting.
+- `src/app/chartAxis.ts` — a domain → the gridline values to rule and label, at
+  a step (1, 2 or 5 times a power of ten) a person would have picked. Pure
+  arithmetic with no pixels in it, which is why it is not inside the chart that
+  draws it: the part of an axis that can be quietly wrong is the part with the
+  divisions.
 - `src/app/swings.ts` — mood-swing shares bucketed by cycle phase. Also pure.
 - `src/app/bulk.ts` — a day span → the reports it expands to, for the Report
   screen's range save. Enumeration and nothing else: a bulk report _is_ the

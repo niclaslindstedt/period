@@ -419,6 +419,8 @@ export const en = {
     themeSystem: "System",
     calendar: "Calendar",
     weekStart: "Week starts on",
+    weekStartHint:
+      "The first column of every month grid — the Calendar and the report's day picker.",
     monday: "Monday",
     sunday: "Sunday",
     cycle: "Cycle",
