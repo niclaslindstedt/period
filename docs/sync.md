@@ -9,10 +9,10 @@ Dropbox or Google Drive directly from the page.
 
 One JSON file — the same document the app keeps locally, byte for byte:
 
-| Backend      | Path                           |
-| ------------ | ------------------------------ |
-| Dropbox      | `Apps/Cycle/cycle.json`        |
-| Google Drive | `Cycle/cycle.json` in My Drive |
+| Backend      | Path                                |
+| ------------ | ----------------------------------- |
+| Dropbox      | `Apps/nird-cycle/cycle.json`        |
+| Google Drive | `nird-cycle/cycle.json` in My Drive |
 
 You can open it, read it, back it up, or delete it from the provider's own file
 browser. It is the format documented in
@@ -20,6 +20,19 @@ browser. It is the format documented in
 
 Google Drive access uses the `drive.file` scope: the app can see the files it
 created and nothing else in the account.
+
+### If you synced before the rename
+
+The folder used to be called `Cycle`, and it moved to `nird-cycle` when the app
+did. A build looks in exactly one folder, so an account that synced to the old
+one will look empty on the first connection after the rename.
+
+Nothing was deleted — `Apps/Cycle/cycle.json` and `Cycle/cycle.json` are still
+where they were. Move or copy that file into the new folder from your
+provider's own file browser and the history comes back: the two copies merge
+day by day rather than one replacing the other (see below), so nothing is lost
+whichever copy is newer. The reports on the device you had been using were
+never in the cloud copy's hands anyway — they are still in that browser.
 
 ## Connecting
 

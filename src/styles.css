@@ -76,6 +76,35 @@
   }
 }
 
+/* ── The wordmark ────────────────────────────────────────────────────────────
+   The lockup in the top bar: the mark and the name, both in the accent, and
+   the one piece of text in the app that is not Inter.
+
+   Mono for the name is the point of it. Everything else on screen is prose and
+   numbers read at a glance; the wordmark is a *name*, and setting it in the
+   one family nothing else uses is what stops it reading as a page title that
+   happens to sit at the top. It also puts the name in the same register as the
+   mark beside it — a stroke of even width, and letters of even width.
+
+   The family is named here rather than reached through Tailwind's `font-mono`:
+   that utility resolves to `--font-mono`, which the framework's code blocks and
+   the log viewer read too, and this app has no wish to restyle those. The
+   system stack stays behind it, for the moment before the webfont lands
+   (`@fontsource/jetbrains-mono`, imported in `main.tsx` — self-hosted, so this
+   costs a request to nobody).
+
+   `-0.02em` because mono metrics set every letter on the same advance, which
+   at wordmark size opens gaps a proportional face would have closed; pulling
+   the tracking in makes the two words read as one lockup rather than as spaced
+   out type. */
+.app-wordmark {
+  font-family:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 /* ── Toasts ──────────────────────────────────────────────────────────────────
    The framework tints a toast by kind: green for success, red for danger. That
    is the right default for an app whose accent is green — but this one's is
@@ -293,24 +322,15 @@ body {
    the home indicator (`viewport-fit=cover`), so 10px is all that sits below
    the labels. Carrying `env(safe-area-inset-bottom)` as well left them 44px
    clear on a phone — a strip of empty surface as tall as a tab, taken off the
-   page for a home indicator that floats over the bar perfectly happily. */
+   page for a home indicator that floats over the bar perfectly happily.
+
+   One number for every platform, deliberately. The installed iOS PWA used to
+   take 5px more on the argument that it is the one place the bar really does
+   end at the screen edge — but the home indicator floats over the labels
+   there just as harmlessly as elsewhere, and the extra strip read as the bar
+   sitting off the bottom of the screen rather than as clearance. */
 .app-bottom-nav {
   padding-bottom: 10px;
-}
-
-/* The installed iOS PWA gets 5px more, because it is the one place the bar
-   really does end at the screen edge: a browser tab keeps Safari's toolbar
-   below it, and every other platform draws its own system bar there. Spent as
-   padding rather than margin so the extra space stays *inside* the bar — a
-   margin would open a strip of page background under a bordered nav, which
-   reads as a gap rather than as clearance. Same iOS-and-standalone probe as
-   the `100vh` rule above. */
-@supports (-webkit-touch-callout: none) {
-  @media (display-mode: standalone) {
-    .app-bottom-nav {
-      padding-bottom: 15px;
-    }
-  }
 }
 
 /* A tab is a thumb target, so give it the platform minimum regardless of how

@@ -66,17 +66,36 @@ export const GOOGLE_CLIENT_ID: string =
 
 // Dropbox fixes the app-folder name from the app's own configuration (an
 // "App folder"-scoped app lives under `Apps/<name>/`), so it isn't always
-// "Cycle". Inject the real name at build time so the displayed location
+// `nird-cycle`. Inject the real name at build time so the displayed location
 // points at the folder that actually exists.
+//
+// Both defaults followed the app's rename, from `Cycle` to `nird-cycle`. That
+// is a *location* moving and not just a label, so it is worth being plain
+// about what it costs: a build looks in exactly one folder, so an install that
+// synced to the old one finds nothing in the new one and reads as an empty
+// account until the old file is moved across by hand. Nothing is deleted —
+// `Apps/Cycle/cycle.json` and `Cycle/cycle.json` stay exactly where they are —
+// and the document merges per day on the way back in (see `merge.ts`), so
+// moving the file into the new folder restores the history rather than
+// duplicating it.
+//
+// A deploy that would rather not move can pin the old name with
+// `VITE_DROPBOX_APP_FOLDER` / `VITE_GDRIVE_APP_FOLDER`; on Dropbox the folder
+// is the OAuth app's own configuration anyway, so the variable is how the two
+// are kept honest with each other regardless.
+//
+// Lowercase and hyphenated, unlike the app's own display name: this is a path
+// segment. It is the one place the name has to survive a filesystem, a URL and
+// somebody typing it, and `nird-cycle` does all three without a space in it.
 export const DROPBOX_APP_FOLDER: string =
   (import.meta.env.VITE_DROPBOX_APP_FOLDER as string | undefined)?.trim() ||
-  "Cycle";
+  "nird-cycle";
 
 // Google Drive's folder, unlike Dropbox's, is created by us — this is the
 // folder made in the user's My Drive.
 export const GDRIVE_APP_FOLDER: string =
   (import.meta.env.VITE_GDRIVE_APP_FOLDER as string | undefined)?.trim() ||
-  "Cycle";
+  "nird-cycle";
 
 export const PROVIDER_NAMES: Record<SyncBackendId, string> = {
   local: "This device",

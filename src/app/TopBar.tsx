@@ -3,18 +3,22 @@ import type { ReactNode } from "react";
 
 import { CogIcon, PlusIcon } from "@niclaslindstedt/oss-framework/components";
 
+import { AppMarkIcon } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
 import type { Tab } from "./BottomNav.tsx";
 
-// The bar across the top: the sync glyph and the two things you *do* rather
-// than places you go.
+// The bar across the top: the app's mark and name, the sync glyph, and the two
+// things you *do* rather than places you go.
 //
-// The left half is deliberately empty. It has carried the wordmark and then
-// the app mark, and both spent the row's most valuable slot saying the one
-// thing nobody standing inside this app is unsure of — the mark already has
-// the tab, the home screen and the install prompt for its job. What remains is
-// an invisible `<h1>`: the page keeps its heading and a screen reader still
-// announces the app by name, but nothing is painted.
+// The left half is the `<h1>` — the mark beside the wordmark, which is the
+// same pair the home-screen tile and the browser tab show. It has been empty
+// before, on the argument that a name repeats what the icon you just tapped
+// already said; what changed is that the mark and the name are now one lockup
+// rather than a title on its own, and a lockup is worth the slot in a way a
+// title is not. The mark here is `AppMarkIcon` and not the favicon file: the
+// same geometry with the install tile's background dropped and both inks swapped
+// for `currentColor`, so it wears the accent — this app's rose — inside the app
+// while staying green where it is an icon among other apps' icons.
 //
 // It is the sibling `notes` bar's geometry — a bordered row at `px-4 py-3`
 // with the action cluster on the right, gapped at `0.5rem` — because these are
@@ -61,11 +65,15 @@ export function TopBar({ active, onOpen, syncSlot }: Props) {
   const onReport = active === "report";
   const onSettings = active === "settings";
   return (
-    // `justify-end`, not `justify-between`: the heading is visually hidden
-    // (absolutely positioned out of flow), so the action cluster is the only
-    // in-flow child and it belongs on the right, where the thumb is.
-    <header className="app-header flex shrink-0 items-center justify-end gap-2 border-b border-line bg-surface-3 px-4 pb-3">
-      <h1 className="sr-only">{t("app.name")}</h1>
+    // `justify-between`: the heading takes the left edge and the action
+    // cluster the right, which is where the thumb is.
+    <header className="app-header flex shrink-0 items-center justify-between gap-2 border-b border-line bg-surface-3 px-4 pb-3">
+      {/* `min-w-0` + `truncate` so a longer name in another language gives way
+          to the buttons rather than pushing them off the row. */}
+      <h1 className="app-wordmark flex min-w-0 items-center gap-2 text-accent">
+        <AppMarkIcon className="h-6 w-6 shrink-0" />
+        <span className="truncate">{t("app.name")}</span>
+      </h1>
       <div className="flex shrink-0 items-center gap-2">
         {syncSlot}
         <button
@@ -74,10 +82,14 @@ export function TopBar({ active, onOpen, syncSlot }: Props) {
           aria-label={t("nav.settings")}
           aria-current={onSettings ? "page" : undefined}
           title={t("nav.settings")}
-          className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
-            onSettings
-              ? "bg-accent/15 text-accent"
-              : "text-muted hover:bg-surface-2 hover:text-fg"
+          // Accent at rest as well as on the Settings screen, so the row reads
+          // as one colour: the mark, the name, the cog and the `+` are the four
+          // things in it, and three of them being rose left the cog looking
+          // switched off rather than quiet. The lit state is the tinted fill
+          // behind it instead of a change of ink — which is the same "filled
+          // means happening" grammar the `+` and the calendar's marks use.
+          className={`flex h-9 w-9 items-center justify-center rounded-md text-accent transition-colors ${
+            onSettings ? "bg-accent/15" : "hover:bg-surface-2"
           }`}
         >
           <CogIcon className="h-5 w-5" />

@@ -202,11 +202,11 @@ export function App() {
     <div className="flex h-full flex-col bg-page text-fg">
       {/* The bar carries the two screens that are actions rather than
           destinations — filing a report and changing a setting — plus the sync
-          glyph and the wordmark (see `TopBar.tsx`). It used to be an empty rule
-          under the status bar, on the argument that a title repeats what the
-          icon you just tapped already said; the argument stands, but the row
-          now has buttons in it and has to have height regardless, and an empty
-          left half is worse than the app's name. */}
+          glyph and the app's mark and name (see `TopBar.tsx`). It used to be an
+          empty rule under the status bar, on the argument that a title repeats
+          what the icon you just tapped already said; the row now has buttons in
+          it and has to have height regardless, and an empty left half is worse
+          than the lockup. */}
       <TopBar
         active={tab}
         onOpen={toggle}

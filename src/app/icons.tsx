@@ -35,6 +35,48 @@ function Glyph({
   );
 }
 
+/**
+ * The app mark — the same ring-with-an-arrowhead that is the favicon and the
+ * install icon, drawn in `currentColor` on nothing.
+ *
+ * The two differences from `public/icons/icon.svg` are the whole point of it
+ * existing. That file paints the mark green on the dark install surface,
+ * because an icon's job is to be found on a home screen next to its sibling
+ * apps and it has to carry its own background to do that. This one drops the
+ * background rect and swaps both inks for `currentColor`, so inside the app
+ * the mark is whatever the element around it is — which is the accent in the
+ * top bar, the app's rose, the same colour as everything else you can touch.
+ * The mark is one shape in two liveries rather than two marks.
+ *
+ * Its own viewBox, not the 24×24 grid the glyphs below are traced on. This is
+ * a logo and not a UI glyph: its stroke is 15 on a 100 box (a little over 3 on
+ * the 24 one), because the ring has to stay a ring at 16px in a browser tab.
+ * Sizing it like a cog would make it a hairline nobody recognises.
+ *
+ * Geometry is copied from `public/icons/icon.svg` and mirrored a second time
+ * into `scripts/generate-icons.mjs`, which rasterises it. All three are kept
+ * in step by hand — change one, change the other two.
+ */
+export function AppMarkIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M71.21 29.89 A30 30 0 1 1 28.79 29.89"
+        stroke="currentColor"
+        strokeWidth={15}
+        strokeLinecap="round"
+      />
+      <path d="M47.17 11.50 L40.81 41.91 L16.77 17.87 Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Bleeding. The outline form for controls, the filled form for calendar
  *  markers where a 6px outline would read as a smudge. */
 export function DropletIcon({ className }: IconProps) {
