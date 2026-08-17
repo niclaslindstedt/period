@@ -19,8 +19,10 @@ import {
   BottomNav,
   initialTab,
   isNavTab,
+  screenEnter,
   TABS,
   type NavTab,
+  type ScreenEnter,
   type Tab,
 } from "./app/BottomNav.tsx";
 import { CalendarScreen } from "./app/CalendarScreen.tsx";
@@ -109,12 +111,27 @@ export function App() {
   // first. Status is the fallback for a first run, which opens on Report with
   // no nav tab behind it.
   const [home, setHome] = useState<NavTab>("status");
-  const show = useCallback((next: Tab) => {
-    if (isNavTab(next)) setHome(next);
-    setTab(next);
-  }, []);
+  // Which way the screen now arriving came from, so the shell can move it in
+  // from the side the bar says it lives on (see `screenEnter` and the
+  // `.app-screen` rules in styles.css). Set wherever the tab is, rather than
+  // derived afterwards from a remembered previous value: every change goes
+  // through one of the two functions below, and both of them know both ends of
+  // the move at the moment they make it.
+  const [enter, setEnter] = useState<ScreenEnter>("none");
+  const show = useCallback(
+    (next: Tab) => {
+      setEnter(screenEnter(tab, next));
+      if (isNavTab(next)) setHome(next);
+      setTab(next);
+    },
+    [tab],
+  );
   const toggle = useCallback(
-    (next: "report" | "settings") => setTab(tab === next ? home : next),
+    (next: "report" | "settings") => {
+      const target = tab === next ? home : next;
+      setEnter(screenEnter(tab, target));
+      setTab(target);
+    },
     [tab, home],
   );
 
@@ -128,6 +145,7 @@ export function App() {
   const swipe = useCallback(
     (direction: 1 | -1) => {
       if (!isNavTab(tab)) {
+        setEnter(screenEnter(tab, home));
         setTab(home);
         return;
       }
@@ -218,11 +236,30 @@ export function App() {
       {/* The scroller is also what a swipe is measured across (see
           `useSwipeNav.ts`): the gesture belongs to the screen being paged, not
           to the bars that stay put either side of it. */}
-      <main ref={main} className="relative min-h-0 flex-1 overflow-y-auto">
+      {/* `overflow-x-hidden` is what makes the arriving screen's slide safe:
+          it starts a couple of rem off to one side, and without a clip here
+          that offset would be page width the scroller offered sideways for a
+          fifth of a second. Hidden rather than `clip` because the swipe walks
+          up from the touch target looking for a sideways *scroller* to yield
+          to (`auto`/`scroll`), and this is deliberately not one. */}
+      <main
+        ref={main}
+        className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+      >
         {/* `min-h-full` + `flex` so a screen can ask for the leftover height
             — the Report screen centres its card in it rather than stranding
-            three controls at the top of an empty phone. */}
-        <div className="mx-auto flex min-h-full max-w-2xl flex-col">
+            three controls at the top of an empty phone.
+
+            `key={tab}` is what restarts the animation: the CSS class alone
+            would only re-fire when the direction *changed*, so two swipes the
+            same way would animate once. A new key is a new element, and a new
+            element always runs its animation. The screens below are mounted
+            per tab anyway, so this costs nothing beyond the wrapper. */}
+        <div
+          key={tab}
+          data-enter={enter}
+          className="app-screen mx-auto flex min-h-full max-w-2xl flex-col"
+        >
           {tab === "status" && (
             <StatusScreen
               data={store.data}

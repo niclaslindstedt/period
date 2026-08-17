@@ -6,14 +6,32 @@ import { CogIcon, PlusIcon } from "@niclaslindstedt/oss-framework/components";
 import { useT } from "./i18n/index.ts";
 import type { Tab } from "./BottomNav.tsx";
 
-// The bar across the top: the app's name, the sync glyph, and the two things
+// The bar across the top: the app's mark, the sync glyph, and the two things
 // you *do* rather than places you go.
 //
+// The left half is the install icon — the same `icons/icon.svg` the tab
+// favicon and the home-screen tile are drawn from, not a second lockup traced
+// to match. It replaced the wordmark, which spent the row's most valuable slot
+// spelling out the one thing nobody standing in this app is unsure of. The
+// mark is the app's face everywhere else it appears (the tab, the home screen,
+// the install prompt, the sibling apps' family resemblance), so putting it
+// here is what closes that loop: the thing you tapped is the thing at the top
+// of what opened.
+//
+// An `<img>` at the real asset rather than an inlined copy of the geometry,
+// because the mark has exactly one definition and a hand-traced duplicate is a
+// thing that drifts. It is a precached public asset, so it is there offline,
+// and it is loaded from `BASE_URL` so a deploy under a subpath resolves it.
+// The accessible name stays the app's name via `alt` — a screen reader still
+// reads "Cycle", and the `<h1>` is still the page's heading.
+//
 // It is the sibling `notes` bar's geometry — a bordered row at `px-4 py-3` with
-// the wordmark at `text-lg font-bold` on the left and the action cluster on the
-// right, gapped at `0.5rem` — because these are the same app family and a
-// header that lands at a different height on each of them reads as three
-// unrelated apps rather than one set. What is this app's rather than borrowed is
+// the app's identity on the left and the action cluster on the right, gapped at
+// `0.5rem` — because these are the same app family and a header that lands at a
+// different height on each of them reads as three unrelated apps rather than
+// one set. The mark is 28px, which is `notes`' `text-lg` wordmark's line height
+// and a notch under the 36px action buttons, so the row's height is set by the
+// same thing it always was. What is this app's rather than borrowed is
 // the surface: `notes` floats a translucent header over its own scroller, and
 // here the bar is a solid `surface-3` sibling of the bottom nav it bookends, so
 // the two frame the screen in the same material.
@@ -54,8 +72,20 @@ export function TopBar({ active, onOpen, syncSlot }: Props) {
   const onSettings = active === "settings";
   return (
     <header className="app-header flex shrink-0 items-center justify-between gap-2 border-b border-line bg-surface-3 px-4 pb-3">
-      <h1 className="truncate text-lg font-bold text-fg-bright">
-        {t("app.name")}
+      {/* Sized to the row the buttons already set (h-9), one notch down so the
+          mark sits inside their line rather than defining a taller one — the
+          header's height is unchanged by carrying it. `width`/`height` are on
+          the element as well as in the classes so the row does not reflow in
+          the moment before the SVG has loaded. */}
+      <h1 className="flex min-w-0 items-center">
+        <img
+          src={`${import.meta.env.BASE_URL}icons/icon.svg`}
+          alt={t("app.name")}
+          width={28}
+          height={28}
+          draggable={false}
+          className="h-7 w-7 shrink-0 select-none"
+        />
       </h1>
       <div className="flex shrink-0 items-center gap-2">
         {syncSlot}

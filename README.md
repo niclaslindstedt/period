@@ -102,7 +102,8 @@ npm run build && npm run preview
 
 ## Usage
 
-Four tabs, on a bottom bar — swipe left or right to move between them:
+Four tabs, on a bottom bar — swipe left or right to move between them, and the
+screen slides in from the side it lives on:
 
 | Tab          | What it does                                                                                                                                                                                                                                                                                                  |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

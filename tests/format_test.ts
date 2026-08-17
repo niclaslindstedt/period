@@ -78,8 +78,19 @@ describe("probabilityPercent", () => {
     expect(probabilityPercent(0.63)).toBe("63%");
     expect(probabilityPercent(0.987)).toBe("98%");
     expect(probabilityPercent(0.505)).toBe("50%");
-    // Under a percent floors to zero, which is what a floor says: under one.
-    expect(probabilityPercent(0.004)).toBe("0%");
+  });
+
+  it("says under a percent rather than none", () => {
+    // "0%" is the one figure this function could print that reads as a
+    // certainty, and a small chance is not a ruled-out one.
+    expect(probabilityPercent(0.004)).toBe("<1%");
+    expect(probabilityPercent(0.0099)).toBe("<1%");
+    expect(probabilityPercent(1e-9)).toBe("<1%");
+    // One percent is a percent, and says so plainly.
+    expect(probabilityPercent(0.01)).toBe("1%");
+  });
+
+  it("keeps a flat zero for a probability that really is zero", () => {
     expect(probabilityPercent(0)).toBe("0%");
   });
 
@@ -94,5 +105,11 @@ describe("probabilityPercent", () => {
   it("handles a negative the way it handles zero", () => {
     // Not reachable from the model, but a formatter must not print "-20%".
     expect(probabilityPercent(-0.2)).toBe("0%");
+  });
+
+  it("survives a value that is not a number", () => {
+    // A NaN reaching a formatter is a bug upstream; printing "NaN%" on the
+    // Status screen would make it the reader's problem.
+    expect(probabilityPercent(Number.NaN)).toBe("0%");
   });
 });

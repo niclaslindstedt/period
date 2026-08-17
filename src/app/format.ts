@@ -104,11 +104,24 @@ export function formatMonth(year: number, month: number): string {
  *
  * Capped at 99%, because flooring leaves exactly one way to overstate: a
  * genuine 99.6% would print as a flat "100%", and the app claiming certainty
- * is the one thing the confidence copy beside it exists to avoid. A floored
- * "0%" needs no such guard — it reads as "under one percent", which is what a
- * floor says, and the chart names a day the model has genuinely excluded
- * ("Ruled out") rather than quoting a figure at all.
+ * is the one thing the confidence copy beside it exists to avoid.
+ *
+ * And floored to **"<1%"** rather than to "0%" at the other end, for the
+ * mirror-image reason. A floor is a lower bound everywhere else on the scale,
+ * but at the bottom the digit it prints is also the number zero — and "0%" is
+ * the one output of this function that reads as a certainty rather than as an
+ * estimate. A day the model gives a small-but-real chance is not a day it has
+ * ruled out, and the app should not spend the reader's trust saying it has.
+ * "<1%" is the same floor, said in the one place it needs saying out loud.
+ *
+ * A flat "0%" is therefore reserved for a probability that genuinely is zero
+ * (and for the nonsense values a formatter still has to survive) — the
+ * arithmetic can back that one.
  */
 export function probabilityPercent(p: number): string {
-  return `${Math.min(99, Math.floor(Math.max(0, p) * 100))}%`;
+  // `!(p > 0)` rather than `p <= 0` so a NaN from upstream lands here too,
+  // instead of printing as "NaN%".
+  if (!(p > 0)) return "0%";
+  const whole = Math.floor(p * 100);
+  return whole < 1 ? "<1%" : `${Math.min(99, whole)}%`;
 }

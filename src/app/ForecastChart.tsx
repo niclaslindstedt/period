@@ -526,8 +526,9 @@ function Readout({
   // which is exactly where a rounded percentage would print "100%" for a day
   // the model only thinks is very likely — see `probabilityPercent`. This
   // readout used to carry a decimal below ten percent; it doesn't now, for the
-  // same reason nothing else does. A day whose share rounds to nothing is a
-  // day the chart is already drawing as a bar you can barely see.
+  // same reason nothing else does. A day whose share floors to nothing reads
+  // as "<1%", which is the bar you can barely see, said in words — a day the
+  // model has genuinely excluded is marked "Ruled out" instead.
   const percent = probabilityPercent;
 
   return (

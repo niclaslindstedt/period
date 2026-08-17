@@ -7,7 +7,7 @@ below runs in the browser tab.
 index.html
   └── src/main.tsx            mounts <App> inside the i18n LanguageRoot
        └── src/App.tsx        theme, today, store, sync, tab switch, chrome
-            ├── TopBar            wordmark, sync glyph, + (report), cog
+            ├── TopBar            app mark, sync glyph, + (report), cog
             ├── StatusScreen      reads dayStatus.ts — the opening screen
             ├── ReportScreen      writes day reports
             ├── CalendarScreen    reads dayStatus.ts over a month grid

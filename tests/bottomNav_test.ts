@@ -7,7 +7,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import { initialTab, isNavTab, TABS } from "../src/app/BottomNav.tsx";
+import {
+  initialTab,
+  isNavTab,
+  screenEnter,
+  TABS,
+} from "../src/app/BottomNav.tsx";
 import { blankEntry, emptyDoc, type AppData } from "../src/app/types.ts";
 
 function docWith(entries: AppData["entries"]): AppData {
@@ -49,5 +54,43 @@ describe("the bar's destinations", () => {
     // A first run lands on Report, which is not a destination — the top bar's
     // own button is what shows as current there.
     expect(isNavTab(initialTab(emptyDoc()))).toBe(false);
+  });
+});
+
+describe("which way a screen arrives from", () => {
+  // The motion is the bar's order made visible, so the thing worth pinning is
+  // that it agrees with the order — a screen that slid the wrong way would
+  // contradict the swipe that asked for it.
+
+  it("moves forward down the bar and back up it", () => {
+    expect(screenEnter("status", "calendar")).toBe("forward");
+    expect(screenEnter("calendar", "history")).toBe("forward");
+    expect(screenEnter("history", "status")).toBe("back");
+    expect(screenEnter("forecast", "calendar")).toBe("back");
+  });
+
+  it("agrees with the order for every pair on the bar", () => {
+    TABS.forEach((from, i) => {
+      TABS.forEach((to, j) => {
+        const expected = i === j ? "none" : j > i ? "forward" : "back";
+        expect(screenEnter(from, to)).toBe(expected);
+      });
+    });
+  });
+
+  it("claims no direction for the screens the bar does not carry", () => {
+    // Report and Settings are top-bar actions with no neighbours, so there is
+    // no side for them to come in from.
+    for (const tab of TABS) {
+      expect(screenEnter(tab, "report")).toBe("none");
+      expect(screenEnter("report", tab)).toBe("none");
+      expect(screenEnter(tab, "settings")).toBe("none");
+      expect(screenEnter("settings", tab)).toBe("none");
+    }
+    expect(screenEnter("report", "settings")).toBe("none");
+  });
+
+  it("claims no direction for a screen replacing itself", () => {
+    for (const tab of TABS) expect(screenEnter(tab, tab)).toBe("none");
   });
 });
