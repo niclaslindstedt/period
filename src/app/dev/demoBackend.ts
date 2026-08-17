@@ -36,8 +36,10 @@ export function createDemoBackend(): DocBackend {
     },
     save(next) {
       // In-memory only — the whole point is that the real document is never
-      // touched.
+      // touched. It cannot fail, so demo reports confirm exactly as real ones
+      // do.
       doc = next;
+      return true;
     },
   };
 }

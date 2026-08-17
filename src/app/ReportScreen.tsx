@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import {
   addDays,
@@ -13,6 +19,7 @@ import {
 import {
   Button,
   CalendarIcon,
+  CheckIcon,
   CloudUploadIcon,
   HeartIcon,
   Modal,
@@ -98,6 +105,16 @@ import type { DocStore } from "./useDocStore.ts";
 // The draft is held locally and only reaches the store on Save. That keeps a
 // half-finished report from moving the forecast under the user mid-edit, and
 // makes "I opened the wrong day" a no-op rather than an edit to undo.
+//
+// Save confirms on the button itself — a checkmark where the disk glyph was,
+// for a moment — rather than by raising a toast. There is no server here and
+// nothing to wait for: the write is a synchronous line into a document on this
+// device, so a card sliding in from the top of the screen was announcing a
+// round trip that never happened, and it announced it over the top bar, away
+// from the thumb that had just pressed the button. Confirmation belongs on the
+// control that was pressed. A failed write is the opposite case — something the
+// user has to be told, because the screen would otherwise look exactly as it
+// does on success — and that one still raises a toast (see `useDocStore.ts`).
 
 /** Which selection the date picker is making: one day, or a span of them. */
 type PickerMode = "day" | "range";
@@ -112,8 +129,16 @@ type Props = {
    *  itself is the same write to the same local document either way, and the
    *  push to the cloud is the sync engine's business afterwards. */
   cloudBacked: boolean;
-  onSaved: (message: string) => void;
+  /** Raise a passing message. Saving no longer uses it — the button says so
+   *  itself — so this is clearing, which removes reports and is worth a
+   *  sentence naming how many. */
+  onNotice: (message: string) => void;
 };
+
+/** How long Save wears its checkmark. Long enough to read after the thumb
+ *  lifts, short enough that the button is back to naming its action before
+ *  anyone would press it again. */
+const CONFIRM_MS = 1600;
 
 export function ReportScreen({
   store,
@@ -121,7 +146,7 @@ export function ReportScreen({
   weekStartsOn,
   temperatureUnit,
   cloudBacked,
-  onSaved,
+  onNotice,
 }: Props) {
   const t = useT();
   // The days this report is for. A one-day report is the degenerate span, so
@@ -158,11 +183,45 @@ export function ReportScreen({
     maskOf(stored?.temperature ?? null, temperatureUnit),
   );
 
+  // True for the moment after a save, which is the whole of the confirmation.
+  const [confirming, setConfirming] = useState(false);
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dropConfirm = useCallback(() => {
+    if (confirmTimer.current !== null) clearTimeout(confirmTimer.current);
+    confirmTimer.current = null;
+    setConfirming(false);
+  }, []);
+  useEffect(() => dropConfirm, [dropConfirm]);
+
   useEffect(() => {
     const entry = store.data.entries[day];
     setDraft(entry ?? blankEntry(day, new Date().toISOString()));
     setTemperatureDigits(maskOf(entry?.temperature ?? null, temperatureUnit));
   }, [day, store.data.entries, temperatureUnit]);
+
+  // Moving to another day drops the checkmark with the report it belonged to.
+  // A tick left over from the previous day would read as a claim about the one
+  // now on screen, which is the day nobody has saved yet.
+  useEffect(() => {
+    dropConfirm();
+  }, [day, span.end, dropConfirm]);
+
+  // So does a refused write. The store persists in an effect of its own, so the
+  // failure lands a beat after the tap — and a checkmark sitting next to the
+  // toast that says it didn't save is worse than either alone.
+  useEffect(() => {
+    dropConfirm();
+  }, [store.writeFailures, dropConfirm]);
+
+  /** Every change the form makes to the draft. It goes through here rather
+   *  than through `setDraft` directly so an edit also takes the checkmark
+   *  down: the instant a field moves, what is on screen is no longer what was
+   *  saved, and the button must stop saying otherwise. */
+  const edit = (patch: (prev: DayEntry) => DayEntry) => {
+    dropConfirm();
+    setDraft(patch);
+  };
 
   const save = () => {
     const now = new Date().toISOString();
@@ -170,25 +229,33 @@ export function ReportScreen({
       // The yes/no answers over the span; each day keeps whatever temperature
       // and test result it already had (see `bulkEntries`).
       store.saveEntries(bulkEntries(store.data, span, draft, now));
-      onSaved(t("report.savedRange", { count: String(spanDays) }));
-      return;
+    } else {
+      store.saveEntry({ ...draft, date: day, updatedAt: now });
     }
-    store.saveEntry({ ...draft, date: day, updatedAt: now });
-    onSaved(t("report.saved"));
+    // The write is synchronous and local, so by here it has happened — the
+    // only way it fails is the storage itself refusing, which `useDocStore`
+    // reports on its own and `App` turns into a toast.
+    if (confirmTimer.current !== null) clearTimeout(confirmTimer.current);
+    setConfirming(true);
+    confirmTimer.current = setTimeout(() => {
+      confirmTimer.current = null;
+      setConfirming(false);
+    }, CONFIRM_MS);
   };
 
   const clear = () => {
+    dropConfirm();
     if (multi) {
       store.deleteEntries(daysInRange(span));
       setDraft(blankEntry(day, new Date().toISOString()));
       setTemperatureDigits("");
-      onSaved(t("report.clearedRange", { count: String(spanDays) }));
+      onNotice(t("report.clearedRange", { count: String(spanDays) }));
       return;
     }
     store.deleteEntry(day);
     setDraft(blankEntry(day, new Date().toISOString()));
     setTemperatureDigits("");
-    onSaved(t("report.cleared"));
+    onNotice(t("report.cleared"));
   };
 
   const openPicker = () => {
@@ -289,27 +356,25 @@ export function ReportScreen({
             icon={<DropletIcon className="h-6 w-6" />}
             label={t("report.blood")}
             value={draft.bleeding}
-            onChange={(bleeding) => setDraft((prev) => ({ ...prev, bleeding }))}
+            onChange={(bleeding) => edit((prev) => ({ ...prev, bleeding }))}
           />
           <Answer
             icon={<WaveIcon className="h-6 w-6" />}
             label={t("report.swings")}
             value={draft.moodSwings}
-            onChange={(moodSwings) =>
-              setDraft((prev) => ({ ...prev, moodSwings }))
-            }
+            onChange={(moodSwings) => edit((prev) => ({ ...prev, moodSwings }))}
           />
           <Answer
             icon={<HeartIcon className="h-6 w-6" />}
             label={t("report.lust")}
             value={draft.lust}
-            onChange={(lust) => setDraft((prev) => ({ ...prev, lust }))}
+            onChange={(lust) => edit((prev) => ({ ...prev, lust }))}
           />
           <Answer
             icon={<RingsIcon className="h-6 w-6" />}
             label={t("report.sex")}
             value={draft.sex}
-            onChange={(sex) => setDraft((prev) => ({ ...prev, sex }))}
+            onChange={(sex) => edit((prev) => ({ ...prev, sex }))}
           />
         </div>
         <FertilityTestField
@@ -319,7 +384,7 @@ export function ReportScreen({
           value={multi ? null : draft.fertilityTest}
           disabled={multi}
           onChange={(fertilityTest) =>
-            setDraft((prev) => ({ ...prev, fertilityTest }))
+            edit((prev) => ({ ...prev, fertilityTest }))
           }
         />
         <Temperature
@@ -331,7 +396,7 @@ export function ReportScreen({
           digits={multi ? "" : temperatureDigits}
           disabled={multi}
           onChange={(temperature, digits) => {
-            setDraft((prev) => ({ ...prev, temperature }));
+            edit((prev) => ({ ...prev, temperature }));
             setTemperatureDigits(digits);
           }}
         />
@@ -348,26 +413,46 @@ export function ReportScreen({
           className="h-[4.25rem] w-full rounded-2xl text-base font-semibold"
           onClick={save}
         >
-          {/* The glyph says where the report is going, which is the one thing
-              about Save that is not already obvious from the word: a disk
-              while the document lives on this device only, a cloud once an
-              account is connected. It is decorative — the button already says
-              what it does in words — so it carries no label of its own. */}
-          <span className="flex items-center justify-center gap-2">
-            {cloudBacked ? (
+          {/* Before the tap the glyph says where the report is going, which is
+              the one thing about Save that is not already obvious from the
+              word: a disk while the document lives on this device only, a
+              cloud once an account is connected. It is decorative — the button
+              already says what it does in words — so it carries no label of
+              its own.
+
+              After the tap both halves become the confirmation. The check is
+              plain in either case, deliberately: a cloud with a tick would
+              claim the report had reached the account, and all that has
+              happened is a write to this device — the push is the sync
+              engine's afterwards (see `useSyncEngine.ts`).
+
+              `aria-live` on the wrapper is what carries the same news to a
+              screen reader, since the label changing under a button that still
+              has focus is otherwise silent. */}
+          <span
+            aria-live="polite"
+            className="flex items-center justify-center gap-2"
+          >
+            {confirming ? (
+              <CheckIcon className="h-5 w-5" />
+            ) : cloudBacked ? (
               <CloudUploadIcon className="h-5 w-5" />
             ) : (
               <DiskIcon className="h-5 w-5" />
             )}
-            {multi
-              ? // The count is on the button because it is the one gesture on
-                // this screen that writes more than the day on display, and
-                // the number of days it writes is the thing worth being sure
-                // of.
-                t("report.saveRange", { count: String(spanDays) })
-              : stored
-                ? t("report.saveExisting")
-                : t("report.saveNew")}
+            {confirming
+              ? multi
+                ? t("report.savedRange", { count: String(spanDays) })
+                : t("report.saved")
+              : multi
+                ? // The count is on the button because it is the one gesture
+                  // on this screen that writes more than the day on display,
+                  // and the number of days it writes is the thing worth being
+                  // sure of.
+                  t("report.saveRange", { count: String(spanDays) })
+                : stored
+                  ? t("report.saveExisting")
+                  : t("report.saveNew")}
           </span>
         </Button>
         {/* Clearing is rarer than saving and destructive, so it reads as a
