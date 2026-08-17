@@ -383,17 +383,6 @@ export function SettingsScreen({
           <dd className="text-fg">{__APP_VERSION__}</dd>
           <dt className="text-muted">{t("settings.build")}</dt>
           <dd className="text-fg">{__BUILD_LABEL__}</dd>
-          <dt className="text-muted">{t("settings.sourceCode")}</dt>
-          <dd>
-            <a
-              className="text-link hover:underline"
-              href="https://github.com/niclaslindstedt/period"
-              target="_blank"
-              rel="noreferrer"
-            >
-              github.com/niclaslindstedt/period
-            </a>
-          </dd>
         </dl>
         <p className="text-xs leading-snug text-muted">
           {t("settings.privacy")}
