@@ -29,6 +29,14 @@ import { useEffect, type RefObject } from "react";
 //     A wide table or a scrolling chart owns its own axis, and the walk is what
 //     keeps this rule from having to be re-declared every time one is added.
 //
+// A marked element may claim the axis for a swipe of its *own* — the month
+// calendar pages its month that way (see `MonthCalendar.tsx`). So the bail
+// skips a match that is the very element this hook is mounted on: the marker
+// says "the app's swipe stops here", and the hook mounted on the marker is the
+// one it stops at. Nesting is the whole mechanism, and it needs no second
+// attribute: the outer hook (on `<main>`) sees the marker on a descendant and
+// stands down, the inner hook sees it on itself and proceeds.
+//
 // And it bails during the gesture on a second finger (a pinch is not a swipe)
 // and on a drag that is mostly vertical (the page scrolls far more often than
 // it swipes, so the diagonal has to resolve in scrolling's favour).
@@ -85,7 +93,10 @@ export function useSwipeNav(
       if (!touch) return;
       const target = touch.target;
       if (!(target instanceof Element)) return;
-      if (target.closest(IGNORED)) return;
+      // A marker on the hook's own root is this gesture's claim on the axis,
+      // not a veto of it — only one on something *inside* the root bails.
+      const ignored = target.closest(IGNORED);
+      if (ignored && ignored !== element) return;
       if (scrollsHorizontally(target, element)) return;
       from = { x: touch.clientX, y: touch.clientY };
     };

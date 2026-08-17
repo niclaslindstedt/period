@@ -7,7 +7,7 @@ below runs in the browser tab.
 index.html
   └── src/main.tsx            mounts <App> inside the i18n LanguageRoot
        └── src/App.tsx        theme, today, store, sync, tab switch, chrome
-            ├── TopBar            sync glyph, + (report), cog — left half empty
+            ├── TopBar            mark + wordmark, sync glyph, + (report), cog
             ├── StatusScreen      reads dayStatus.ts — the opening screen
             ├── ReportScreen      writes day reports
             ├── CalendarScreen    reads dayStatus.ts over a month grid
@@ -30,7 +30,8 @@ src/app/
   useDocStore.ts    the document in state, persisted to localStorage
   useSyncEngine.ts  the cloud copy: pull on open, debounced push on edit
   useAppSettings.ts the settings blob
-  useSwipeNav.ts    touch swipe → one tab along the bottom bar
+  useSwipeNav.ts    touch swipe → one tab along the bottom bar (or, on the
+                    month grid, one month along)
   backup.ts         export / restore a JSON file
 
   dev/demoData.ts    a year of invented reports, relative to today (pure)

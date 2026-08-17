@@ -1,4 +1,4 @@
-# Cycle
+# Nird Cycle
 
 > A local-first period tracking PWA built on @niclaslindstedt/oss-framework.
 > One report per day — four yes/no answers (blood, mood swings, lust, sex) plus

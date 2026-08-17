@@ -68,6 +68,14 @@ export const GOOGLE_CLIENT_ID: string =
 // "App folder"-scoped app lives under `Apps/<name>/`), so it isn't always
 // "Cycle". Inject the real name at build time so the displayed location
 // points at the folder that actually exists.
+//
+// These two defaults deliberately did *not* follow the app's rename to "Nird
+// Cycle": they are not a label, they are where somebody's document already
+// is. Renaming them would point a returning install at a folder that does not
+// exist and read as a wiped account. Moving them is a migration — pick up the
+// old folder, copy, and only then look at the new one — not a rename, and a
+// build that wants a different folder today can already say so with
+// `VITE_DROPBOX_APP_FOLDER` / `VITE_GDRIVE_APP_FOLDER`.
 export const DROPBOX_APP_FOLDER: string =
   (import.meta.env.VITE_DROPBOX_APP_FOLDER as string | undefined)?.trim() ||
   "Cycle";

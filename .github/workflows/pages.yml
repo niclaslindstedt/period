@@ -73,7 +73,8 @@ jobs:
           VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           # App-folder names for the stored document; unset -> both default to
-          # "Cycle".
+          # "Cycle" (the folder name predates the app's rename to Nird Cycle
+          # and is deliberately unchanged — it is where the document already is).
           VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
           VITE_GDRIVE_APP_FOLDER: ${{ vars.VITE_GDRIVE_APP_FOLDER }}
 

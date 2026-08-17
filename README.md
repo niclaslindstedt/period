@@ -1,4 +1,4 @@
-# cycle
+# Nird Cycle
 
 > A local-first cycle tracking PWA — two taps a day, then read your cycle history and a forecast of the next period and fertile window. No account, no server.
 
@@ -9,10 +9,10 @@
 
 ## What
 
-**cycle** is a period tracker that runs entirely in your browser. Each day you
-tap four buttons — blood, mood swings, lust, sex — and optionally add your
-waking temperature and what an ovulation test said, on a screen that fits a
-phone without scrolling. The app derives everything else from those reports:
+**Nird Cycle** is a period tracker that runs entirely in your browser. Each
+day you tap four buttons — blood, mood swings, lust, sex — and optionally add
+your waking temperature and what an ovulation test said, on a screen that fits
+a phone without scrolling. The app derives everything else from those reports:
 where you are in your cycle, when the next period is likely, how your cycle
 length has moved over time, and which phase your mood swings cluster in.
 
@@ -103,14 +103,15 @@ npm run build && npm run preview
 ## Usage
 
 Four tabs, on a bottom bar — swipe left or right to move between them, and the
-screen slides in from the side it lives on:
+screen slides in from the side it lives on. The one exception is the month grid,
+which takes the swipe for itself and pages the month:
 
-| Tab          | What it does                                                                                                                                                                                                                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**   | What today is, in a word — _Fertile_, _Not fertile_, _Period_ — with how sure that is as a percentage, the cycle day, the next period, and a week of days either side of today in the same colours the calendar uses.                                                                                         |
-| **Calendar** | A month at a time. Periods and fertile windows are drawn as one stroke across the days they cover — solid up to the next expected period, outlined past it, so what rests on a prediction looks like one. It projects past the next period too, as far ahead as your history can place one. Pages either way. |
-| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, and the optional fertile window. Switch between **simple** and **advanced** detail.                                                                                    |
-| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                                                                                                   |
+| Tab          | What it does                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**   | What today is, in a word — _Fertile_, _Not fertile_, _Period_ — with how sure that is as a percentage, the cycle day, the next period, and a week of days either side of today in the same colours the calendar uses.                                                                                                                                                         |
+| **Calendar** | A month at a time. Periods and fertile windows are drawn as one stroke across the days they cover — solid up to the next expected period, outlined past it, so what rests on a prediction looks like one. It projects past the next period too, as far ahead as your history can place one. Pages either way — the arrows, `PageUp` / `PageDown`, or a swipe across the grid. |
+| **Forecast** | Cycle day, the predicted next period with the range around it and a confidence label, an interactive chart of the probability per day, and the optional fertile window. Switch between **simple** and **advanced** detail.                                                                                                                                                    |
+| **History**  | Average cycle and period length, cycle-length trend, recent temperatures, mood swings by cycle phase, and the list of periods every number is derived from.                                                                                                                                                                                                                   |
 
 …and two buttons on the top bar, for the two screens you visit and leave:
 

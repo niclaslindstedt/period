@@ -1,8 +1,13 @@
 # Calendar
 
 The month view — the whole cycle at a glance, past and ahead. Page either way
-with the arrows, or with `PageUp` / `PageDown` from the keyboard. Swipe left or
-right anywhere on the screen to move to the next or previous tab.
+with the arrows, with `PageUp` / `PageDown` from the keyboard, or by swiping
+left or right across the grid.
+
+A swipe elsewhere on the app moves one tab along the bottom bar, and the grid
+deliberately takes that gesture away from it: a row of months is itself a
+left-to-right order, and it is the nearer one when your finger is on the
+calendar. Swiping the strip of screen outside the grid still changes tab.
 
 The grid is a fixed six rows and it is the only thing on the screen, so it sits
 centred in the height rather than at the top of it — on a tall phone that is the
