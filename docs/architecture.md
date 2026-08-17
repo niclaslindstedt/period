@@ -7,7 +7,7 @@ below runs in the browser tab.
 index.html
   └── src/main.tsx            mounts <App> inside the i18n LanguageRoot
        └── src/App.tsx        theme, today, store, sync, tab switch, chrome
-            ├── TopBar            app mark, sync glyph, + (report), cog
+            ├── TopBar            sync glyph, + (report), cog — left half empty
             ├── StatusScreen      reads dayStatus.ts — the opening screen
             ├── ReportScreen      writes day reports
             ├── CalendarScreen    reads dayStatus.ts over a month grid
@@ -38,7 +38,9 @@ src/app/
   dev/useDemoData.ts the developer "Demo data" switch (in-memory only)
 
   ForecastChart.tsx the probability-per-day chart with its credible bands
+  HistoryChart.tsx  the History screen's series, in the Forecast chart's grammar
   ProfileCharts.tsx the learned mood and temperature patterns
+  Pill.tsx          the date pills Forecast and History quote dates with
   DayMark.tsx       a day's status → its mark, for the two screens that paint days
 ```
 

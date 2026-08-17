@@ -385,6 +385,13 @@ export const en = {
     swingChart: "Mood swings by cycle phase",
     swingChartDesc:
       "Share of the days you reported in each phase that had mood swings.",
+    swingShare: "{percent} of days had mood swings",
+    swingSample: "{count} reported days",
+    chart: {
+      keyboardHint:
+        "Chart. Use the left and right arrow keys to read each point.",
+      gap: "No reading",
+    },
     temperatureChart: "Waking temperature",
     temperatureChartDesc:
       "Your recent waking temperatures. Gaps are mornings with no reading, and fevers, which say nothing about a cycle.",
@@ -474,7 +481,6 @@ export const en = {
     about: "About",
     version: "Version",
     build: "Build",
-    sourceCode: "Source code",
     privacy:
       "Everything stays on this device unless you connect a cloud account yourself. There is no server, no account, and no analytics.",
   },
