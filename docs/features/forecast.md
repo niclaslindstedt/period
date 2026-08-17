@@ -37,9 +37,9 @@ in **8 Sep**. There is no second, longer form to meet it halfway down a card.
 
 Each column is one day, and its height is the chance the next period starts on
 that day. Switched to **Curve**, the same numbers are drawn as the shape they
-trace with a circle on each day, so it stays visible that the model has one
-figure per day rather than a continuous line you could read a value off between
-two dates. The shaded bands behind them are the ranges the period falls in with
+trace — an unmarked line, so the columns are the view that shows where the one
+figure per day actually sits; the curve is the silhouette of the same
+distribution. The shaded bands behind them are the ranges the period falls in with
 50%, 80% and 95% probability — the darkest band is the narrowest and the least
 certain to contain the answer, the palest is the widest and the most certain.
 
