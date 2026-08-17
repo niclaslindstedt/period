@@ -8,6 +8,16 @@ the plot instead of dots and floating tooltips. Point (or drag across, or focus
 the chart and arrow through) any chart and the readout names the point and its
 value; with nothing under the pointer it reads out the most recent one.
 
+They carry one thing the Forecast chart does not: a labelled y axis, at most
+five gridlines stepped by a round number — 0, 10, 20, 30 days; 36.0, 36.5,
+37.0 °C; 0%, 20%, 40%. A forecast plots a probability whose shape is the
+message, but a History series plots a quantity in a unit you know, where a
+column's height means nothing until you can price it. The scale hugs the data
+exactly as the marks do, so the labels never span a range your readings never
+covered — on the temperature chart in particular, which is drawn against its
+own range rather than from zero, because from zero the third-of-a-degree step
+the chart exists to show would be a flat line.
+
 - **The four numbers** — average cycle length, average period length, how many
   cycles have been tracked, and how many days carry a report.
 - **Cycle length over time** — one value per completed cycle, drawn as columns
@@ -33,7 +43,9 @@ value; with nothing under the pointer it reads out the most recent one.
   The readout also says how many reported days each share rests on.
 - **Periods** — every period, newest first, with its length and the cycle it
   closed, its dates set in the same pills the Forecast screen quotes its
-  upcoming periods with.
+  upcoming periods with. The list is ruled into columns: every start sits under
+  the starts and every end under the ends, however many digits a date has, so
+  reading down it does not mean re-finding the second date on every row.
 
 That last list matters as much as the charts: it is exactly the input every
 average was computed from, so a number that looks wrong can be traced to the

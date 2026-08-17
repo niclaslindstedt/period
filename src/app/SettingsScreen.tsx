@@ -109,16 +109,26 @@ export function SettingsScreen({
         title={t("settings.calendar")}
         icon={<CogIcon className="h-3.5 w-3.5" />}
       >
-        <SegmentedControl
-          value={String(settings.weekStartsOn)}
-          options={[
-            { value: "1", label: t("settings.monday") },
-            { value: "0", label: t("settings.sunday") },
-          ]}
-          onChange={(next) => update("weekStartsOn", Number(next) as WeekStart)}
-          ariaLabel={t("settings.weekStart")}
-          fullWidth
-        />
+        {/* Two weekday names on their own read as a question with no wording —
+            the section title says "Calendar", not what about it Monday and
+            Sunday are answers to. The label is the one the control was already
+            announced by, so the screen now says out loud what a screen reader
+            was told all along. */}
+        <Labelled label={t("settings.weekStart")}>
+          <SegmentedControl
+            value={String(settings.weekStartsOn)}
+            options={[
+              { value: "1", label: t("settings.monday") },
+              { value: "0", label: t("settings.sunday") },
+            ]}
+            onChange={(next) =>
+              update("weekStartsOn", Number(next) as WeekStart)
+            }
+            ariaLabel={t("settings.weekStart")}
+            fullWidth
+          />
+        </Labelled>
+        <p className="text-xs text-muted">{t("settings.weekStartHint")}</p>
       </Section>
 
       <Section

@@ -24,6 +24,7 @@ src/app/
   stats.ts          Student-t, incomplete beta, discrete distributions (pure)
   swings.ts         reports → swing shares per cycle phase  (pure, clock-free)
   temperature.ts    °C ⇄ °F, parsing, two-decimal formatting (pure)
+  chartAxis.ts      a domain → the gridlines to rule and label (pure)
   bulk.ts           a day span → the reports it expands to  (pure, clock-free)
   merge.ts          two documents → one                     (pure)
   migrations.ts     bytes ⇄ AppData, with validation

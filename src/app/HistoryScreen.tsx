@@ -19,7 +19,7 @@ import {
 } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
 import { phaseLabel } from "./labels.ts";
-import { DateSpan } from "./Pill.tsx";
+import { DateSpan, DateSpanList, DateSpanRow } from "./Pill.tsx";
 import { swingsByPhase } from "./swings.ts";
 import { inUnit, isFever, type TemperatureUnit } from "./temperature.ts";
 import { sortedEntries, type AppData, type DayEntry } from "./types.ts";
@@ -207,6 +207,9 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
             formatValue={(v) =>
               t("history.swingShare", { percent: `${Math.round(v)}%` })
             }
+            // A share is only a share against its sign — 45 next to 20 could
+            // be days as easily as percent.
+            formatTick={(v) => `${Math.round(v)}%`}
             details={phases.map((p) =>
               t("history.swingSample", { count: String(p.days) }),
             )}
@@ -218,7 +221,7 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
         title={t("history.periods")}
         icon={<DropletIcon className="h-3.5 w-3.5" />}
       >
-        <ul className="flex flex-col gap-2 text-sm">
+        <DateSpanList>
           {/* Newest first: the period someone wants to check is almost always
               the last one. */}
           {[...stats.periods].reverse().map((period, i) => {
@@ -227,11 +230,9 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
             const index = stats.periods.length - 1 - i;
             const gap = index > 0 ? stats.cycleLengths[index - 1] : undefined;
             return (
-              <li
-                key={period.start}
-                className="flex flex-wrap items-center justify-between gap-2"
-              >
+              <DateSpanRow key={period.start}>
                 <DateSpan
+                  columns
                   start={period.start}
                   end={period.end}
                   label={t("history.periodRow", {
@@ -239,15 +240,15 @@ export function HistoryScreen({ data, options, temperatureUnit }: Props) {
                     end: formatDay(period.end),
                   })}
                 />
-                <span className="text-xs text-muted">
+                <span className="justify-self-end text-right text-xs text-muted">
                   {t("history.periodLength", { count: String(period.length) })}
                   {gap !== undefined &&
                     ` · ${t("history.cycleGap", { count: String(gap) })}`}
                 </span>
-              </li>
+              </DateSpanRow>
             );
           })}
-        </ul>
+        </DateSpanList>
       </Section>
     </div>
   );

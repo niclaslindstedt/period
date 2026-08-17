@@ -33,6 +33,11 @@ the next period, arrows for the range it might fall in, an ovum for ovulation.
 Dates are written the same way everywhere in the app: an abbreviated month, as
 in **8 Sep**. There is no second, longer form to meet it halfway down a card.
 
+Where ranges are listed — the periods still to come, the credible intervals in
+the advanced panel — they are ruled into columns, so every start, dash and end
+sits at the same place on every row rather than shifting with the width of the
+date before it.
+
 ## Reading the chart
 
 Each column is one day, and its height is the chance the next period starts on
