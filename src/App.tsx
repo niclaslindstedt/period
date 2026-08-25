@@ -331,6 +331,56 @@ export function App() {
         </div>
       </main>
 
+      {/* The update prompt, moved out of the viewport's bottom corner and
+          anchored to the *bar* instead. The framework fixes it to the bottom of
+          the screen, which is a sound default for an app whose navigation is a
+          sidebar — but this app's navigation is the strip along that same edge
+          (see `BottomNav.tsx`), so a build landing while the app was open put a
+          card squarely over the four tabs and left it there until someone found
+          the dismiss button. The prompt is not urgent enough to cost anyone
+          their navigation: an update waits perfectly happily one screen up.
+
+          A zero-height positioned slot in the flow rather than an offset typed
+          into the card, because the bar's height is its labels' — one line of
+          type at whatever size the platform renders it — and a number here
+          would be wrong on the first phone that disagreed. The slot sits
+          between the scroller and the bar, so `bottom: 0` in it *is* the bar's
+          top edge; `styles.css` re-points the framework's card at it. Nothing
+          in the slot is in flow, so it takes no height off the page. */}
+      <div className="app-update-slot relative z-[60]">
+        {/* Applying an update reloads the page, which takes a visible moment;
+            the spinner banner replaces the prompt so the wait reads as progress
+            rather than a stuck button. Same box as the card it stands in for —
+            same inset, same width, same corner — because it is the same card in
+            its next state, and a shape that changed on the tap would read as
+            one panel being swapped for another. */}
+        {pwa.needRefresh && reloading ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute inset-x-3 bottom-3 mx-auto flex max-w-md items-center gap-3 rounded-sm border border-line bg-surface px-3 py-2.5 text-fg shadow-md"
+          >
+            <SpinnerIcon className="h-5 w-5 animate-spin text-accent" />
+            <span className="text-sm font-medium">{t("update.reload")}</span>
+          </div>
+        ) : (
+          <UpdateToast
+            needRefresh={pwa.needRefresh}
+            incomingVersion={pwa.incomingVersion}
+            onReload={() => {
+              setReloading(true);
+              pwa.reload();
+            }}
+            onDismiss={() => pwa.dismiss()}
+            labels={{
+              ready: t("update.available"),
+              action: t("update.reload"),
+              dismiss: t("common.close"),
+            }}
+          />
+        )}
+      </div>
+
       <BottomNav active={tab} onSelect={show} />
 
       <SyncDetailsModal
@@ -354,34 +404,6 @@ export function App() {
         onClose={() => setSyncDetailsOpen(false)}
       />
 
-      {/* Applying an update reloads the page, which takes a visible moment;
-          the spinner banner replaces the prompt so the wait reads as progress
-          rather than a stuck button. */}
-      {pwa.needRefresh && reloading ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed inset-x-3 bottom-[4.25rem] z-[60] mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-2.5 text-fg shadow-md"
-        >
-          <SpinnerIcon className="h-5 w-5 animate-spin text-accent" />
-          <span className="text-sm font-medium">{t("update.reload")}</span>
-        </div>
-      ) : (
-        <UpdateToast
-          needRefresh={pwa.needRefresh}
-          incomingVersion={pwa.incomingVersion}
-          onReload={() => {
-            setReloading(true);
-            pwa.reload();
-          }}
-          onDismiss={() => pwa.dismiss()}
-          labels={{
-            ready: t("update.available"),
-            action: t("update.reload"),
-            dismiss: t("common.close"),
-          }}
-        />
-      )}
       {/* Top, not the framework's default bottom. Every toast this app raises
           is the answer to a tap on the Report screen's Save button, and at the
           bottom of the screen the card lands squarely on the bottom nav — it

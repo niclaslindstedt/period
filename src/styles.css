@@ -339,6 +339,26 @@ body {
   min-height: 3rem;
 }
 
+/* ── The update prompt ───────────────────────────────────────────────────────
+   The framework's `UpdateToast` fixes itself to the bottom of the viewport,
+   which in this shell is precisely where the bottom nav is: a new build
+   landing while the app was open dropped a card over the four tabs and kept it
+   there until it was dismissed. `App.tsx` gives it a zero-height slot in the
+   flow immediately above the bar instead, and this re-points the card at that
+   slot — `absolute` rather than `fixed`, so `bottom` is measured from the bar's
+   top edge whatever height its labels come out at, on any phone.
+
+   `[data-toast-stack]` is the hook the framework puts on the card for exactly
+   this. The sides stay the card's own (0.75rem plus whatever the shell reserves
+   through `--app-content-left|right`), and the safe-area inset it carried is
+   dropped along with the `fixed`: the bar below it already clears the home
+   indicator, so spending the inset again here would only lift the card off the
+   bar it is sitting on. */
+.app-update-slot [data-toast-stack] {
+  position: absolute;
+  bottom: 0.75rem;
+}
+
 /* ── Moving between screens ──────────────────────────────────────────────────
    The bottom bar is four destinations in a fixed left-to-right order and a
    swipe moves one step along it (see `useSwipeNav.ts`). Without motion the
