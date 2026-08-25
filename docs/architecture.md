@@ -243,6 +243,12 @@ The worker is "prompt to update": it installs the new build's assets, parks in
 `waiting`, and only takes over when the user taps the update toast. A silent
 swap could discard a half-typed report.
 
+The prompt itself is anchored to the bottom nav rather than to the viewport —
+`App.tsx` gives it a zero-height slot immediately above the bar and
+`styles.css` re-points the framework's card at it — because the bottom of the
+screen in this shell is where the navigation lives, and an update is not urgent
+enough to cover it.
+
 `src/app/pwa.ts` holds the one value both sides must agree on — the precache
 cache id — and is imported by both the browser (`App.tsx`) and the build
 (`pwa-plugin.ts`), so it must stay free of browser- and Node-only imports.
