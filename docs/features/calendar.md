@@ -69,6 +69,53 @@ ever drawn as if it were an end.
 
 Today's number keeps its accent colour and weight whatever it is drawn on.
 
+## Correcting a day
+
+A month is where a mistake is visible — the mark on the 8th says bleeding and
+there was none — so it is also where the fix is made.
+
+**Tap a day** and its report opens in a dialog: the same four answers, the same
+fertility test, the same waking temperature the [Daily report](daily-report.md)
+screen asks for, filled in with whatever is stored for that day. Change what is
+wrong and press **Update report**, or press **Delete this report** to remove the
+day entirely. Deleting asks once before it happens, because the day goes back to
+being a day nobody logged and every number derived from it moves.
+
+A day with nothing logged opens the same dialog, empty — tapping the 3rd is a
+perfectly good way to file the report you forgot on the 3rd.
+
+## Correcting several days
+
+**Press and hold** any day — logged or not — and it becomes one end of a
+selection. The next tap fixes the other end, and it can land **before** the
+first one, so a span can be picked backwards from the day a period ended.
+Tapping the same day again picks that day alone.
+
+Then a dialog opens for the span:
+
+- **Save N days** writes the four yes/no answers to every day in it. This is the
+  Report screen's range save, reached from the month instead of from a date
+  picker — so "those six days were a period" is one gesture, not six.
+- **Delete N reports** removes every report the span covers, after one
+  confirmation naming how many.
+
+Waking temperatures and fertility-test results already recorded on those days
+are **kept** — a span has no single reading, so it never writes (or erases) one.
+That is why the two measurements are not in this dialog at all; correct one from
+the day's own editor.
+
+The span reaches up to 31 days, which is the longest one report can be filed
+over. While you are picking, everything the selection cannot reach greys out —
+days past the limit, and days that have not happened yet.
+
+If you would rather not hold anything — or you are on a keyboard — **Select
+days** under the legend starts the same selection: press it, then pick the two
+ends. `Cancel` in its place backs out.
+
+Days after today are never editable, on the calendar or anywhere else. They are
+still coloured, because that is the forecast; they simply have nothing to
+report.
+
 ## Where the colours come from
 
 The same place the [Status](status.md) screen's week row does — one call per

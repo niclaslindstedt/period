@@ -41,6 +41,11 @@ two is the one you can tell apart before the tap rather than after it. Clearing
 does say so in a passing message, because it takes reports away and the count it
 took is worth naming.
 
+Correcting an older day is usually shorter from the other end: on the
+[Calendar](calendar.md#correcting-a-day) you can see which day is wrong, and
+tapping it opens the same report — with the same delete under it — without
+picking a date first.
+
 Leaving them all dim is a real answer. **Save** is what files the report, so a
 day saved with no button lit records that you checked and there was nothing —
 which the cycle derivation treats differently from a day you simply didn't log.
@@ -65,6 +70,10 @@ covers, so that count is there before you save rather than after.
 
 Switching back to **One day** collapses the selection onto the first day of the
 span, and **Clear these days** removes every report in it.
+
+The [Calendar](calendar.md#correcting-several-days) reaches the same range save
+by a different door: press and hold a day in the month, tap the day that closes
+the span, and the same four answers — and the same **Delete** — apply to it.
 
 A span is capped at 31 days. It is a guard against a mis-tap in a paged calendar
 — a first day picked in March and a second in a month you scrolled to by

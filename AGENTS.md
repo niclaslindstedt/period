@@ -141,6 +141,12 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   clock-free. It is also what keeps each covered day's existing temperature,
   which is the whole reason that control is disabled over a span rather than
   merely ignored.
+- `src/app/daySelection.ts` — a press on a calendar day → what it means: open
+  that day, anchor a span, close one (in either direction), or nothing at all.
+  The rules a mis-tap has to get past before it can write or delete a month of
+  reports, so they are arithmetic in a module with a test rather than branches
+  inside a screen. Pure and clock-free; the span cap is `bulk.ts`'s, because
+  closing a span opens the editor that files one.
 - `src/app/merge.ts` — the per-day, last-edit-wins document merge that both
   cloud sync and backup restore run through.
 - `src/app/migrations.ts` — parse / normalise / serialize; the only module that
@@ -167,6 +173,8 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   `ForecastScreen.tsx`, `HistoryScreen.tsx`, `SettingsScreen.tsx` — the six
   screens. Four are bottom-nav tabs; Report and Settings are reached from the
   top bar, because they are things you do and leave rather than places you are.
+  Report is where a report is _filed_; Calendar is where one is _corrected_,
+  because a month is where a wrong day is visible.
 - `src/app/TopBar.tsx` — the top bar: the wordmark, the sync glyph, the `+` that
   opens the daily report, and the settings cog. Its geometry is the sibling
   `notes` header's (`px-4 py-3`, `text-lg font-bold`, the same
@@ -174,6 +182,22 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
 - `src/app/useSwipeNav.ts` — the touch swipe that moves one tab along the bottom
   bar. Bails on range inputs, dialogs, `[data-swipe-ignore]`, and anything that
   scrolls sideways; a horizontal drag is not always a page gesture.
+- `src/app/useDayPress.ts` — press and hold on a day cell. The framework's grid
+  offers one gesture (a day was activated), so the hold is added from outside by
+  listening on the element the grid sits in, reading the day back off the hidden
+  `data-day` marker `renderDay` leaves in the cell, and swallowing the click the
+  release would otherwise deliver. Pointer events, so a mouse can hold too — but
+  the hold is never the only way in, because nothing holds a key.
+- `src/app/ReportFields.tsx` — the report as controls: the four answers, the
+  ovulation test, the waking temperature. Mounted by the Report screen and by
+  the calendar's day editor, so the two cannot drift into asking the same
+  question two ways. The draft stays with the caller; only the controls are
+  shared.
+- `src/app/DayEditModal.tsx`, `RangeEditModal.tsx` — the two editors the
+  Calendar screen opens: one day (the full report, plus **Delete this report**)
+  and one span (the four answers, plus **Delete N reports**), each behind a
+  confirmation. The span editor writes through `bulk.ts` — it is the Report
+  screen's range save reached from the month, not a second one.
 - `src/app/DayMark.tsx` — a day's status as a mark, plus the legend built from
   the same table. The only place that mapping exists, so the Status week row and
   the Calendar month grid cannot paint one day two ways. Shape carries meaning
@@ -294,6 +318,8 @@ the tests pin real dates without fake timers.
 | A new statistic over mood swings     | `src/app/swings.ts`                                                                                                                          |
 | A new evidence channel               | A profile + a clamped term in `src/app/forecastModel.ts`, with tests in `tests/forecastModel_test.ts`                                        |
 | A change to what a range save writes | `src/app/bulk.ts`, with tests in `tests/bulk_test.ts`                                                                                        |
+| A change to what pressing a day does | `src/app/daySelection.ts`, with tests in `tests/daySelection_test.ts`                                                                        |
+| A new control on the report form     | `src/app/ReportFields.tsx` — never in one of the two screens that mount it                                                                   |
 | A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`, or a button in `src/app/TopBar.tsx` if it is an action rather than a place    |
 | A new setting                        | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                         |
 | A new developer-only affordance      | `src/app/dev/`, revealed behind `settings.devMode` in `SettingsScreen.tsx` — never in the persisted settings if it must not survive a reload |
@@ -346,6 +372,7 @@ with `[Learn more](feature:<slug>)`.
 | A `VITE_*` variable              | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it      |
 | A screen's behaviour             | The matching `docs/features/*.md` and the README's Usage table                                                      |
 | `dayStatus.ts`                   | `docs/features/status.md` and `docs/features/calendar.md` — both screens quote its rules                            |
+| `daySelection.ts` or an editor   | `docs/features/calendar.md`'s editing sections and `docs/features/daily-report.md`, which points at them            |
 | The navigation (nav or top bar)  | `docs/architecture.md`'s tree, the README's Usage tables, and `docs/features/daily-report.md`                       |
 | An evidence channel              | `docs/forecast-model.md`, `docs/features/daily-report.md`, `docs/features/forecast.md`, and the README's What block |
 | Module layout                    | The "Where new code goes" table above and `docs/architecture.md`                                                    |

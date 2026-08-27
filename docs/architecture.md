@@ -10,7 +10,8 @@ index.html
             ├── TopBar            mark + wordmark, sync glyph, + (report), cog
             ├── StatusScreen      reads dayStatus.ts — the opening screen
             ├── ReportScreen      writes day reports
-            ├── CalendarScreen    reads dayStatus.ts over a month grid
+            ├── CalendarScreen    reads dayStatus.ts over a month grid, and
+            │                     edits a day (or a span) from it
             ├── ForecastScreen    reads cycle.ts + forecastModel.ts
             ├── HistoryScreen     reads cycle.ts + swings.ts
             ├── SettingsScreen    settings, sync controls, backup, about
@@ -26,6 +27,7 @@ src/app/
   temperature.ts    °C ⇄ °F, parsing, two-decimal formatting (pure)
   chartAxis.ts      a domain → the gridlines to rule and label (pure)
   bulk.ts           a day span → the reports it expands to  (pure, clock-free)
+  daySelection.ts   a press on a calendar day → what it means (pure, clock-free)
   merge.ts          two documents → one                     (pure)
   migrations.ts     bytes ⇄ AppData, with validation
   useDocStore.ts    the document in state, persisted to localStorage
@@ -33,6 +35,7 @@ src/app/
   useAppSettings.ts the settings blob
   useSwipeNav.ts    touch swipe → one tab along the bottom bar (or, on the
                     month grid, one month along)
+  useDayPress.ts    press and hold on a day cell → the day it landed on
   backup.ts         export / restore a JSON file
 
   dev/demoData.ts    a year of invented reports, relative to today (pure)
@@ -44,6 +47,9 @@ src/app/
   ProfileCharts.tsx the learned mood and temperature patterns
   Pill.tsx          the date pills Forecast and History quote dates with
   DayMark.tsx       a day's status → its mark, for the two screens that paint days
+  ReportFields.tsx  the report as controls, for the screen and the day editor
+  DayEditModal.tsx  one day's report, opened from the calendar — edit or delete
+  RangeEditModal.tsx a span of days, opened from the calendar — write or delete
 ```
 
 `cycle.ts` and `forecastModel.ts` are two answers to the same question at
@@ -118,8 +124,10 @@ a two-decimal Fahrenheit reading round-trip, since one Fahrenheit hundredth is
 
 An **absent** entry and an entry with both answers `false` are different
 claims — "I never logged this day" against "I checked, nothing happened" — so
-saving a no/no report stores it rather than clearing the day. Only **Clear this
-day** removes one.
+saving a no/no report stores it rather than clearing the day. Only a delete
+removes one: **Clear this day** on the Report screen, or **Delete this report**
+in the [Calendar](features/calendar.md#correcting-a-day)'s day editor, both of
+which run through the same `deleteEntry` / `deleteEntries` on the store.
 
 Keyed by day, because every question the app answers is "what happened on this
 day?" or "what do all the days add up to?". A report is an upsert; the calendar

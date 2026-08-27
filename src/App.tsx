@@ -281,12 +281,14 @@ export function App() {
           )}
           {tab === "calendar" && (
             <CalendarScreen
-              data={store.data}
+              store={store}
               today={today}
               options={options}
               showFertileWindow={settings.showFertileWindow}
               weekStartsOn={settings.weekStartsOn}
               model={settings.forecastModel}
+              temperatureUnit={settings.temperatureUnit}
+              onNotice={notice}
             />
           )}
           {tab === "forecast" && (
