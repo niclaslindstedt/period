@@ -449,6 +449,14 @@ body {
 .app-cycle-calendar [role="gridcell"] > button {
   position: relative;
   isolation: isolate;
+
+  /* A day is pressed and held to start selecting a span of them (see
+     `useDayPress.ts`), and the browser's own answer to a long press is to
+     select the day number or raise a callout over it — both of which land on
+     top of the selection the press just started. The gesture is the app's
+     here, so the platform's version of it is turned off at the cell. */
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 /* Today, at a size you can find without looking for it. The framework marks the

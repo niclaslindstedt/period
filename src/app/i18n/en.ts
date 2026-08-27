@@ -149,6 +149,36 @@ export const en = {
       predictedFertile: "Predicted fertile window",
       reported: "Reported, no bleeding",
     },
+    // Pressing a day. The hint line under the legend is the only place the
+    // hold gesture is named, so it has to name it — and the button beside it
+    // has to be a way in for everyone who cannot hold anything, which is why
+    // the two say different halves of the same thing rather than repeating.
+    pressHint: "Tap a day to edit it, or hold to pick a range",
+    selectDays: "Select days",
+    selectStartHint: "Tap the first day",
+    // The second tap may land either side of the first, and on the first
+    // itself — a span of one is a perfectly good answer, and a hint that only
+    // mentioned "the last day" would hide that.
+    selectEndHint: "Tap the last day — or the same one again",
+    // Saving from the calendar closes the dialog over the month it changed, so
+    // the confirmation is a passing line rather than a mark on the button that
+    // is no longer on screen (the Report screen does it the other way, and for
+    // the same reason).
+    saved: "Report saved",
+    deleteDay: "Delete this report",
+    deleteDayConfirm: "Delete this report?",
+    deleteDayHint:
+      "The report for {day} is removed, and every number derived from it moves. This can't be undone.",
+    deleteRange: "Delete {count} reports",
+    deleteRangeConfirm: "Delete {count} reports?",
+    deleteRangeHint:
+      "Every report in {span} is removed — {days} in all — and every number derived from them moves. This can't be undone.",
+    // What Save does over a span, said before it is pressed. A bulk report is
+    // one report filed on several days, not a patch over what each of them
+    // already said, and the days it covers keep their temperatures and test
+    // results (see `bulk.ts`).
+    rangeWrites:
+      "Saving writes these four answers to all {count} days. Waking temperatures and fertility tests already recorded are kept.",
   },
 
   forecast: {
