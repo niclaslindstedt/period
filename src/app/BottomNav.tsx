@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import {
+  BottomNav as NavBar,
   CalendarIcon,
   HeartIcon,
+  stepDirection,
 } from "@niclaslindstedt/oss-framework/components";
 
 import { ChartIcon, ForecastIcon } from "./icons.tsx";
@@ -75,9 +77,10 @@ export type ScreenEnter = "forward" | "back" | "none";
  * what pressing a top-bar button is.
  */
 export function screenEnter(from: Tab, to: Tab): ScreenEnter {
-  if (from === to) return "none";
-  if (!isNavTab(from) || !isNavTab(to)) return "none";
-  return TABS.indexOf(to) > TABS.indexOf(from) ? "forward" : "back";
+  // The framework's `stepDirection` is exactly this rule over an ordered
+  // axis, and it already returns "none" for a screen that is not on the axis
+  // — which is the Report / Settings case, unchanged.
+  return stepDirection(TABS, from as NavTab, to as NavTab);
 }
 
 /**
@@ -122,34 +125,26 @@ export function BottomNav({
   onSelect: (tab: NavTab) => void;
 }) {
   const t = useT();
+  // The framework's bar takes its destinations as data; this app supplies the
+  // vocabulary — which screens are places, what they are called, and what
+  // each one's glyph is. The markup, the current-page marking and the layout
+  // are the framework's.
+  const items = useMemo(
+    () =>
+      TABS.map((tab) => ({
+        id: tab,
+        label: t(`nav.${tab}` as const),
+        icon: ICONS[tab],
+      })),
+    [t],
+  );
   return (
-    <nav
-      aria-label={t("app.name")}
-      className="app-bottom-nav shrink-0 border-t border-line bg-surface-3"
-    >
-      <ul className="mx-auto flex max-w-2xl">
-        {TABS.map((tab) => {
-          const Icon = ICONS[tab];
-          const on = tab === active;
-          return (
-            <li key={tab} className="flex-1">
-              <button
-                type="button"
-                onClick={() => onSelect(tab)}
-                aria-current={on ? "page" : undefined}
-                className={`flex w-full flex-col items-center gap-0.5 py-2 text-[0.7rem] transition-colors ${
-                  on ? "text-accent" : "text-muted hover:text-fg"
-                }`}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                <span className="max-w-full truncate px-0.5">
-                  {t(`nav.${tab}` as const)}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <NavBar
+      items={items}
+      active={active}
+      onSelect={onSelect}
+      label={t("app.name")}
+      className="app-bottom-nav"
+    />
   );
 }

@@ -25,7 +25,6 @@ src/app/
   stats.ts          Student-t, incomplete beta, discrete distributions (pure)
   swings.ts         reports → swing shares per cycle phase  (pure, clock-free)
   temperature.ts    °C ⇄ °F, parsing, two-decimal formatting (pure)
-  chartAxis.ts      a domain → the gridlines to rule and label (pure)
   bulk.ts           a day span → the reports it expands to  (pure, clock-free)
   daySelection.ts   a press on a calendar day → what it means (pure, clock-free)
   merge.ts          two documents → one                     (pure)
@@ -33,9 +32,6 @@ src/app/
   useDocStore.ts    the document in state, persisted to localStorage
   useSyncEngine.ts  the cloud copy: pull on open, debounced push on edit
   useAppSettings.ts the settings blob
-  useSwipeNav.ts    touch swipe → one tab along the bottom bar (or, on the
-                    month grid, one month along)
-  useDayPress.ts    press and hold on a day cell → the day it landed on
   backup.ts         export / restore a JSON file
 
   dev/demoData.ts    a year of invented reports, relative to today (pure)

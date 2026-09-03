@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import type {
-  DayKey,
-  DayRange,
-  GridCell,
-  WeekStart,
+import {
+  MonthCalendar,
+  useDayPress,
+  type DayKey,
+  type DayRange,
+  type GridCell,
+  type WeekStart,
 } from "@niclaslindstedt/oss-framework/calendar";
 import {
   CalendarIcon,
@@ -35,10 +37,8 @@ import {
   type ForecastModelKind,
 } from "./forecastModel.ts";
 import { useT } from "./i18n/index.ts";
-import { MonthCalendar } from "./MonthCalendar.tsx";
 import { RangeEditModal } from "./RangeEditModal.tsx";
 import type { TemperatureUnit } from "./temperature.ts";
-import { useDayPress } from "./useDayPress.ts";
 import type { DocStore } from "./useDocStore.ts";
 
 // The month view — the whole cycle at a glance, past and ahead, and the place a
@@ -184,21 +184,23 @@ export function CalendarScreen({
       >
         <MonthCalendar
           anchor={today}
+          today={today}
           weekStartsOn={weekStartsOn}
+          labels={{
+            prevMonth: t("report.prevMonth"),
+            nextMonth: t("report.nextMonth"),
+          }}
           selected={selection.kind === "anchored" ? selection.anchor : null}
           onSelect={select}
           // Only while a span is being picked: the days that cannot close it
           // grey out, so the cap and the "up to today" rule are visible in the
           // grid rather than discovered by a tap that does nothing.
           isDisabled={blockedDuring(selection, today)}
+          // The day key no longer has to be planted here for the hold to
+          // read back: since framework 3.1.0 `MonthGrid` marks every cell
+          // with `data-day` itself, which is what its `useDayPress` reads.
           renderDay={(cell: GridCell) => (
-            <>
-              <DayMark {...markFor(cell.key, toneAt)} />
-              {/* The day key, carried into the framework's cell so a press can
-                  read it back off the DOM — the grid's own markup offers no
-                  other handle on which day was held. See `useDayPress.ts`. */}
-              <span hidden data-day={cell.key} />
-            </>
+            <DayMark {...markFor(cell.key, toneAt)} />
           )}
         />
         <DayLegend showFertile={showFertileWindow} />

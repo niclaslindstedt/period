@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  MonthCalendar,
   daysBetween,
   extendRange,
   isInRange,
@@ -28,7 +29,6 @@ import {
   rangeLength,
 } from "./bulk.ts";
 import { DiskIcon } from "./icons.tsx";
-import { MonthCalendar } from "./MonthCalendar.tsx";
 import { formatDay, formatFullDay } from "./format.ts";
 import { useT, type TFn } from "./i18n/index.ts";
 import { dayHeadline } from "./labels.ts";
@@ -462,6 +462,11 @@ export function ReportScreen({
                 : undefined
             }
             weekStartsOn={weekStartsOn}
+            today={today}
+            labels={{
+              prevMonth: t("report.prevMonth"),
+              nextMonth: t("report.nextMonth"),
+            }}
             onSelect={pickDay}
             renderDay={
               shown && !isSingleDay(shown)
