@@ -68,7 +68,7 @@ function channelName(base: string): { name: string; short_name: string } {
   if (base === "/branch/")
     return { name: "Nird Cycle (branch)", short_name: "Nird br" };
   return {
-    name: "Nird Cycle — a local-first period tracker",
+    name: "Nird Cycle",
     short_name: "Nird Cycle",
   };
 }
