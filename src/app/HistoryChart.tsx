@@ -7,11 +7,11 @@ import {
   barPath,
   linePath,
   linearScale,
+  niceTicks,
   type PathPoint,
 } from "@niclaslindstedt/oss-framework/charts";
 import { useMeasuredSize } from "@niclaslindstedt/oss-framework/hooks";
 
-import { niceTicks } from "./chartAxis.ts";
 import { useT } from "./i18n/index.ts";
 
 // The History screen's chart, drawn the way the Forecast screen draws its own.
@@ -129,7 +129,7 @@ export function HistoryChart({
   // The axis comes before the frame, because the frame depends on it: the
   // gutter is however wide the widest label turns out to be, and the labels
   // are fixed by the domain alone, which owes nothing to the pixels.
-  const axis = niceTicks(domain[0], domain[1], MAX_TICKS);
+  const axis = niceTicks(domain, MAX_TICKS);
   const tickLabel = (value: number) =>
     formatTick ? formatTick(value) : value.toFixed(axis.decimals);
   const gutter =

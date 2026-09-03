@@ -18,7 +18,7 @@ import {
 } from "@niclaslindstedt/oss-framework/components";
 import { LogViewer } from "@niclaslindstedt/oss-framework/logging";
 
-import { descendingLogStore, logStore } from "./log.ts";
+import { logStore } from "./log.ts";
 import { downloadBackup, readBackupFile } from "./backup.ts";
 import type { DemoDataToggle } from "./dev/useDemoData.ts";
 import { useT } from "./i18n/index.ts";
@@ -378,7 +378,7 @@ export function SettingsScreen({
                 has to bring one, or the filter row and every log line print
                 against the border. */}
             <div className="max-h-64 overflow-auto rounded-md border border-line p-2">
-              <LogViewer store={descendingLogStore} />
+              <LogViewer store={logStore} />
             </div>
           </>
         )}

@@ -96,6 +96,16 @@ primitives, the theme engine, the calendar grid, the SVG charts, the storage
 adapters (localStorage / Dropbox / Google Drive), the i18n runtime, logging,
 the toast store, and the PWA update state machine.
 
+Since framework 3.1.0 it also owns the app _shell_ this app used to carry its
+own copy of: the bottom bar (`BottomNav`) and the `stepDirection` its screen
+transition reads, the tab-paging swipe (`useSwipeNav`), the paging month view
+(`MonthCalendar`), the press-and-hold on a day cell (`useDayPress` — the grid
+now writes the `data-day` marker itself, so `renderDay` no longer has to plant
+one), the gridline arithmetic behind the History chart's axis (`niceTicks`),
+and `DayKey` rendering (`formatDayKey` / `formatMonthLabel` / `dayKeyToDate`).
+What stayed here is the vocabulary — which screens are destinations, what a
+day's mark means, and what a hold is allowed to start.
+
 ### The renderer is Preact
 
 `preact` is the only renderer dependency — **never add `react` or `react-dom`
@@ -129,11 +139,6 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   incomplete beta, weighted moments, discrete distributions). Textbook
   definitions with textbook-value tests.
 - `src/app/temperature.ts` — °C ⇄ °F, parsing, two-decimal formatting.
-- `src/app/chartAxis.ts` — a domain → the gridline values to rule and label, at
-  a step (1, 2 or 5 times a power of ten) a person would have picked. Pure
-  arithmetic with no pixels in it, which is why it is not inside the chart that
-  draws it: the part of an axis that can be quietly wrong is the part with the
-  divisions.
 - `src/app/swings.ts` — mood-swing shares bucketed by cycle phase. Also pure.
 - `src/app/bulk.ts` — a day span → the reports it expands to, for the Report
   screen's range save. Enumeration and nothing else: a bulk report _is_ the
@@ -179,15 +184,6 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   opens the daily report, and the settings cog. Its geometry is the sibling
   `notes` header's (`px-4 py-3`, `text-lg font-bold`, the same
   `max(0.75rem, env(safe-area-inset-top))`); its surface is this app's.
-- `src/app/useSwipeNav.ts` — the touch swipe that moves one tab along the bottom
-  bar. Bails on range inputs, dialogs, `[data-swipe-ignore]`, and anything that
-  scrolls sideways; a horizontal drag is not always a page gesture.
-- `src/app/useDayPress.ts` — press and hold on a day cell. The framework's grid
-  offers one gesture (a day was activated), so the hold is added from outside by
-  listening on the element the grid sits in, reading the day back off the hidden
-  `data-day` marker `renderDay` leaves in the cell, and swallowing the click the
-  release would otherwise deliver. Pointer events, so a mouse can hold too — but
-  the hold is never the only way in, because nothing holds a key.
 - `src/app/ReportFields.tsx` — the report as controls: the four answers, the
   ovulation test, the waking temperature. Mounted by the Report screen and by
   the calendar's day editor, so the two cannot drift into asking the same
@@ -387,7 +383,8 @@ with `[Learn more](feature:<slug>)`.
   Don't reintroduce the picker.
 - **The bottom nav is the navigation.** Four tabs, no sidebar, no drawer, and
   they are _destinations_ — a fixed left-to-right order a swipe moves along
-  (`useSwipeNav.ts`). Things you do and then leave belong on the top bar
+  (the framework's `useSwipeNav`). Things you do and then leave belong on the
+  top bar
   instead, which is where Report and Settings went. Six was the old ceiling
   (about 62px a tab at 375px, which fits "Calendar" and nothing longer); at four
   there is room, but a new _destination_ still has to earn a place in an order

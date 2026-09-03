@@ -9,29 +9,21 @@
 // part, and these run once per rendered calendar cell.
 
 import {
-  parseDayKey,
+  dayKeyToDate,
+  formatDayKey,
+  formatMonthLabel,
   type DayKey,
 } from "@niclaslindstedt/oss-framework/calendar";
 
-const cache = new Map<string, Intl.DateTimeFormat>();
-
-function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  const key = JSON.stringify(options);
-  let found = cache.get(key);
-  if (!found) {
-    found = new Intl.DateTimeFormat(undefined, options);
-    cache.set(key, found);
-  }
-  return found;
-}
+// The framework owns the `Intl` formatter cache and the `DayKey` →
+// local-date conversion (`dayKeyToDate`, `formatDayKey`, `formatMonthLabel`);
+// what stays here is which *shapes* this app names a date in, and the one
+// number with a presentation rule of its own.
 
 /** A `DayKey` as a local `Date` at midnight, or null when it isn't a real
  *  day. Calendar days are timezone-free, so the components are read back as
  *  *local* — the same day the user typed, whatever their offset. */
-export function toDate(day: DayKey): Date | null {
-  const parts = parseDayKey(day);
-  return parts ? new Date(parts.year, parts.month - 1, parts.day) : null;
-}
+export const toDate = dayKeyToDate;
 
 /**
  * "5 Jul" — how this app names a date. **The only way it names one.**
@@ -49,10 +41,7 @@ export function toDate(day: DayKey): Date | null {
  * be written.
  */
 export function formatDay(day: DayKey): string {
-  const date = toDate(day);
-  return date
-    ? formatter({ day: "numeric", month: "short" }).format(date)
-    : day;
+  return formatDayKey(day, { day: "numeric", month: "short" });
 }
 
 /** "Sun, 5 Jul 2026" — the same date with the weekday and the year, for the
@@ -60,21 +49,17 @@ export function formatDay(day: DayKey): string {
  *  abbreviated here too: it is the same date vocabulary, spelled out further,
  *  not a second one. */
 export function formatFullDay(day: DayKey): string {
-  const date = toDate(day);
-  return date
-    ? formatter({
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }).format(date)
-    : day;
+  return formatDayKey(day, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 /** The single-letter-ish weekday for a day strip ("Mon"). */
 export function formatWeekday(day: DayKey): string {
-  const date = toDate(day);
-  return date ? formatter({ weekday: "short" }).format(date) : day;
+  return formatDayKey(day, { weekday: "short" });
 }
 
 /** "July 2026" — a month grid's heading. The long name survives here and only
@@ -82,9 +67,7 @@ export function formatWeekday(day: DayKey): string {
  *  date: it is the grid's title, it sits alone at the top of it, and "Jul
  *  2026" over a calendar page reads as an abbreviation of nothing. */
 export function formatMonth(year: number, month: number): string {
-  return formatter({ month: "long", year: "numeric" }).format(
-    new Date(year, month - 1, 1),
-  );
+  return formatMonthLabel(year, month);
 }
 
 /**
