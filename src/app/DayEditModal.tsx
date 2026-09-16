@@ -34,9 +34,13 @@ import type { DocStore } from "./useDocStore.ts";
 // **Deleting is the reason this exists.** A report that should never have been
 // filed — the wrong day, a phone in a pocket, a test day that was really a
 // negative — used to be reachable only by picking that day on the Report screen
-// and finding the Clear link. Here it is a button under the report it removes,
-// behind a confirmation, because removing a bleeding day silently moves every
-// number the app shows.
+// and finding the Clear link. Here it is a bin in the dialog's own header,
+// beside the day it throws away, behind a confirmation — because removing a
+// bleeding day silently moves every number the app shows. It sits at the top
+// rather than under the form because the form scrolls on a short screen, and a
+// delete you have to scroll to find is a delete nobody finds; putting it there
+// also keeps it off the thumb's path to Save, which is the tap it must never be
+// mistaken for.
 //
 // **Both edits close the dialog and say what they did.** That is the opposite
 // of the Report screen, where Save confirms on the button and stays put — and
@@ -110,21 +114,44 @@ export function DayEditModal({
             scroll inside it and the two buttons stay where the thumb left
             them. */}
         <div className="flex flex-col gap-4 overflow-y-auto px-3 py-4">
-          <div className="flex flex-col gap-0.5">
-            <h2
-              id="day-editor-title"
-              className="text-lg leading-tight font-bold text-fg-bright"
-            >
-              {dayHeadline(t, day, today)}
-            </h2>
-            <p className="text-xs text-muted">{formatFullDay(day)}</p>
-            {/* The same line the Report screen carries under its date, and for
-                the same reason: "I checked in, nothing happened" and "I never
-                logged this day" are different claims, and only this line tells
-                them apart on a day whose answers are all no. */}
-            <p className="mt-1 text-xs text-muted">
-              {stored ? t("report.logged") : t("report.empty")}
-            </p>
+          {/* The heading and the bin share the row: the title says which day
+              this is, and the button beside it throws that day away. */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h2
+                id="day-editor-title"
+                className="text-lg leading-tight font-bold text-fg-bright"
+              >
+                {dayHeadline(t, day, today)}
+              </h2>
+              <p className="text-xs text-muted">{formatFullDay(day)}</p>
+              {/* The same line the Report screen carries under its date, and
+                  for the same reason: "I checked in, nothing happened" and "I
+                  never logged this day" are different claims, and only this
+                  line tells them apart on a day whose answers are all no. */}
+              <p className="mt-1 text-xs text-muted">
+                {stored ? t("report.logged") : t("report.empty")}
+              </p>
+            </div>
+            {/* Only where there is something to remove. On a day with no report
+                the bin would be a button that does nothing, sitting over a form
+                whose whole purpose is to create the thing it deletes. */}
+            {stored !== null && (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                aria-label={t("calendar.deleteDay")}
+                title={t("calendar.deleteDay")}
+                // Danger ink at rest rather than muted-until-hovered: a phone
+                // has no hover, so a bin that only colours on a pointer reads
+                // as disabled on the device this app is used on. It is the
+                // top bar's 36px square, so the two headers in the app put a
+                // button in the same place at the same size.
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-danger transition-colors hover:bg-danger/15"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            )}
           </div>
 
           <ReportFields
@@ -143,31 +170,16 @@ export function DayEditModal({
             temperatureUnit={temperatureUnit}
           />
 
-          <div className="flex flex-col items-center gap-2">
-            <Button
-              variant="primary"
-              className="w-full rounded-xl py-3 font-semibold"
-              onClick={save}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <CheckIcon className="h-4 w-4" />
-                {stored ? t("report.saveExisting") : t("report.saveNew")}
-              </span>
-            </Button>
-            {/* Only where there is something to remove. On a day with no report
-                the link would be a button that does nothing, sitting under a
-                form whose whole purpose is to create the thing it deletes. */}
-            {stored !== null && (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs text-muted hover:text-danger"
-              >
-                <TrashIcon className="h-3.5 w-3.5" />
-                {t("calendar.deleteDay")}
-              </button>
-            )}
-          </div>
+          <Button
+            variant="primary"
+            className="w-full rounded-xl py-3 font-semibold"
+            onClick={save}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <CheckIcon className="h-4 w-4" />
+              {stored ? t("report.saveExisting") : t("report.saveNew")}
+            </span>
+          </Button>
         </div>
       </Modal>
 

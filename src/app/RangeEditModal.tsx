@@ -101,22 +101,44 @@ export function RangeEditModal({ range, store, onClose, onNotice }: Props) {
         size="max-w-sm"
       >
         <div className="flex flex-col gap-4 overflow-y-auto px-3 py-4">
-          <div className="flex flex-col gap-0.5">
-            <h2
-              id="range-editor-title"
-              className="text-lg leading-tight font-bold text-fg-bright"
-            >
-              {`${formatDay(range.start)} – ${formatDay(range.end)}`}
-            </h2>
-            {/* How many days, and how many of them already carry a report.
-                Both numbers are load-bearing: the first is what Save writes,
-                the second is what Delete removes. */}
-            <p className="text-xs text-muted">
-              {t("report.rangeLogged", {
-                logged: String(logged),
-                count: String(days),
-              })}
-            </p>
+          {/* The span and the bin share the row, exactly as the day editor's
+              headline and bin do — the one gesture that removes a month of
+              reports should not be in a different place from the one that
+              removes a single day. */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h2
+                id="range-editor-title"
+                className="text-lg leading-tight font-bold text-fg-bright"
+              >
+                {`${formatDay(range.start)} – ${formatDay(range.end)}`}
+              </h2>
+              {/* How many days, and how many of them already carry a report.
+                  Both numbers are load-bearing: the first is what Save writes,
+                  the second is what the bin removes. */}
+              <p className="text-xs text-muted">
+                {t("report.rangeLogged", {
+                  logged: String(logged),
+                  count: String(days),
+                })}
+              </p>
+            </div>
+            {/* Nothing to delete is the common case on a span picked over an
+                empty stretch of month, and a dead button there would be the
+                only control in the dialog that did nothing. */}
+            {logged > 0 && (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                aria-label={t("calendar.deleteRange", {
+                  count: String(logged),
+                })}
+                title={t("calendar.deleteRange", { count: String(logged) })}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-danger transition-colors hover:bg-danger/15"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            )}
           </div>
 
           {/* Only the four answers. See the note at the top of the file for why
@@ -129,31 +151,16 @@ export function RangeEditModal({ range, store, onClose, onNotice }: Props) {
             {t("calendar.rangeWrites", { count: String(days) })}
           </p>
 
-          <div className="flex flex-col items-center gap-2">
-            <Button
-              variant="primary"
-              className="w-full rounded-xl py-3 font-semibold"
-              onClick={save}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <CheckIcon className="h-4 w-4" />
-                {t("report.saveRange", { count: String(days) })}
-              </span>
-            </Button>
-            {/* Nothing to delete is the common case on a span picked over an
-                empty stretch of month, and a dead button there would be the
-                only control in the dialog that did nothing. */}
-            {logged > 0 && (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs text-muted hover:text-danger"
-              >
-                <TrashIcon className="h-3.5 w-3.5" />
-                {t("calendar.deleteRange", { count: String(logged) })}
-              </button>
-            )}
-          </div>
+          <Button
+            variant="primary"
+            className="w-full rounded-xl py-3 font-semibold"
+            onClick={save}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <CheckIcon className="h-4 w-4" />
+              {t("report.saveRange", { count: String(days) })}
+            </span>
+          </Button>
         </div>
       </Modal>
 

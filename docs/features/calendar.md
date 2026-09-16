@@ -77,9 +77,14 @@ there was none — so it is also where the fix is made.
 **Tap a day** and its report opens in a dialog: the same four answers, the same
 fertility test, the same waking temperature the [Daily report](daily-report.md)
 screen asks for, filled in with whatever is stored for that day. Change what is
-wrong and press **Update report**, or press **Delete this report** to remove the
-day entirely. Deleting asks once before it happens, because the day goes back to
-being a day nobody logged and every number derived from it moves.
+wrong and press **Update report**, or press the **bin** beside the date to
+remove the day entirely. Deleting asks once before it happens, because the day
+goes back to being a day nobody logged and every number derived from it moves.
+
+The bin sits in the dialog's top corner, at the opposite end from Save: the
+report itself scrolls on a short screen, and a delete you have to scroll to
+reach is a delete nobody finds. A day with nothing logged shows no bin, because
+there is nothing there to throw away.
 
 A day with nothing logged opens the same dialog, empty — tapping the 3rd is a
 perfectly good way to file the report you forgot on the 3rd.
@@ -96,8 +101,9 @@ Then a dialog opens for the span:
 - **Save N days** writes the four yes/no answers to every day in it. This is the
   Report screen's range save, reached from the month instead of from a date
   picker — so "those six days were a period" is one gesture, not six.
-- **Delete N reports** removes every report the span covers, after one
-  confirmation naming how many.
+- The **bin** in the top corner removes every report the span covers, after one
+  confirmation naming how many. It is absent over a stretch of month with
+  nothing logged in it.
 
 Waking temperatures and fertility-test results already recorded on those days
 are **kept** — a span has no single reading, so it never writes (or erases) one.
