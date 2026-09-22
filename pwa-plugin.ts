@@ -88,7 +88,7 @@ export function buildManifest(base: string): string {
     name,
     short_name,
     description:
-      "A privacy-first cycle tracker PWA: log bleeding, mood, lust, sex, temperature and ovulation tests daily, read your cycle history, and see a forecast of the next period and fertile window. Local-only or cloud-synced (Dropbox, Google Drive).",
+      "A privacy-first cycle tracker PWA: log bleeding, mood, lust, sex, temperature and ovulation tests daily, read your cycle history, and see a forecast of the next period and fertile window. Local-only or cloud-synced (Dropbox).",
     id: base,
     start_url: base,
     scope: base,

@@ -3,7 +3,7 @@
 The app is local-first: your reports live in this browser, and that copy is
 always the working copy. Sync adds a second copy in **your own** cloud account
 so another device can read it. There is no server in between — the app talks to
-Dropbox or Google Drive directly from the page.
+Dropbox directly from the page.
 
 ## What gets stored, and where
 
@@ -12,14 +12,10 @@ One JSON file — the same document the app keeps locally, byte for byte:
 | Backend      | Path                                |
 | ------------ | ----------------------------------- |
 | Dropbox      | `Apps/nird-cycle/cycle.json`        |
-| Google Drive | `nird-cycle/cycle.json` in My Drive |
 
 You can open it, read it, back it up, or delete it from the provider's own file
 browser. It is the format documented in
 [architecture.md](architecture.md#the-shape-of-the-data).
-
-Google Drive access uses the `drive.file` scope: the app can see the files it
-created and nothing else in the account.
 
 ### If you synced before the rename
 
@@ -37,7 +33,7 @@ never in the cloud copy's hands anyway — they are still in that browser.
 ## Connecting
 
 Settings → **Sync** → pick a provider. Dropbox redirects to its consent screen
-and back; Google Drive opens a token popup. Either way the tokens land in this
+and back. The tokens land in this
 browser's localStorage and are used for nothing but that one file.
 
 A provider whose client id wasn't configured at build time doesn't appear in

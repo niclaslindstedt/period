@@ -71,11 +71,9 @@ jobs:
         env:
           VITE_BASE: /preview/
           VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
-          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           # App-folder names for the stored document; unset -> both default to
           # "nird-cycle".
           VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
-          VITE_GDRIVE_APP_FOLDER: ${{ vars.VITE_GDRIVE_APP_FOLDER }}
 
       - name: Stash preview dist
         run: |
@@ -105,9 +103,7 @@ jobs:
           # place of the preview app — see pwa-plugin.ts `ignorePaths`.
           VITE_PWA_IGNORE_PATHS: /preview/
           VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
-          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
-          VITE_GDRIVE_APP_FOLDER: ${{ vars.VITE_GDRIVE_APP_FOLDER }}
 
       - name: Assemble the artifact
         run: |

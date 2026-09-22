@@ -55,9 +55,7 @@ jobs:
           VITE_BASE: /
           VITE_PWA_IGNORE_PATHS: /preview/
           VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
-          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
-          VITE_GDRIVE_APP_FOLDER: ${{ vars.VITE_GDRIVE_APP_FOLDER }}
 
       - name: Extract release notes
         run: node scripts/release/extract-section.mjs "${{ steps.meta.outputs.version }}" > .release-notes.md

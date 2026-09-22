@@ -83,7 +83,7 @@ independent of the laptop's until you connect sync.
 
 ## Keep it on more than one device
 
-Settings → **Sync** connects your own Dropbox or Google Drive. The app writes
+Settings → **Sync** connects your own Dropbox. The app writes
 one JSON file to a folder in your account, pulls it on open, and pushes about a
 second after each edit. Two devices merge day by day, so logging Tuesday on the
 phone and Wednesday on the laptop leaves you with both.

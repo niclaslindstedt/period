@@ -4,7 +4,7 @@
 > One report per day — four yes/no answers (blood, mood swings, lust, sex) plus
 > an optional waking temperature and ovulation-test result — stored
 > on-device as JSON, with an optional copy synced to the user's own
-> Dropbox or Google Drive. Cycles, averages, and the next-period forecast are
+> Dropbox. Cycles, averages, and the next-period forecast are
 > derived from those reports at read time; nothing about a cycle is stored.
 
 - App: https://cycle.niclaslindstedt.se/
