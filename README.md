@@ -1,4 +1,4 @@
-# Nird Cycle
+# Cycle
 
 > A local-first cycle tracking PWA — two taps a day, then read your cycle history and a forecast of the next period and fertile window. No account, no server.
 
@@ -9,7 +9,7 @@
 
 ## What
 
-**Nird Cycle** is a period tracker that runs entirely in your browser. Each
+**Cycle** is a period tracker that runs entirely in your browser. Each
 day you tap four buttons — blood, mood swings, lust, sex — and optionally add
 your waking temperature and what an ovulation test said, on a screen that fits
 a phone without scrolling. The app derives everything else from those reports:
@@ -129,7 +129,7 @@ is no secret to protect), and leaving either unset simply hides that provider:
 | Variable                  | Effect                                                          |
 | ------------------------- | --------------------------------------------------------------- |
 | `VITE_DROPBOX_APP_KEY`    | Enables the Dropbox backend.                                    |
-| `VITE_DROPBOX_APP_FOLDER` | Folder name the document is filed under (default `nird-cycle`). |
+| `VITE_DROPBOX_APP_FOLDER` | Folder name the document is filed under (default `cycle`). |
 | `VITE_BASE`               | Deploy base path (default `/`).                                 |
 
 See [`docs/configuration.md`](docs/configuration.md) for the details.

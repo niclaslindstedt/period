@@ -13,7 +13,7 @@ All optional. The app builds and runs with none of them set.
 | `VITE_BASE`               | `/`          | Deploy base path. Drives the bundler base, the service-worker scope, and the PWA install identity. The Pages workflow sets `/` for the released build and `/preview/` for main.                                                    |
 | `VITE_PWA_IGNORE_PATHS`   | —            | Comma-separated absolute paths this build's service worker must disown. Only the root release sets it (`/preview/`), because a scope is a path prefix and the root worker would otherwise claim the preview channel's navigations. |
 | `VITE_DROPBOX_APP_KEY`    | —            | Dropbox OAuth app key (PKCE public client). Unset ⇒ the Dropbox backend is hidden from Settings → Sync rather than offered and then failing.                                                                                       |
-| `VITE_DROPBOX_APP_FOLDER` | `nird-cycle` | The app-folder name shown as the file's location. Dropbox fixes this from the OAuth app's own configuration, so it has to be told what the folder is actually called.                                                              |
+| `VITE_DROPBOX_APP_FOLDER` | `cycle` | The app-folder name shown as the file's location. Dropbox fixes this from the OAuth app's own configuration, so it has to be told what the folder is actually called.                                                              |
 
 Both OAuth identifiers are **public**: the flows are PKCE with no client
 secret, so they are supplied as repository _variables_ (not secrets) and

@@ -64,10 +64,10 @@ export const DROPBOX_APP_KEY: string =
 
 // Dropbox fixes the app-folder name from the app's own configuration (an
 // "App folder"-scoped app lives under `Apps/<name>/`), so it isn't always
-// `nird-cycle`. Inject the real name at build time so the displayed location
+// `cycle`. Inject the real name at build time so the displayed location
 // points at the folder that actually exists.
 //
-// Both defaults followed the app's rename, from `Cycle` to `nird-cycle`. That
+// Both defaults followed the app's rename, from `Cycle` to `cycle`. That
 // is a *location* moving and not just a label, so it is worth being plain
 // about what it costs: a build looks in exactly one folder, so an install that
 // synced to the old one finds nothing in the new one and reads as an empty
@@ -84,10 +84,10 @@ export const DROPBOX_APP_KEY: string =
 //
 // Lowercase and hyphenated, unlike the app's own display name: this is a path
 // segment. It is the one place the name has to survive a filesystem, a URL and
-// somebody typing it, and `nird-cycle` does all three without a space in it.
+// somebody typing it, and `cycle` does all three without a space in it.
 export const DROPBOX_APP_FOLDER: string =
   (import.meta.env.VITE_DROPBOX_APP_FOLDER as string | undefined)?.trim() ||
-  "nird-cycle";
+  "cycle";
 
 export const PROVIDER_NAMES: Record<SyncBackendId, string> = {
   local: "This device",

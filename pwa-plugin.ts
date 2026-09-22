@@ -55,21 +55,21 @@ const PUBLIC_SKIP = new Set([
 
 // Per-release-channel PWA display name. The three Pages channels share one
 // origin, so a channel-specific name installs the preview/branch builds as
-// visibly separate home-screen tiles instead of three identical "Nird Cycle"
+// visibly separate home-screen tiles instead of three identical "Cycle"
 // icons that are impossible to tell apart once installed.
 //
 // `short_name` is what a home screen actually paints under the tile, and it
 // gets about a dozen characters before the launcher truncates it — so the
 // channel builds drop the second word rather than have three tiles that all
-// read "Nird Cycle…".
+// read "Cycle…".
 function channelName(base: string): { name: string; short_name: string } {
   if (base === "/preview/")
-    return { name: "Nird Cycle (preview)", short_name: "Nird pre" };
+    return { name: "Cycle (preview)", short_name: "Cycle pre" };
   if (base === "/branch/")
-    return { name: "Nird Cycle (branch)", short_name: "Nird br" };
+    return { name: "Cycle (branch)", short_name: "Cycle br" };
   return {
-    name: "Nird Cycle",
-    short_name: "Nird Cycle",
+    name: "Cycle",
+    short_name: "Cycle",
   };
 }
 

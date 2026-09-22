@@ -11,7 +11,7 @@ One JSON file — the same document the app keeps locally, byte for byte:
 
 | Backend      | Path                                |
 | ------------ | ----------------------------------- |
-| Dropbox      | `Apps/nird-cycle/cycle.json`        |
+| Dropbox      | `Apps/cycle/cycle.json`        |
 
 You can open it, read it, back it up, or delete it from the provider's own file
 browser. It is the format documented in
@@ -19,7 +19,7 @@ browser. It is the format documented in
 
 ### If you synced before the rename
 
-The folder used to be called `Cycle`, and it moved to `nird-cycle` when the app
+The folder used to be called `Cycle`, and it moved to `cycle` when the app
 did. A build looks in exactly one folder, so an account that synced to the old
 one will look empty on the first connection after the rename.
 

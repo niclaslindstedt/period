@@ -72,7 +72,7 @@ jobs:
           VITE_BASE: /preview/
           VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
           # App-folder names for the stored document; unset -> both default to
-          # "nird-cycle".
+          # "cycle".
           VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
 
       - name: Stash preview dist
