@@ -132,7 +132,8 @@ is no secret to protect), and leaving either unset simply hides that provider:
 | `VITE_DROPBOX_APP_FOLDER` | Folder name the document is filed under (default `cycle`). |
 | `VITE_BASE`               | Deploy base path (default `/`).                            |
 
-See [`docs/configuration.md`](docs/configuration.md) for the details.
+The workflows read them from repository secrets of the same names. See
+[`docs/configuration.md`](docs/configuration.md) for the details.
 
 ## Examples
 

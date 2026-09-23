@@ -16,8 +16,11 @@ All optional. The app builds and runs with none of them set.
 | `VITE_DROPBOX_APP_FOLDER` | `cycle` | The app-folder name shown as the file's location. Dropbox fixes this from the OAuth app's own configuration, so it has to be told what the folder is actually called.                                                              |
 
 Both OAuth identifiers are **public**: the flows are PKCE with no client
-secret, so they are supplied as repository _variables_ (not secrets) and
-injected at build time. There is no server-side half of the flow to protect.
+secret, and there is no server-side half of the flow to protect. The workflows
+still read them from repository **secrets** (Settings → Secrets and variables →
+Actions → Secrets) under the same names, because this repository keeps every
+build setting as a secret and has no repository variables; they are injected at
+build time, and the built site carries them in plain sight.
 
 The declarations live in `src/vite-env.d.ts`; the consumers are
 `vite.config.ts` and `src/app/useSyncEngine.ts`.

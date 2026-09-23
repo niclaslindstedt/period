@@ -70,10 +70,10 @@ jobs:
         run: npm run build
         env:
           VITE_BASE: /preview/
-          VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
+          VITE_DROPBOX_APP_KEY: ${{ secrets.VITE_DROPBOX_APP_KEY }}
           # App-folder names for the stored document; unset -> both default to
           # "cycle".
-          VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
+          VITE_DROPBOX_APP_FOLDER: ${{ secrets.VITE_DROPBOX_APP_FOLDER }}
 
       - name: Stash preview dist
         run: |
@@ -102,8 +102,8 @@ jobs:
           # it has to disown that path or it would serve the released shell in
           # place of the preview app — see pwa-plugin.ts `ignorePaths`.
           VITE_PWA_IGNORE_PATHS: /preview/
-          VITE_DROPBOX_APP_KEY: ${{ vars.VITE_DROPBOX_APP_KEY }}
-          VITE_DROPBOX_APP_FOLDER: ${{ vars.VITE_DROPBOX_APP_FOLDER }}
+          VITE_DROPBOX_APP_KEY: ${{ secrets.VITE_DROPBOX_APP_KEY }}
+          VITE_DROPBOX_APP_FOLDER: ${{ secrets.VITE_DROPBOX_APP_FOLDER }}
 
       - name: Assemble the artifact
         run: |
