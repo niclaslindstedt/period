@@ -126,11 +126,11 @@ The app needs no configuration to run. Two build-time variables switch cloud
 sync on; both are public OAuth client identifiers (the flows are PKCE, so there
 is no secret to protect), and leaving either unset simply hides that provider:
 
-| Variable                  | Effect                                                          |
-| ------------------------- | --------------------------------------------------------------- |
-| `VITE_DROPBOX_APP_KEY`    | Enables the Dropbox backend.                                    |
+| Variable                  | Effect                                                     |
+| ------------------------- | ---------------------------------------------------------- |
+| `VITE_DROPBOX_APP_KEY`    | Enables the Dropbox backend.                               |
 | `VITE_DROPBOX_APP_FOLDER` | Folder name the document is filed under (default `cycle`). |
-| `VITE_BASE`               | Deploy base path (default `/`).                                 |
+| `VITE_BASE`               | Deploy base path (default `/`).                            |
 
 See [`docs/configuration.md`](docs/configuration.md) for the details.
 
