@@ -43,6 +43,35 @@ inputs:
     description: VITE_DROPBOX_APP_FOLDER for the same build.
     required: false
     default: ""
+  # macOS SIGNING AND NOTARIZATION — all optional, all passed straight
+  # through to ./.github/actions/apple-signing, which is where they are
+  # explained. Empty packages exactly as without them.
+  mac-certificate:
+    description: MAC_CSC_LINK — the Developer ID certificate, a base64 .p12.
+    required: false
+    default: ""
+  mac-certificate-password:
+    description: MAC_CSC_KEY_PASSWORD — the password the .p12 was exported with.
+    required: false
+    default: ""
+  mac-signing-identity:
+    description: >
+      MAC_SIGN_IDENTITY — optional; read out of the certificate when empty,
+      and ignored without one.
+    required: false
+    default: ""
+  apple-id:
+    description: APPLE_ID — the Apple Account notarization submits as.
+    required: false
+    default: ""
+  apple-app-specific-password:
+    description: APPLE_APP_SPECIFIC_PASSWORD — an app-specific password for it.
+    required: false
+    default: ""
+  apple-team-id:
+    description: APPLE_TEAM_ID — the team the certificate belongs to.
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -68,6 +97,21 @@ runs:
         sudo apt-get update
         sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
           libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
+
+    # Turns the package into a Developer ID-signed, notarized one when the
+    # certificate is configured, by exporting APPLE_SIGNING_IDENTITY and the
+    # notarization environment for the Package step below. Without the
+    # certificate it exports nothing, so the package is what it always was.
+    - name: Apple signing
+      if: inputs.target == 'macos'
+      uses: ./.github/actions/apple-signing
+      with:
+        certificate: ${{ inputs.mac-certificate }}
+        certificate-password: ${{ inputs.mac-certificate-password }}
+        identity: ${{ inputs.mac-signing-identity }}
+        apple-id: ${{ inputs.apple-id }}
+        apple-password: ${{ inputs.apple-app-specific-password }}
+        apple-team-id: ${{ inputs.apple-team-id }}
 
     # The site build lives in the root project; the shell only carries its
     # output. `tauri/` is deliberately not a workspace member — it has its own

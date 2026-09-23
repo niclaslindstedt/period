@@ -129,10 +129,6 @@ jobs:
       contents: read
       # npm ci resolves @niclaslindstedt/oss-framework from GitHub Packages.
       packages: read
-    env:
-      # An absent secret means the ad-hoc signature `tauri build` falls back to,
-      # which is the minimum an arm64 app needs to run at all — see release.yml.
-      APPLE_SIGNING_IDENTITY: ${{ secrets.MAC_SIGN_IDENTITY }}
     steps:
       - name: Skip unselected platform
         if: inputs.platform != 'all' && inputs.platform != matrix.target
@@ -152,6 +148,15 @@ jobs:
           # that Dropbox app must also allow http://127.0.0.1:53682/ … :53684/.
           dropbox-app-key: ${{ secrets.VITE_DROPBOX_APP_KEY }}
           dropbox-app-folder: ${{ secrets.VITE_DROPBOX_APP_FOLDER }}
+          # The same six release.yml passes, so a dispatch here rehearses the
+          # release's macOS half: a wrong certificate or password shows up
+          # before a version is tagged. All six empty packages as before.
+          mac-certificate: ${{ secrets.MAC_CSC_LINK }}
+          mac-certificate-password: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          mac-signing-identity: ${{ secrets.MAC_SIGN_IDENTITY }}
+          apple-id: ${{ secrets.APPLE_ID }}
+          apple-app-specific-password: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
 
       - uses: actions/upload-artifact@v7
         if: inputs.platform == 'all' || inputs.platform == matrix.target

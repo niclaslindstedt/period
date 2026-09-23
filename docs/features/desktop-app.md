@@ -10,10 +10,10 @@ for **Windows, macOS and Linux**, attached to every release on the
 Pick the one for your machine — the app inside all three is the same app.
 
 - **Windows** — the `.exe` installer.
-- **macOS** — the `.dmg`. The app is signed but not notarized, so the first
-  launch is refused. Open **System Settings → Privacy & Security**, scroll to
-  the message about Cycle and choose **Open Anyway**. macOS remembers after
-  that.
+- **macOS** — the `.dmg`. When the release notes say it is notarized by Apple,
+  it opens like any other app. Otherwise the first launch is refused: open
+  **System Settings → Privacy & Security**, scroll to the message about Cycle
+  and choose **Open Anyway**. macOS remembers after that.
 - **Linux** — the `.AppImage` runs on anything without installing; the `.deb`
   is for Debian and Ubuntu.
 

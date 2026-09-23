@@ -93,7 +93,9 @@ seam reaches back into this tree, `VITE_SHELL_BUILD`, set by the shell's site
 build, which switches off the service-worker half of `appPwa` and — through
 `__SHELL_BUILD__` — the in-app update prompt. A desktop build updates by being replaced. The package's
 name and identifier come from `APP_DISPLAY_NAME` and `APP_BUNDLE_ID` at
-packaging time (`tauri/scripts/package.mjs`), like the phone app's. See
+packaging time (`tauri/scripts/package.mjs`), like the phone app's. The macOS
+package is signed and notarized by `.github/actions/apple-signing` when its six
+optional secrets are set, and packaged as before when they are not. See
 [`tauri/README.md`](tauri/README.md).
 
 The `@niclaslindstedt/oss-framework` dependency comes from the **GitHub

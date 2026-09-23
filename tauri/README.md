@@ -179,7 +179,28 @@ a build nobody is going to install.
 `.github/workflows/desktop-tauri.yml` can also be dispatched to build all three
 platforms without cutting a release.
 
-**macOS is never signed with nothing** — Apple Silicon refuses to execute
-unsigned arm64 code and reports it to the user as "the app is damaged", so the
-default is an ad-hoc signature and the user answers one Gatekeeper prompt. Set
-the `MAC_SIGN_IDENTITY` repository secret and the same job signs for real.
+### macOS signing and notarization
+
+Without an Apple Developer account configured, the macOS package is made
+exactly as a fork makes it: no Developer ID signature, no notarization, and the
+user answers one Gatekeeper prompt on first launch. Six repository secrets
+(Settings → Secrets and variables → Actions → Secrets) turn it into a
+Developer ID-signed, notarized `.dmg` that opens like any other app:
+
+| Secret                        | What it is                                                                                                            |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `MAC_CSC_LINK`                | The Developer ID Application certificate with its private key, as a base64 `.p12` (`base64 -i cert.p12`)              |
+| `MAC_CSC_KEY_PASSWORD`        | The password the `.p12` was exported with                                                                             |
+| `MAC_SIGN_IDENTITY`           | Optional: the identity to sign as (`Developer ID Application: Name (TEAMID)`); read out of the certificate when unset |
+| `APPLE_ID`                    | The Apple Account email notarization submits as                                                                       |
+| `APPLE_APP_SPECIFIC_PASSWORD` | An app-specific password for that account (appleid.apple.com → Sign-In and Security)                                  |
+| `APPLE_TEAM_ID`               | The team ID the certificate belongs to                                                                                |
+
+`.github/actions/apple-signing` does the work on the macOS runner, for both
+`release.yml` and a dispatched `desktop-tauri.yml` (so a dispatch rehearses the
+release's macOS half before a version is tagged). It imports the certificate
+into a throwaway keychain and only then hands `tauri build` a signing identity;
+with `MAC_CSC_LINK` unset it does nothing, and `MAC_SIGN_IDENTITY` on its own is
+ignored, because a runner has no key to sign with. Notarization follows only a
+real signature, and only with all three Apple account secrets set. The release
+notes say which of the two a release's `.dmg` is.
