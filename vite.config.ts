@@ -69,9 +69,22 @@ const version = process.env.GITHUB_SHA
   ? buildLabel
   : `${buildLabel}+${new Date().toISOString()}`;
 
+// A build for the DESKTOP SHELL (tauri/), set by `tauri/scripts/bundle-web.mjs`.
+//
+// It changes exactly one thing, and it is about the medium rather than the
+// audience: the service worker is left out (`serviceWorker: false` below —
+// everything else `appPwa` writes into the `<head>` still applies). A desktop
+// build has no deployment to discover an update from — a new version arrives
+// as a new binary — so a worker here would precache a copy of files already on
+// local disk and then serve the page from ITS copy. `__SHELL_BUILD__` carries
+// the same fact into the app, where it switches off the update prompt that has
+// nothing left to prompt about.
+const shellBuild = process.env.VITE_SHELL_BUILD === "on";
+
 export default defineConfig({
   base,
   define: {
+    __SHELL_BUILD__: JSON.stringify(shellBuild),
     __APP_VERSION__: JSON.stringify(appVersion),
     __BUILD_LABEL__: JSON.stringify(buildLabel),
     __BUILD_COMMIT__: JSON.stringify(commit),
@@ -87,5 +100,9 @@ export default defineConfig({
   // which import `react`, `react-dom`, and `react/jsx-runtime` as externals —
   // resolve to Preact. Nothing from React itself reaches the bundle; see
   // `docs/architecture.md`.
-  plugins: [preact(), tailwindcss(), appPwa({ base, version, ignorePaths })],
+  plugins: [
+    preact(),
+    tailwindcss(),
+    appPwa({ base, version, ignorePaths, serviceWorker: !shellBuild }),
+  ],
 });

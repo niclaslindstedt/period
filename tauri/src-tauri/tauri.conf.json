@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Cycle",
+  "mainBinaryName": "cycle",
+  "version": "../../package.json",
+  "identifier": "dev.local.cycle",
+  "build": {
+    "frontendDist": "./placeholder"
+  },
+  "app": {
+    "windows": [],
+    "withGlobalTauri": false,
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage", "app", "dmg", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/256x256.png",
+      "icons/512x512.png",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../webroot": "webroot"
+    },
+    "category": "Healthcare and Fitness",
+    "shortDescription": "a local-first cycle log",
+    "longDescription": "A local-first cycle log: note bleeding and mood each day, then read your cycle history and what comes next. Your days stay on your machine.",
+    "copyright": "Copyright © Niclas Lindstedt",
+    "macOS": {
+      "entitlements": "entitlements.mac.plist",
+      "minimumSystemVersion": "10.15"
+    }
+  }
+}

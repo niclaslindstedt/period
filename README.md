@@ -198,6 +198,7 @@ More in [`docs/troubleshooting.md`](docs/troubleshooting.md).
 
 ## Documentation
 
+- [The desktop app](docs/features/desktop-app.md)
 - [Getting started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
 - [Architecture](docs/architecture.md)

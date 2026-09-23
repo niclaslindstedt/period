@@ -14,7 +14,11 @@ export default [
     // Node tooling scripts (icon generation, SEO checks) and agent-skill
     // helpers. These run under Node, so expose its globals rather than the
     // browser's.
-    files: ["scripts/**/*.mjs", ".agent/skills/**/*.mjs"],
+    files: [
+      "scripts/**/*.mjs",
+      "tauri/scripts/**/*.mjs",
+      ".agent/skills/**/*.mjs",
+    ],
     languageOptions: {
       sourceType: "module",
       ecmaVersion: 2022,

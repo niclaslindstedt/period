@@ -30,3 +30,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// Whether this build is the one bundled inside the desktop shell (tauri/).
+// True only when `tauri/scripts/bundle-web.mjs` built it: no service worker was
+// emitted, so there is no update lifecycle for the app to drive.
+declare const __SHELL_BUILD__: boolean;
