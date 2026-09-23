@@ -7,7 +7,22 @@ import globals from "globals";
 export default [
   {
     // Build output and dependencies are out of scope for the linter.
-    ignores: ["dist/**", "node_modules/**", "coverage/**"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      // `native/ios` / `native/android` are build output too: `expo prebuild`
+      // regenerates them from `native/app.config.js` and its config plugins.
+      "native/node_modules/**",
+      "native/ios/**",
+      "native/android/**",
+      "native/.expo/**",
+      // The desktop shell's own trees: Rust build output, and the site copied
+      // in from `dist/` (both gitignored — see tauri/README.md).
+      "tauri/target/**",
+      "tauri/webroot/**",
+      "tauri/node_modules/**",
+    ],
   },
   js.configs.recommended,
   {
@@ -17,6 +32,9 @@ export default [
     files: [
       "scripts/**/*.mjs",
       "tauri/scripts/**/*.mjs",
+      // The native wrapper's Node-side JavaScript: its Expo config, its Metro
+      // config and its bundle script. None of it ships to a device.
+      "native/**/*.{js,mjs}",
       ".agent/skills/**/*.mjs",
     ],
     languageOptions: {
@@ -29,6 +47,9 @@ export default [
     files: [
       "src/**/*.{ts,tsx}",
       "tests/**/*.{ts,tsx}",
+      // The native wrapper's app sources, linted from here so the repo has one
+      // set of rules; `native/` has its own `tsc` against react-native / expo.
+      "native/**/*.{ts,tsx}",
       "vite.config.ts",
       "vitest.config.ts",
       "pwa-plugin.ts",

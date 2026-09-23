@@ -50,6 +50,27 @@ make check-seo     # build + assert the structural SEO/PWA signals
 make icons         # regenerate the PWA icons, favicon, and og image
 ```
 
+The phone wrapper in `native/` has a **dependency tree of its own** — `make
+install` does not touch it:
+
+```sh
+make native-install    # npm --prefix native install
+make native-bundle     # build the web app into native/assets/webroot.zip
+make native-typecheck  # the wrapper's own tsc
+make native-prebuild   # inspect what the config plugins generate
+```
+
+It is a thin Expo / React Native shell: the built site served from a loopback
+origin in a WebView, plus one capability a browser cannot have — iCloud Drive.
+**Nothing in `src/` knows it exists**: `src/app/cloudHost.ts` looks for a
+document-store capability on `window` and offers iCloud when one answers. The
+wrapper moves bytes and decides nothing about the cycle. The iCloud container
+is committed as `iCloud.se.agilator.cycle` in `native/identifiers.js` and the
+module's Swift and TS, never derived from the bundle id; the bridge's property
+and event names are a contract with `cloudHost.ts` that
+`tests/native_icloud_test.ts` pins. See [`native/README.md`](native/README.md)
+and [`docs/features/native-app.md`](docs/features/native-app.md).
+
 The desktop shell in `tauri/` is a Rust project with its own toolchain; `make
 test` and `make lint` stop at its edge:
 
@@ -390,6 +411,7 @@ with `[Learn more](feature:<slug>)`.
 | `forecastModel.ts` or `stats.ts` | `docs/forecast-model.md`, `docs/features/forecast.md`, and the README's What block                                  |
 | The `DayEntry` shape             | `docs/architecture.md`'s data shape, `docs/features/daily-report.md`, and a `migrations.ts` step                    |
 | The sync engine or the merge     | `docs/sync.md`                                                                                                      |
+| The phone wrapper (`native/`)    | `native/README.md`, `native/RELEASING.md`, `docs/features/native-app.md`                                            |
 | A `VITE_*` variable              | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it      |
 | A screen's behaviour             | The matching `docs/features/*.md` and the README's Usage table                                                      |
 | `dayStatus.ts`                   | `docs/features/status.md` and `docs/features/calendar.md` — both screens quote its rules                            |

@@ -56,8 +56,8 @@ category are an account wrapped around a server you cannot inspect.
 
 This one has no account and no server. Reports live in your browser's
 localStorage. If you want them on more than one device, you connect **your own**
-Dropbox and the app keeps a copy there — in a folder you can
-open, in a JSON file you can read. Nothing else leaves the device: no
+Dropbox — or, in the phone app, iCloud Drive — and the app keeps a copy there,
+in a folder you can open, in a JSON file you can read. Nothing else leaves the device: no
 analytics, no telemetry, no third-party requests at runtime.
 
 The forecasting is deliberately simple arithmetic — the median gap between your

@@ -477,6 +477,12 @@ export const en = {
     sync: "Sync",
     syncHint:
       "Reports live on this device. Connect a cloud account to keep a copy and read it on your other devices.",
+    // The same sentence with iCloud in it, shown only where the app has a
+    // store to offer — which is the app-store build. A browser has none, so
+    // naming iCloud there would be offering something that is not on the
+    // picker below it.
+    syncHintICloud:
+      "Reports live on this device. Keep a copy in your own iCloud or Dropbox to read it on your other devices.",
     backend: "Where the copy lives",
     connect: "Connect",
     disconnect: "Disconnect",

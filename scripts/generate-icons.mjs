@@ -392,8 +392,30 @@ writeFileSync(
     })),
   ),
 );
+
+// The native wrapper's assets (native/assets), cut from the same mark so the
+// app on a home screen and the PWA on a home screen are one product rather
+// than two that resemble each other.
+//   icon          — iOS wants a square, fully opaque icon and applies its own
+//                   mask, so the tile is not pre-rounded.
+//   adaptive-icon — Android masks the foreground to whatever shape the
+//                   launcher uses, so the mark is inset to the safe zone and
+//                   the tile runs to the edges (app.config.js paints the same
+//                   ink behind it).
+//   splash-icon   — the launch screen's mark, so this one keeps its rounded
+//                   corners.
+const nativeAssets = join(root, "native", "assets");
+mkdirSync(nativeAssets, { recursive: true });
+writeFileSync(join(nativeAssets, "icon.png"), renderIcon(1024, { radius: 0 }));
+writeFileSync(
+  join(nativeAssets, "adaptive-icon.png"),
+  renderIcon(1024, { pad: 0.18, radius: 0 }),
+);
+writeFileSync(join(nativeAssets, "splash-icon.png"), renderIcon(512));
+
 console.log(
-  "icons: wrote pwa-192/512/512-maskable, apple-touch-180, og.png, favicon.ico",
+  "icons: wrote pwa-192/512/512-maskable, apple-touch-180, og.png, favicon.ico, " +
+    "native icon/adaptive-icon/splash-icon",
 );
 
 // The DESKTOP SHELL's icons (tauri/src-tauri/icons/), from the same geometry

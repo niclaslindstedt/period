@@ -3,15 +3,17 @@
 The app is local-first: your reports live in this browser, and that copy is
 always the working copy. Sync adds a second copy in **your own** cloud account
 so another device can read it. There is no server in between — the app talks to
-Dropbox directly from the page.
+Dropbox directly from the page, and in the phone app iCloud Drive is a folder the
+device keeps in step.
 
 ## What gets stored, and where
 
 One JSON file — the same document the app keeps locally, byte for byte:
 
-| Backend | Path                    |
-| ------- | ----------------------- |
-| Dropbox | `Apps/cycle/cycle.json` |
+| Backend                 | Path                            |
+| ----------------------- | ------------------------------- |
+| Dropbox                 | `Apps/cycle/cycle.json`         |
+| iCloud Drive (app only) | `iCloud Drive/Cycle/cycle.json` |
 
 You can open it, read it, back it up, or delete it from the provider's own file
 browser. It is the format documented in
@@ -33,7 +35,8 @@ never in the cloud copy's hands anyway — they are still in that browser.
 ## Connecting
 
 Settings → **Sync** → pick a provider. Dropbox redirects to its consent screen
-and back. The tokens land in this
+and back; iCloud Drive, offered only in the phone app, needs nothing but the
+choice. The tokens land in this
 browser's localStorage and are used for nothing but that one file.
 
 A provider whose client id wasn't configured at build time doesn't appear in

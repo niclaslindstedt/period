@@ -30,7 +30,6 @@ import { emptyDoc } from "./types.ts";
 import type { AppSettings, ThemeChoice } from "./useAppSettings.ts";
 import type { DocStore } from "./useDocStore.ts";
 import {
-  AVAILABLE_BACKENDS,
   PROVIDER_NAMES,
   type SyncBackendId,
   type SyncEngine,
@@ -243,10 +242,17 @@ export function SettingsScreen({
         title={t("settings.sync")}
         icon={<CloudIcon className="h-3.5 w-3.5" />}
       >
-        <p className="text-xs text-muted">{t("settings.syncHint")}</p>
+        <p className="text-xs text-muted">
+          {sync.available.includes("icloud")
+            ? t("settings.syncHintICloud")
+            : t("settings.syncHint")}
+        </p>
+        {/* The options are a reading rather than a constant: iCloud is
+            offered by the app's host (see `cloudHost.ts`), so it appears
+            where there is one and is absent in a browser. */}
         <SegmentedControl<SyncBackendId>
           value={sync.backend}
-          options={AVAILABLE_BACKENDS.map((id) => ({
+          options={sync.available.map((id) => ({
             value: id,
             label: PROVIDER_NAMES[id],
           }))}

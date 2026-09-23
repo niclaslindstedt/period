@@ -5,6 +5,9 @@ the app keeps a copy there too:
 
 - **Dropbox** — OAuth (PKCE) with silent token refresh; the document lives in
   the app folder as `cycle.json`.
+- **iCloud Drive** — in the phone app only: the same file in a **Cycle** folder
+  of your own iCloud Drive, kept in step between your Apple devices. See
+  [the app on a phone](native-app.md).
 
 There is no server in between and no account to create — the app talks to your
 provider directly, and the file it writes is plain JSON you can open yourself.
