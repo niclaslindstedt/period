@@ -182,8 +182,10 @@ platforms without cutting a release.
 ### macOS signing and notarization
 
 Without an Apple Developer account configured, the macOS package is made
-exactly as a fork makes it: no Developer ID signature, no notarization, and the
-user answers one Gatekeeper prompt on first launch. Six repository secrets
+exactly as a fork makes it: signed ad hoc (`scripts/package.mjs` passes
+`signingIdentity: "-"`, because Apple Silicon refuses to run an unsigned app and
+calls it "damaged"), not notarized, and the user answers one Gatekeeper prompt
+on first launch. Six repository secrets
 (Settings → Secrets and variables → Actions → Secrets) turn it into a
 Developer ID-signed, notarized `.dmg` that opens like any other app:
 

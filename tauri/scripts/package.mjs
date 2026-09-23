@@ -59,21 +59,42 @@ execFileSync(process.execPath, [join(APP_DIR, "scripts", "bundle-web.mjs")], {
   stdio: "inherit",
 });
 
+// NEVER UNSIGNED ON macOS. Apple Silicon refuses to execute unsigned arm64
+// code and tells the user "the app is damaged". Left to itself, `tauri build`
+// with no identity leaves only the linker's signature on the binary, which
+// `codesign --verify --deep --strict` rejects for the bundle as a whole. An
+// ad-hoc signature ("-") signs the whole bundle, and is what a build with no
+// certificate gets; APPLE_SIGNING_IDENTITY — exported by
+// .github/actions/apple-signing only after it imported the certificate — is
+// the real one, with notarization on top.
+const MACOS = process.platform === "darwin";
+const signingIdentity = process.env.APPLE_SIGNING_IDENTITY?.trim() || "-";
+
 const override = {
   ...(displayName ? { productName: displayName } : {}),
   ...(bundleId ? { identifier: bundleId } : {}),
+  ...(MACOS ? { bundle: { macOS: { signingIdentity } } } : {}),
 };
 const configArgs = [];
 if (Object.keys(override).length > 0) {
   const file = join(mkdtempSync(join(tmpdir(), "tauri-identity-")), "id.json");
   writeFileSync(file, JSON.stringify(override));
   configArgs.push("--config", file);
+}
+if (displayName || bundleId) {
   console.log(
     `• packaging as ${displayName || "(project name)"} — ` +
       `${bundleId || "(development identifier)"}`,
   );
 } else {
   console.log("• packaging under the development identity");
+}
+if (MACOS) {
+  console.log(
+    signingIdentity === "-"
+      ? "• signing ad hoc (no Developer ID certificate)"
+      : `• signing as ${signingIdentity}`,
+  );
 }
 
 execFileSync(
