@@ -62,6 +62,17 @@ module.exports = () => ({
         "com.apple.developer.icloud-services": ["CloudDocuments"],
       },
       infoPlist: {
+        // Publishes the container's `Documents` folder to the Files app as a
+        // folder called "Cycle", so the user can see, copy and back up the
+        // log the app keeps there. Without this the container syncs but is
+        // invisible — a log its owner cannot open.
+        NSUbiquitousContainers: {
+          [ICLOUD_CONTAINER]: {
+            NSUbiquitousContainerIsDocumentScopePublic: true,
+            NSUbiquitousContainerSupportedFolderLevels: "None",
+            NSUbiquitousContainerName: "Cycle",
+          },
+        },
         // The bundled build is served over plain HTTP on the loopback
         // interface. ATS is left ON — only localhost is excepted, so nothing
         // else in the app may fall back to cleartext.
