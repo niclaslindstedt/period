@@ -62,6 +62,17 @@ container that signs but was never created resolves to nil at runtime: the app
 builds, installs, launches, and reports iCloud as unavailable with nothing in
 the log to say why.
 
+### 5. Dropbox
+
+The phone app signs in to Dropbox through an in-app authentication session
+that returns on **`se.agilator.cycle://oauth`** — the bundle id is the URL scheme (see
+[README → Signing in to Dropbox](README.md#signing-in-to-dropbox)). In the
+[Dropbox App Console](https://www.dropbox.com/developers/apps), open the app
+whose key is the `VITE_DROPBOX_APP_KEY` secret and add `se.agilator.cycle://oauth` under
+**Settings → OAuth 2 → Redirect URIs**, exactly as written. The same secret
+(and `VITE_DROPBOX_APP_FOLDER`) is what the build job passes to the web
+bundle; without it the app offers no Dropbox at all.
+
 ## Cutting a build
 
 Dispatch **Actions → native → Run workflow** and pick:
@@ -106,3 +117,6 @@ build without it launches to a blank screen.
       Drive**, report a day, and see `cycle.json` appear under **Files → iCloud
       Drive → Cycle**. Then sign out of iCloud and confirm the app says so
       rather than losing the day.
+- [ ] Settings → Sync → Dropbox opens Dropbox in a sheet over the app (not in
+      Safari), and approving closes the sheet and connects. Closing the sheet
+      instead leaves nothing connected and shows no error.

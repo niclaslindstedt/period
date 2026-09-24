@@ -63,7 +63,10 @@ make native-prebuild   # inspect what the config plugins generate
 It is a thin Expo / React Native shell: the built site served from a loopback
 origin in a WebView, plus one capability a browser cannot have — iCloud Drive.
 **Nothing in `src/` knows it exists**: `src/app/cloudHost.ts` looks for a
-document-store capability on `window` and offers iCloud when one answers. The
+document-store capability on `window` and offers iCloud when one answers. The wrapper also offers Dropbox's
+sign-in an in-app authentication session at `window.__ossAuthSession`, which
+the framework's `getAuthSessionHost` looks for; a browser has none and keeps
+its redirect. The
 wrapper moves bytes and decides nothing about the cycle. The iCloud container
 is committed as `iCloud.se.agilator.cycle` in `native/identifiers.js` and the
 module's Swift and TS, never derived from the bundle id; the bridge's property
@@ -444,6 +447,13 @@ with `[Learn more](feature:<slug>)`.
   `native/app.config.js`): `se.agilator.cycle` in a store build,
   `dev.local.cycle` in a plain checkout. Reverse-DNS so no other app can claim
   it, and never committed as a literal — it follows `APP_BUNDLE_ID`.
+- **The auth-session bridge's names are the framework's**
+  (`AUTH_SESSION_HOST_PROPERTY`, `AUTH_SESSION_HOST_EVENT`), spelled again in
+  `native/src/authSessionBridge.ts`; `tests/native_auth_session_test.ts` pins
+  them. The phone app's Dropbox sign-in returns on `<scheme>://oauth` —
+  `se.agilator.cycle://oauth` in a store build — and the Dropbox app must list that exact
+  URI, so changing the bundle id breaks phone sign-in until the App Console
+  follows.
 
 ## Website staleness
 

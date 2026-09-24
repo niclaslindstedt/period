@@ -14,6 +14,11 @@ name: native
 #                             cannot write it into a dynamic config, so
 #                             native/app.config.js reads it from here.
 #
+# Optional, baked into the web bundle the wrapper serves:
+#   VITE_DROPBOX_APP_KEY / VITE_DROPBOX_APP_FOLDER (secrets) — the website's
+#                             Dropbox app. Unset, the phone app offers no
+#                             Dropbox.
+#
 # Store submission additionally needs the App Store Connect / Play credentials
 # configured on the EAS project itself; see native/RELEASING.md.
 
@@ -81,6 +86,12 @@ jobs:
       - name: Bundle the web app into the wrapper
         working-directory: native
         run: npm run bundle -- --profile "${{ inputs.profile }}"
+        env:
+          # The same Dropbox app as the website's. Unset, the app offers no
+          # Dropbox; set, that app must list <bundle id>://oauth
+          # (se.agilator.cycle://oauth) as a redirect URI (native/RELEASING.md).
+          VITE_DROPBOX_APP_KEY: ${{ secrets.VITE_DROPBOX_APP_KEY }}
+          VITE_DROPBOX_APP_FOLDER: ${{ secrets.VITE_DROPBOX_APP_FOLDER }}
 
       - name: Set up EAS
         uses: expo/expo-github-action@v8

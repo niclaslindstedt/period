@@ -6,10 +6,13 @@ import {
   ConflictError,
   RateLimitError,
   completeDropboxAuth,
+  connectDropboxAuthSession,
   connectDropboxLoopback,
   createDropboxAdapter,
   describeStorageError,
+  getAuthSessionHost,
   hasPendingDropboxAuth,
+  isAuthCancelled,
   isDesktopShellOrigin,
   isOfflineError,
   localCacheKey,
@@ -448,6 +451,28 @@ export function useSyncEngine(
         return;
       }
       if (!DROPBOX_APP_KEY) throw new Error("Dropbox is not configured");
+      // In the phone app the redirect would land in the system browser, not
+      // in the app, so a host that offers an authentication session is asked
+      // for one: consent in a sheet over the app, the redirect handed back,
+      // and the connection made here, in place. Asked for as a capability,
+      // never as a platform. Closing the sheet is not an error.
+      const authSession = getAuthSessionHost();
+      if (authSession) {
+        try {
+          adoptDropbox(
+            await connectDropboxAuthSession(
+              DROPBOX_APP_KEY,
+              authSession,
+              undefined,
+              syncLog,
+            ),
+          );
+        } catch (err) {
+          if (!isAuthCancelled(err)) throw err;
+          syncLog.info("dropbox: sign-in cancelled");
+        }
+        return;
+      }
       // In the desktop app the redirect has nowhere to land (its origin is a
       // private scheme), so the sign-in runs in the user's browser and the
       // shell's loopback listener hands the result back — in place, no reload.

@@ -27,6 +27,7 @@
 // import — puts expo back in the root's type graph and turns CI red on a
 // machine where it passes.
 import type { CloudMethod, CloudResult } from "./icloudWire";
+import { escapeForScript } from "./scriptText";
 
 export type { CloudMethod, CloudResult };
 
@@ -183,11 +184,4 @@ export function resolveScript(id: string, result: CloudResult): string {
       }
     } catch (e) {}
   })(); true;`;
-}
-
-/** A JavaScript string literal holding `text`, safe to splice into a script. */
-function escapeForScript(text: string): string {
-  return JSON.stringify(text)
-    .replace(/\u2028/g, "\\u2028")
-    .replace(/\u2029/g, "\\u2029");
 }

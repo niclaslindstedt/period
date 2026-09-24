@@ -29,7 +29,11 @@ The declarations live in `src/vite-env.d.ts`; the consumers are
 
 - **Dropbox** — create an app at
   [dropbox.com/developers/apps](https://www.dropbox.com/developers/apps) with
-  "App folder" access, add your deploy origin as a redirect URI, and take the
+  "App folder" access, add every redirect URI the app uses — the deploy origin for the
+  website, `http://127.0.0.1:53682/`, `:53683/` and `:53684/` for the desktop
+  app, and `se.agilator.cycle://oauth` for the phone app (its URL scheme is its bundle id;
+  see [`../native/README.md`](../native/README.md#signing-in-to-dropbox)) —
+  and take the
   app key. The app-folder name you pick there is what `VITE_DROPBOX_APP_FOLDER`
   must repeat.
 

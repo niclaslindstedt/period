@@ -3,10 +3,11 @@
 //
 // This is a deliberately thin wrapper. It starts a loopback server, points a
 // WebView at it, keeps the native chrome in step with the page's theme, sends
-// off-origin links to the system browser, and answers the page when it asks
-// its iCloud container for the document. There is no native UI at all beyond
-// a spinner and a failure screen — everything a reader sees is the web app,
-// unchanged.
+// off-origin links to the system browser, answers the page when it asks its
+// iCloud container for the document, and opens a provider's sign-in in an
+// authentication session when the page asks for one. There is no native UI at
+// all beyond a spinner and a failure screen — everything a reader sees is the
+// web app, unchanged.
 //
 // The wrapper adds exactly two things the browser cannot do, and it has to add
 // something: App Store guideline 4.2 rejects a build that is only a viewer for
@@ -54,11 +55,26 @@ import {
   type CloudRequest,
 } from "./src/icloudBridge";
 import { answerCloudRequest } from "./src/icloud";
+import {
+  authSessionResolveScript,
+  authSessionScript,
+  isAuthSessionRequest,
+} from "./src/authSessionBridge";
+import { answerAuthSession, authRedirectUri } from "./src/authSession";
 
 // Hold the native splash until the WebView actually paints. Called at module
 // scope so the auto-hide never wins the race; a rejection only means the
 // splash was already gone, which is harmless.
 void SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// The redirect URI a sign-in comes back on (`<scheme>://oauth`, the scheme
+// being the bundle id), and the provider the page finds it through. Null in a
+// build with no URL scheme, which offers no provider and leaves the page on
+// its redirect flow.
+const AUTH_REDIRECT_URI = authRedirectUri();
+const AUTH_SESSION_SCRIPT = AUTH_REDIRECT_URI
+  ? authSessionScript(AUTH_REDIRECT_URI)
+  : "";
 
 // Ceiling on how long the splash may stay up. The happy path hides it on first
 // paint; this only fires when a load hangs, so a broken start falls through to
@@ -138,6 +154,15 @@ export default function App() {
     webViewRef.current?.injectJavaScript(resolveScript(request.id, result));
   }, []);
 
+  // One sign-in. The sheet is modal and the page waits on it; what comes back
+  // is the provider's redirect URL, handed straight to the page, which holds
+  // the PKCE verifier and makes the token exchange itself.
+  const signIn = useCallback(async (id: string, url: string) => {
+    if (!AUTH_REDIRECT_URI) return;
+    const result = await answerAuthSession(url, AUTH_REDIRECT_URI);
+    webViewRef.current?.injectJavaScript(authSessionResolveScript(id, result));
+  }, []);
+
   const onMessage = useCallback(
     (event: WebViewMessageEvent) => {
       let parsed: unknown;
@@ -151,6 +176,10 @@ export default function App() {
         void answerCloud(parsed);
         return;
       }
+      if (isAuthSessionRequest(parsed)) {
+        void signIn(parsed.id, parsed.url);
+        return;
+      }
       if (!isThemeReport(parsed)) return;
 
       // The native chrome follows the page's theme so the status bar and the
@@ -160,7 +189,7 @@ export default function App() {
         setBackground(reported.trim());
       }
     },
-    [answerCloud],
+    [answerCloud, signIn],
   );
 
   // --- navigation -----------------------------------------------------------
@@ -180,10 +209,13 @@ export default function App() {
 
   const origin = server.status === "ready" ? server.origin : null;
 
-  // Keep the WebView on the embedded app. Anything else — a Dropbox or Drive
-  // OAuth page, a link out of the app — belongs in the system browser, both
-  // because OAuth inside an embedded WebView is blocked by the providers and
-  // because App Review expects external links to open externally.
+  // Keep the WebView on the embedded app. Anything else — a link out of the
+  // app, the privacy policy's own links — belongs in the system browser,
+  // because App Review expects external links to open externally. A
+  // provider's sign-in page is not navigated to at all: the page asks for an
+  // authentication session instead (see `src/authSessionBridge.ts`), since a
+  // consent page in Safari redirects back to Safari, not to the app. This
+  // stays the fallback for a page that finds no session provider.
   const onShouldStartLoadWithRequest = useCallback(
     (request: WebViewNavigation) => {
       if (!origin) return false;
@@ -243,11 +275,12 @@ export default function App() {
             allowsBackForwardNavigationGestures
             setSupportMultipleWindows={false}
             injectedJavaScriptBeforeContentLoaded={BEFORE_LOAD_SCRIPT}
-            // Two scripts, one prop: the theme reporter the chrome follows,
-            // and the iCloud host the page looks for. Both run once the page
-            // has loaded, and both are guarded against a second injection (a
+            // Three scripts, one prop: the theme reporter the chrome follows,
+            // the iCloud host the page looks for, and the auth-session
+            // provider its Dropbox sign-in looks for. All run once the page
+            // has loaded, and all are guarded against a second injection (a
             // reload re-runs this).
-            injectedJavaScript={`${AFTER_LOAD_SCRIPT}\n${CLOUD_SCRIPT}`}
+            injectedJavaScript={`${AFTER_LOAD_SCRIPT}\n${CLOUD_SCRIPT}\n${AUTH_SESSION_SCRIPT}`}
             onMessage={onMessage}
             onLoadEnd={hideSplash}
             onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}

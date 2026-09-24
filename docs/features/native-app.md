@@ -52,6 +52,14 @@ Two things it will tell you rather than guess about:
 Android has no iCloud, so there the app is the web app served from inside the
 download, with Dropbox as before.
 
+## Dropbox
+
+Connecting Dropbox opens Dropbox's own sign-in in a sheet over the app. You
+approve there, the sheet closes, and the app is connected — the sign-in never
+leaves for Safari. Closing the sheet simply leaves Dropbox unconnected. The
+app never sees your Dropbox password; the sheet is Dropbox's page, and what
+comes back is a one-time code the app trades for access to its own folder.
+
 ## What the wrapper is not allowed to do
 
 Two rules, and they are what keep the app and the website the same product:
