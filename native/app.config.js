@@ -42,7 +42,12 @@ module.exports = () => ({
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     icon: "./assets/icon.png",
-    scheme: "cycle",
+    // The URL scheme is the bundle id — reverse-DNS, as RFC 8252 §7.1 asks
+    // of a private-use scheme, so it is this app's and nobody else's: a
+    // one-word scheme can be claimed by any other app on the phone. It is
+    // `se.agilator.cycle` in a store build and `dev.local.cycle` in a plain
+    // checkout, from ./identifiers.js — never a literal here.
+    scheme: BUNDLE_ID,
     backgroundColor: BRAND_BG,
     assetBundlePatterns: ["**/*"],
 

@@ -440,6 +440,10 @@ with `[Learn more](feature:<slug>)`.
   that means something, and a new _action_ is a top-bar button, not a tab.
 - **No dependency creep.** The framework, Preact, a font, and workbox-window.
   A new runtime dependency needs a reason that the framework can't serve.
+- **The phone app's URL scheme is its bundle id** (`scheme: BUNDLE_ID` in
+  `native/app.config.js`): `se.agilator.cycle` in a store build,
+  `dev.local.cycle` in a plain checkout. Reverse-DNS so no other app can claim
+  it, and never committed as a literal — it follows `APP_BUNDLE_ID`.
 
 ## Website staleness
 
