@@ -46,6 +46,7 @@ import { startLocalServer, type LocalServer } from "./src/local-server";
 import {
   AFTER_LOAD_SCRIPT,
   BEFORE_LOAD_SCRIPT,
+  barStyleFor,
   isThemeReport,
 } from "./src/injected";
 import {
@@ -109,7 +110,9 @@ export default function App() {
       ? { status: "ready", origin: REMOTE_URL }
       : { status: "starting" },
   );
-  const [background, setBackground] = useState(FALLBACK_BACKGROUND);
+  // The page background the page last reported, or null before it has.
+  const [reported, setReported] = useState<string | null>(null);
+  const background = reported ?? FALLBACK_BACKGROUND;
   const webViewRef = useRef<WebView>(null);
   const canGoBack = useRef(false);
   const serverRef = useRef<LocalServer | null>(null);
@@ -200,9 +203,9 @@ export default function App() {
 
       // The native chrome follows the page's theme so the status bar and the
       // safe-area bands match it instead of guessing.
-      const reported = parsed.theme.background;
-      if (typeof reported === "string" && reported.trim() !== "") {
-        setBackground(reported.trim());
+      const colour = parsed.theme.background;
+      if (typeof colour === "string" && colour.trim() !== "") {
+        setReported(colour.trim());
       }
     },
     [answerCloud, signIn],
@@ -271,11 +274,12 @@ export default function App() {
         style={[styles.fill, { backgroundColor: background }]}
         edges={FRAME_EDGES}
       >
-        {/* `auto` picks the bar style from the background behind it, which is
-            exactly the page's own theme once it has reported one — and that
-            background is the SafeAreaView above, which the page's theme
-            paints. */}
-        <StatusBar style="auto" />
+        {/* Styled from the page's reported background — light icons on a dark
+            page, dark on a light one — never from the phone's appearance: on
+            iOS the page runs under the status bar, and `auto` follows the
+            system, drawing dark icons over a dark theme on a phone in light
+            mode. Until the page reports, it stays `auto`. */}
+        <StatusBar style={barStyleFor(reported)} />
         {origin ? (
           <WebView
             ref={webViewRef}

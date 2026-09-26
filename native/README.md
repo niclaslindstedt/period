@@ -11,9 +11,13 @@ Thin is the design, not an aspiration. The wrapper:
   launch and serves it from a **loopback HTTP server** (`src/local-server.ts`);
 - points a `WebView` at that origin, and gets out of the way — on iOS the
   WebView runs edge to edge and the page pads itself with
-  `env(safe-area-inset-*)`, as the installed PWA does; on Android the status
-  bar and safe-area bands follow the page's own theme; off-origin links go to
-  the system browser, and Android's back button drives the WebView's history;
+  `env(safe-area-inset-*)`, as the installed PWA does; on Android the frame
+  keeps the page clear of the system bars and paints the bands in the page's
+  own background. On both, the status bar takes its style from the background
+  the page reports — light icons on a dark theme, dark on a light one — never
+  from the phone's light or dark setting (`barStyleFor` in `src/injected.ts`);
+  off-origin links go to the system browser, and Android's back button drives
+  the WebView's history;
 - offers the page an **iCloud document store** (`src/icloudBridge.ts` →
   `src/icloud.ts` → `modules/icloud-store`), which the app's own sync engine
   drives exactly as it drives Dropbox and Drive.
@@ -45,7 +49,7 @@ be and how two devices' edits reconcile are the web app's, in
 | -------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `App.tsx`                  | The whole app: a WebView, a spinner, and a failure screen.                                                  |
 | `src/local-server.ts`      | Unpacks `assets/webroot.zip` and serves it on a **fixed** loopback port.                                    |
-| `src/injected.ts`          | The theme reporter injected into the page, and the service-worker teardown.                                 |
+| `src/injected.ts`          | The theme reporter injected into the page, the status-bar style it drives, and the service-worker teardown. |
 | `src/icloudBridge.ts`      | **Pure.** The injected store host, and the request/response plumbing. Tested from the root.                 |
 | `src/icloudWire.ts`        | **Import-free.** The shapes that cross the bridge, and nothing else.                                        |
 | `src/icloud.ts`            | Answers a store request through the native module, and maps a failure to its kind.                          |

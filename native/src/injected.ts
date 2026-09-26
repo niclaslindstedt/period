@@ -155,3 +155,59 @@ export function isThemeReport(value: unknown): value is {
     message.theme !== null
   );
 }
+
+/** What the status bar draws its clock and icons in: `"light"` over a dark
+ *  page, `"dark"` over a light one, `"auto"` while there is nothing to go on. */
+export type BarStyle = "light" | "dark" | "auto";
+
+/**
+ * The status-bar style for the page background the reporter sent.
+ *
+ * Decided from the colour itself, never from the phone's light/dark setting:
+ * the page paints under the status bar, and a reader can pick a dark theme on
+ * a phone in light mode (or the other way round), where the system's choice
+ * draws dark icons on a dark page. The threshold is perceived luminance
+ * (Rec. 601 luma) at one half.
+ *
+ * `null` — no report yet — and a colour this cannot read (only hex and
+ * `rgb()`/`rgba()` are) keep `"auto"`, the behaviour before the page speaks.
+ */
+export function barStyleFor(background: string | null): BarStyle {
+  const rgb = background === null ? null : parseColour(background.trim());
+  if (!rgb) return "auto";
+  const [r, g, b] = rgb;
+  const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luma < 0.5 ? "light" : "dark";
+}
+
+/** Red, green and blue (0–255) from `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`,
+ *  `rgb(…)` or `rgba(…)`; `null` for anything else. */
+function parseColour(value: string): [number, number, number] | null {
+  const hex = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(value);
+  if (hex) {
+    const digits = hex[1]!;
+    const wide =
+      digits.length <= 4
+        ? digits
+            .split("")
+            .map((d) => d + d)
+            .join("")
+        : digits;
+    return [0, 2, 4].map((at) => parseInt(wide.slice(at, at + 2), 16)) as [
+      number,
+      number,
+      number,
+    ];
+  }
+  const fn = /^rgba?\(\s*([^)]*)\)$/i.exec(value);
+  if (!fn) return null;
+  const parts = fn[1]!
+    .split(/[\s,/]+/)
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((part) =>
+      part.endsWith("%") ? (parseFloat(part) * 255) / 100 : parseFloat(part),
+    );
+  if (parts.length < 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  return parts as [number, number, number];
+}
