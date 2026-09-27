@@ -52,7 +52,7 @@ provider's file browser if you want it gone.
 
 A copy that leaves this device is always encrypted, and there is no switch to
 turn that off — it is a requirement of every backend that is not this device,
-not a setting (`useRequiredEncryption` from the framework, wired in
+not a setting (the framework's `useEncryption` with `policy: "required"`, wired in
 `src/app/useSyncEngine.ts`). Until a passphrase is held, the sync engine has no
 adapter to talk to, so nothing is pulled or pushed at all.
 

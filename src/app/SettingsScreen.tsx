@@ -17,9 +17,10 @@ import {
   PaletteIcon,
   ScrollTextIcon,
 } from "@niclaslindstedt/oss-framework/components";
-import type {
-  PassphraseDialogMode,
-  PinLock,
+import {
+  EncryptionSettings,
+  PinLockControl,
+  type PinLock,
 } from "@niclaslindstedt/oss-framework/encryption";
 import { LogViewer } from "@niclaslindstedt/oss-framework/logging";
 
@@ -28,7 +29,7 @@ import { downloadBackup, readBackupFile } from "./backup.ts";
 import type { DemoDataToggle } from "./dev/useDemoData.ts";
 import { useT } from "./i18n/index.ts";
 import { mergeDocs } from "./merge.ts";
-import { AppLockSettings, EncryptionStatus } from "./SyncEncryption.tsx";
+import { useEncryptionLabels, usePinControlLabels } from "./SyncEncryption.tsx";
 import { serializeDoc } from "./migrations.ts";
 import type { ForecastModelKind } from "./forecastModel.ts";
 import type { TemperatureUnit } from "./temperature.ts";
@@ -59,8 +60,6 @@ type Props = {
   demoData: DemoDataToggle;
   /** The app lock, for its section. */
   pin: PinLock;
-  /** Open a passphrase question — set, enter or change. */
-  onAskPassphrase: (mode: PassphraseDialogMode) => void;
   onNotice: (message: string) => void;
 };
 
@@ -71,10 +70,11 @@ export function SettingsScreen({
   sync,
   demoData,
   pin,
-  onAskPassphrase,
   onNotice,
 }: Props) {
   const t = useT();
+  const encryptionLabels = useEncryptionLabels(sync.providerName);
+  const pinControlLabels = usePinControlLabels();
   const [confirmClear, setConfirmClear] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -290,11 +290,15 @@ export function SettingsScreen({
           {sync.location.path}
         </p>
         {sync.connected && (
-          <EncryptionStatus
+          <EncryptionSettings
             encryption={sync.encryption}
-            providerName={sync.providerName}
-            onAsk={onAskPassphrase}
+            location={sync.providerName}
+            labels={encryptionLabels}
             disabled={demoData.on}
+            onChanged={() => {
+              onNotice(t("encryption.changed"));
+              void sync.reload();
+            }}
           />
         )}
         {sync.connected && (
@@ -320,7 +324,7 @@ export function SettingsScreen({
         title={t("pin.title")}
         icon={<LockIcon className="h-3.5 w-3.5" />}
       >
-        <AppLockSettings pin={pin} />
+        <PinLockControl pin={pin} labels={pinControlLabels} />
       </Section>
 
       <Section

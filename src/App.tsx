@@ -8,7 +8,11 @@ import {
   createToastStore,
 } from "@niclaslindstedt/oss-framework/components";
 import { useSwipeNav } from "@niclaslindstedt/oss-framework/hooks";
-import { usePinLock } from "@niclaslindstedt/oss-framework/encryption";
+import {
+  EncryptionGate,
+  PinGate,
+  usePinLock,
+} from "@niclaslindstedt/oss-framework/encryption";
 import { LogViewer } from "@niclaslindstedt/oss-framework/logging";
 import { UpdateToast, usePwaUpdate } from "@niclaslindstedt/oss-framework/pwa";
 import {
@@ -34,9 +38,8 @@ import { HistoryScreen } from "./app/HistoryScreen.tsx";
 import { ReportScreen } from "./app/ReportScreen.tsx";
 import { SettingsScreen } from "./app/SettingsScreen.tsx";
 import {
-  AppLockGate,
-  PassphrasePrompt,
-  usePassphrasePrompt,
+  useEncryptionLabels,
+  usePinGateLabels,
 } from "./app/SyncEncryption.tsx";
 import { StatusScreen } from "./app/StatusScreen.tsx";
 import { TopBar } from "./app/TopBar.tsx";
@@ -106,11 +109,12 @@ export function App() {
   }, [demo.on]);
   const store = useDocStore(backend);
   const sync = useSyncEngine(store, demo.on);
-  const passphrase = usePassphrasePrompt(sync.encryption, demo.on);
   const pin = usePinLock({
     storageKey: PIN_KEY,
     relockAfterMs: RELOCK_AFTER_MS,
   });
+  const encryptionLabels = useEncryptionLabels(sync.providerName);
+  const pinGateLabels = usePinGateLabels();
   const options = useMemo(() => cycleOptions(settings), [settings]);
   const look = useMemo(() => chartLook(settings), [settings]);
 
@@ -214,8 +218,8 @@ export function App() {
     if (pwa.needRefresh) status(`Update ready: ${pwa.incomingVersion ?? "?"}`);
   }, [pwa.needRefresh, pwa.incomingVersion]);
 
-  // Behind the PIN, nothing of the reports renders — not a screen, not a modal.
-  if (pin.locked) return <AppLockGate pin={pin} />;
+  // Behind the PIN, nothing renders — not a screen, not a modal.
+  if (pin.locked) return <PinGate pin={pin} labels={pinGateLabels} />;
 
   return (
     <div className="flex h-full flex-col bg-page text-fg">
@@ -347,7 +351,6 @@ export function App() {
               sync={sync}
               demoData={demo}
               pin={pin}
-              onAskPassphrase={passphrase.open}
               onNotice={notice}
             />
           )}
@@ -406,15 +409,13 @@ export function App() {
 
       <BottomNav active={tab} onSelect={show} />
 
-      <PassphrasePrompt
+      {/* Asks for the passphrase whenever sync is waiting on one. A dialog,
+          not a gate: the working copy on this device works behind it. */}
+      <EncryptionGate
         encryption={sync.encryption}
-        providerName={sync.providerName}
-        mode={passphrase.mode}
-        onClose={passphrase.close}
-        onChanged={() => {
-          notice(t("encryption.changed"));
-          void sync.reload();
-        }}
+        location={sync.providerName}
+        labels={encryptionLabels}
+        paused={demo.on}
       />
 
       <SyncDetailsModal

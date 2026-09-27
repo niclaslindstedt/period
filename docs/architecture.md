@@ -32,7 +32,7 @@ src/app/
   useDocStore.ts    the document in state, persisted to localStorage
   useSyncEngine.ts  the cloud copy: pull on open, debounced push on edit,
                     held until the copy's passphrase is set
-  SyncEncryption.tsx the passphrase prompt, its Settings lines, the PIN gate
+  SyncEncryption.tsx the app's words for the framework's encryption kit
   useAppSettings.ts the settings blob
   backup.ts         export / restore a JSON file
 
