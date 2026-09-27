@@ -13,9 +13,15 @@ import {
   DatabaseIcon,
   CloudIcon,
   InfoIcon,
+  LockIcon,
   PaletteIcon,
   ScrollTextIcon,
 } from "@niclaslindstedt/oss-framework/components";
+import {
+  EncryptionSettings,
+  PinLockControl,
+  type PinLock,
+} from "@niclaslindstedt/oss-framework/encryption";
 import { LogViewer } from "@niclaslindstedt/oss-framework/logging";
 
 import { logStore } from "./log.ts";
@@ -23,6 +29,7 @@ import { downloadBackup, readBackupFile } from "./backup.ts";
 import type { DemoDataToggle } from "./dev/useDemoData.ts";
 import { useT } from "./i18n/index.ts";
 import { mergeDocs } from "./merge.ts";
+import { useEncryptionLabels, usePinControlLabels } from "./SyncEncryption.tsx";
 import { serializeDoc } from "./migrations.ts";
 import type { ForecastModelKind } from "./forecastModel.ts";
 import type { TemperatureUnit } from "./temperature.ts";
@@ -51,6 +58,8 @@ type Props = {
   /** The in-memory demo-data takeover. Not part of `settings` on purpose: it
    *  is never persisted, so a reload always lands back on the real document. */
   demoData: DemoDataToggle;
+  /** The app lock, for its section. */
+  pin: PinLock;
   onNotice: (message: string) => void;
 };
 
@@ -60,9 +69,12 @@ export function SettingsScreen({
   store,
   sync,
   demoData,
+  pin,
   onNotice,
 }: Props) {
   const t = useT();
+  const encryptionLabels = useEncryptionLabels(sync.providerName);
+  const pinControlLabels = usePinControlLabels();
   const [confirmClear, setConfirmClear] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -278,6 +290,18 @@ export function SettingsScreen({
           {sync.location.path}
         </p>
         {sync.connected && (
+          <EncryptionSettings
+            encryption={sync.encryption}
+            location={sync.providerName}
+            labels={encryptionLabels}
+            disabled={demoData.on}
+            onChanged={() => {
+              onNotice(t("encryption.changed"));
+              void sync.reload();
+            }}
+          />
+        )}
+        {sync.connected && (
           <div className="flex gap-2">
             <Button onClick={sync.saveNow} disabled={busy || !sync.dirty}>
               {t("settings.saveNow")}
@@ -294,6 +318,13 @@ export function SettingsScreen({
             </Button>
           </div>
         )}
+      </Section>
+
+      <Section
+        title={t("pin.title")}
+        icon={<LockIcon className="h-3.5 w-3.5" />}
+      >
+        <PinLockControl pin={pin} labels={pinControlLabels} />
       </Section>
 
       <Section
