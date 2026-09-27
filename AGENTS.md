@@ -49,7 +49,6 @@ make test          # full test suite (vitest)
 make lint          # eslint + tsc --noEmit
 make fmt           # prettier --write
 make fmt-check     # verify formatting (CI)
-make check-seo     # build + assert the structural SEO/PWA signals
 make icons         # regenerate the PWA icons, favicon, and og image
 ```
 
@@ -525,10 +524,14 @@ with `[Learn more](feature:<slug>)`.
 
 The app _is_ the website (OSS_SPEC §11.2 / §11.4) — `pages.yml` builds it and
 deploys `dist/`. There is no separate marketing site to drift out of date, but
-the SEO surface in `index.html` and `public/` does: when the app's description
-changes, update `index.html`'s title/description/OG/JSON-LD, `public/llms.txt`,
-and the manifest copy in `pwa-plugin.ts` together. `make check-seo` asserts the
-structure, not the wording — it will not catch a stale sentence.
+the copy in `index.html` does: when the app's description changes, update
+`index.html`'s title/description/Open Graph tags and the manifest copy in
+`pwa-plugin.ts` together.
+
+No SEO and no size budgets, by owner decision: the site is not meant to be
+found, so every page carries `<meta name="robots" content="noindex">`, and
+OSS_SPEC §11.3's sitemap, JSON-LD, `llms.txt`, page-weight budget and
+`seo`/`lighthouse` workflows do not apply here.
 
 ## Maintenance skills
 

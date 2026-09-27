@@ -3,7 +3,6 @@
 > A local-first cycle tracking PWA — two taps a day, then read your cycle history and a forecast of the next period and fertile window. No account, no server.
 
 [![ci](https://github.com/niclaslindstedt/period/actions/workflows/ci.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/ci.yml)
-[![seo](https://github.com/niclaslindstedt/period/actions/workflows/seo.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/seo.yml)
 [![pages](https://github.com/niclaslindstedt/period/actions/workflows/pages.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/pages.yml)
 [![license](https://img.shields.io/badge/license-PolyForm--Noncommercial--1.0.0-blue.svg)](LICENSE)
 

@@ -90,6 +90,8 @@ export default defineConfig({
     __BUILD_COMMIT__: JSON.stringify(commit),
     __BUILD_NUMBER__: JSON.stringify(buildNumber),
   },
+  // No size budgets, by owner decision: the chunk-size warning never fires.
+  build: { chunkSizeWarningLimit: Infinity },
   // `appPwa` only applies on build, so dev keeps registering no worker (the
   // app passes `enabled: !import.meta.env.DEV` to `usePwaUpdate`).
   //

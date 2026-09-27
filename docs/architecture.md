@@ -280,10 +280,10 @@ would cost more in round trips than it saves. The one exception is the
 references registry, which only the About screen reads and which rides in its
 own chunk behind `import()`.
 
-That is a budget, not an accident. Before adding a static import to `App.tsx`,
-ask whether the first paint needs it; anything heavy belongs behind `import()`.
-`make check-seo` asserts the critical-path JS budget, so a regression fails CI
-rather than showing up as a slow first open on a phone.
+Before adding a static import to `App.tsx`, ask whether the first paint needs
+it; anything heavy belongs behind `import()`. That is judgement, not a gate:
+there are no size budgets, by owner decision, and nothing in CI measures the
+bundle.
 
 ## The service worker
 

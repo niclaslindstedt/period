@@ -28,7 +28,10 @@
       name="description"
       content="Cycle is a local-first period and cycle tracking PWA. Log bleeding, mood, lust, sex, temperature and ovulation tests each day, then read your cycle history and a forecast of the next period and fertile window. Your reports stay on your device, and sync to Dropbox — encrypted with your own passphrase — only if you connect one."
     />
-    <link rel="canonical" href="https://cycle.niclaslindstedt.se/" />
+    <!-- The web edition is not meant to be found: people find the app on the
+         App Store and apps.agilator.se, so search engines are asked not to
+         index this page (robots.txt still allows the fetch that reads it). -->
+    <meta name="robots" content="noindex" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -54,21 +57,6 @@
       name="twitter:image"
       content="https://cycle.niclaslindstedt.se/og.png"
     />
-
-    <!-- JSON-LD -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Cycle",
-        "applicationCategory": "HealthApplication",
-        "operatingSystem": "Any",
-        "description": "A local-first cycle tracking PWA with daily bleeding, mood, lust, sex, temperature and ovulation-test reports, cycle history, and a next-period forecast. Optional end-to-end encrypted Dropbox sync.",
-        "url": "https://cycle.niclaslindstedt.se/",
-        "image": "https://cycle.niclaslindstedt.se/og.png",
-        "offers": { "@type": "Offer", "price": "0" }
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>
