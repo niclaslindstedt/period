@@ -1,0 +1,629 @@
+{
+  "$comment": "Every source the app's numbers and claims rest on, keyed by the id code cites as [ref:<id>] (OSS_SPEC.md §24). usedBy lists the files that cite each entry; tests/references_test.ts keeps it and the tags in step. summary and topics are read by Settings → About and sources: the line a user reads, and the part of the forecast the source is listed under. See AGENTS.md, 'Every number cites its source'.",
+  "references": {
+    "1177-agglossning": {
+      "evidence": "health-service",
+      "organization": "1177 (Inera)",
+      "title": "Så fungerar ägglossning",
+      "container": "1177.se",
+      "year": 2025,
+      "url": "https://www.1177.se/liv--halsa/sa-fungerar-kroppen/sa-fungerar-agglossning/",
+      "language": "sv",
+      "accessed": "2026-09-27",
+      "quotes": [
+        {
+          "text": "Ägglossningen sker ungefär två veckor innan mensen."
+        },
+        {
+          "text": "Räkna 14 dagar bakåt från den dag du förväntar dig att få mens."
+        },
+        {
+          "text": "Det är störst chans att bli gravid ungefär fem dagar innan och en dag efter ägglossningen."
+        },
+        {
+          "text": "Sexlusten ökar.",
+          "at": "'Vanliga tecken på ägglossning'"
+        }
+      ],
+      "supports": "Ovulation counted 14 days back from the expected period (lutealPhaseLength), the fertile window of five days before and one day after ovulation (fertileWindowBefore / fertileWindowAfter), and rising desire as a sign of ovulation (the lust channel).",
+      "summary": {
+        "en": "Counting ovulation two weeks back from the next period, the fertile days around it, and that desire often rises then."
+      },
+      "topics": ["cycle", "fertility"],
+      "note": "Senast uppdaterad 2025-03-19; granskad av en barnmorska. The page cites no source.",
+      "usedBy": ["src/app/cycle.ts", "src/app/forecastModel.ts"]
+    },
+    "1177-feber": {
+      "evidence": "health-service",
+      "organization": "1177 (Inera)",
+      "title": "Feber",
+      "container": "1177.se",
+      "year": 2023,
+      "url": "https://www.1177.se/sjukdomar--besvar/infektioner/feber/feber/",
+      "language": "sv",
+      "accessed": "2026-09-27",
+      "quotes": [
+        {
+          "text": "En kroppstemperatur på 38,0 grader eller högre brukar räknas som feber."
+        },
+        {
+          "text": "Det är vanligt att vuxna har en kroppstemperatur mellan 36,0 och 37,8 grader."
+        }
+      ],
+      "supports": "The fever threshold of 38 °C (FEVER_CELSIUS) at which a reading is shown as 'Fever' rather than as a number.",
+      "summary": {
+        "en": "The 38 °C line at which a morning reading counts as a fever."
+      },
+      "topics": ["temperature"],
+      "note": "Senast uppdaterad 2023-11-23; granskad av en läkare, specialist i allmänmedicin. The NHS page 'High temperature (fever) in adults' (last reviewed 24 May 2023) says the same: 'A high temperature is usually considered to be 38C or above.'",
+      "usedBy": ["src/app/temperature.ts"]
+    },
+    "1177-mens": {
+      "evidence": "health-service",
+      "organization": "1177 (Inera)",
+      "title": "Så fungerar mens",
+      "container": "1177.se",
+      "year": 2025,
+      "url": "https://www.1177.se/liv--halsa/sa-fungerar-kroppen/mens/",
+      "language": "sv",
+      "accessed": "2026-09-27",
+      "quotes": [
+        {
+          "text": "Menscykeln brukar vara mellan 21 och 35 dagar."
+        },
+        {
+          "text": "De flesta har mens i ungefär tre till sex dagar och blöder en halv deciliter under hela mensen."
+        },
+        {
+          "text": "Du har mens i mer än tio dagar.",
+          "at": "'När och var ska jag söka vård för mensbesvär?'"
+        },
+        {
+          "text": "Det kan märkas under några dagar eller upp till två veckor före mensen. Det kallas PMS eller premenstruella spänningar."
+        }
+      ],
+      "supports": "A period of three to six days as ordinary, bleeding for more than ten days as a reason to seek care (so a two-week cap, MAX_PERIOD_LENGTH 14, is well past an ordinary period), and premenstrual mood changes up to two weeks before bleeding (PREMENSTRUAL_WINDOW 14).",
+      "summary": {
+        "en": "How long a period usually lasts, when a long one is a reason to seek care, and that mood can change up to two weeks before a period."
+      },
+      "topics": ["cycle", "mood"],
+      "note": "Senast uppdaterad 2025-03-19; granskad av en barnmorska. The page cites no source. It lists 'du blöder i mer än 7 dagar' as a sign of heavy bleeding; FIGO's 2018 definitions (Munro et al., doi 10.1002/ijgo.12666) put normal duration at 8 days or fewer, but that paper's full text could not be fetched to quote.",
+      "usedBy": ["src/app/forecastModel.ts"]
+    },
+    "acog-2019": {
+      "evidence": "health-service",
+      "organization": "American College of Obstetricians and Gynecologists",
+      "title": "Fertility Awareness-Based Methods of Family Planning",
+      "container": "ACOG patient FAQ (FAQ024)",
+      "year": 2019,
+      "url": "https://www.acog.org/womens-health/faqs/fertility-awareness-based-methods-of-family-planning",
+      "language": "en",
+      "accessed": "2026-09-27",
+      "quotes": [
+        {
+          "text": "An egg can survive in the fallopian tube for about 24 hours after ovulation."
+        },
+        {
+          "text": "You can become pregnant if you have sex anywhere from 5 days before ovulation until 1 day after ovulation."
+        }
+      ],
+      "supports": "The fertile window's closing day, one day after ovulation (fertileWindowAfter in cycle.ts): a margin for the egg's survival of about 24 hours, beyond the six days Wilcox et al. observed conceptions in.",
+      "summary": {
+        "en": "Why the fertile days shown run from five days before the estimated ovulation to one day after it."
+      },
+      "topics": ["fertility"],
+      "note": "Published January 2019, last reviewed February 2025.",
+      "usedBy": ["src/app/cycle.ts"]
+    },
+    "bull-2019": {
+      "evidence": "cohort",
+      "authors": [
+        "Bull JR",
+        "Rowland SP",
+        "Scherwitzl EB",
+        "Scherwitzl R",
+        "Danielsson KG",
+        "Harper J"
+      ],
+      "title": "Real-world menstrual cycle characteristics of more than 600,000 menstrual cycles",
+      "container": "npj Digital Medicine",
+      "year": 2019,
+      "volume": "2",
+      "pages": "83",
+      "doi": "10.1038/s41746-019-0152-7",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "We analysed 612,613 ovulatory cycles with a mean length of 29.3 days from 124,648 users. The mean follicular phase length was 16.9 days (95% CI: 10–30) and mean luteal phase length was 12.4 days (95% CI: 7–17).",
+          "at": "abstract"
+        },
+        {
+          "text": "Cycle length differences were found to be predominantly caused by follicular phase length differences (i.e., differences in ovulation day).",
+          "at": "discussion"
+        },
+        {
+          "text": "The per-user cycle length variation was defined as one standard deviation of a user’s cycle lengths.",
+          "at": "methods"
+        },
+        {
+          "text": "2.6 ± 2.5",
+          "at": "table 2, row 'All cycles', column 'Mean ± std per-user cycle length variation in days'"
+        },
+        {
+          "text": "36–50 43,240 (7%) 39.8 ± 3.7",
+          "at": "table 1, row for cycles of 36–50 days: cycles (% of total), mean ± std cycle length in days"
+        },
+        {
+          "text": "Clinical guidelines state that a woman’s median cycle length is 28 days with most falling in the 25–30 day range and that the luteal phase is almost always 14 days long, but there is much greater variation than this.",
+          "at": "introduction"
+        },
+        {
+          "text": "The mean bleed length of 4.0 ± 1.5 days",
+          "at": "discussion"
+        },
+        {
+          "text": "The fertile window, during which there is a probability of conception from unprotected sex, is defined as the day of ovulation and the 5 days preceding it (the time window for sperm survival).",
+          "at": "introduction"
+        },
+        {
+          "text": "BBT is at a relatively constant low level during the follicular phase, reaching its lowest level (the nadir) prior to ovulation, and then displays a distinct rise of 0.2–0.3 °C following ovulation.",
+          "at": "methods"
+        },
+        {
+          "text": "Because users of the app only measure temperature every 24 h, the FHP is expected to be detectable by the algorithm the day after ovulation.",
+          "at": "methods"
+        }
+      ],
+      "supports": "The largest real-world picture of the cycle: ~±3 days of within-person spread (per-user SD 2.6 days, behind priorLogSd 0.11), the follicular 10–30 vs luteal 7–17 day intervals that make ovulation the thing worth dating, the share of long (36–50 day) cycles, the 0.2–0.3 °C rise and the first high reading the day after ovulation, and the six-day fertile window.",
+      "summary": {
+        "en": "How long real cycles run and how much they vary, why ovulation is the part of a cycle that moves, and how much the morning temperature rises after it — from over 600,000 logged cycles."
+      },
+      "topics": ["cycle", "fertility", "temperature"],
+      "note": "Four of the six authors work for Natural Cycles, whose app collected the data. Only cycles in which the app detected ovulation are included (48% of 1.4 million were excluded, mostly for too few temperatures), so the spread and the long-cycle share are for ovulatory cycles only. The mean luteal phase is 12.4 days, not the textbook 14; the paper counts it from the day after the estimated ovulation (the first high temperature) to the day before the next period. The same methods section says 'As the LH surge typically lasts for several days the probability of missing the surge if only testing every other day is relatively small.'",
+      "usedBy": [
+        "src/app/cycle.ts",
+        "src/app/forecastModel.ts",
+        "src/app/i18n/en.ts",
+        "src/app/temperature.ts"
+      ]
+    },
+    "creinin-2004": {
+      "evidence": "clinical-study",
+      "authors": ["Creinin MD", "Keverline S", "Meyn LA"],
+      "title": "How regular is regular? An analysis of menstrual cycle regularity",
+      "container": "Contraception",
+      "year": 2004,
+      "volume": "70",
+      "issue": "4",
+      "pages": "289–292",
+      "doi": "10.1016/j.contraception.2004.04.012",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "The average length of menses was 5.2 +/- 1.0 days.",
+          "at": "abstract"
+        },
+        {
+          "text": "Forty-six percent of all subjects had a cycle range of 7 days or more, and 20% had a cycle range of 14 days or more.",
+          "at": "abstract"
+        }
+      ],
+      "supports": "The five-day default period length (defaultPeriodLength), and that even self-described regular cycles vary by a week or more.",
+      "summary": {
+        "en": "Why a period is assumed to last about five days until your own periods say otherwise, and why even regular cycles move around."
+      },
+      "topics": ["cycle"],
+      "note": "786 cycles from 130 women aged 18–40 who described their cycles as regular (21–35 days), recorded prospectively in three barrier-contraceptive studies.",
+      "usedBy": ["src/app/cycle.ts"]
+    },
+    "dempster-1977": {
+      "evidence": "method",
+      "authors": ["Dempster AP", "Laird NM", "Rubin DB"],
+      "title": "Maximum likelihood from incomplete data via the EM algorithm",
+      "container": "Journal of the Royal Statistical Society: Series B (Methodological)",
+      "year": 1977,
+      "volume": "39",
+      "issue": "1",
+      "pages": "1–22",
+      "doi": "10.1111/j.2517-6161.1977.tb01600.x",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "A broadly applicable algorithm for computing maximum likelihood estimates from incomplete data is presented at various levels of generality. Theory showing the monotone behaviour of the likelihood and convergence of the algorithm is derived. Many examples are sketched, including missing value situations, applications to grouped, censored or truncated data, finite mixture models, variance component estimation, hyperparameter estimation, iteratively reweighted least squares and factor analysis.",
+          "at": "summary"
+        }
+      ],
+      "supports": "The alternating fit behind fitRobustPosterior: an E-step that gives each cycle a responsibility for the ordinary component under the current fit, and an M-step that re-runs the conjugate update with each weight multiplied by it and re-estimates the mixture share, for ROBUST_ITERATIONS passes.",
+      "summary": {
+        "en": "The method that lets one unusually long cycle count for less, so it does not widen every range the app shows you afterwards."
+      },
+      "topics": ["cycle"],
+      "note": "Crossref lists the journal under its current name, 'Journal of the Royal Statistical Society Series B: Statistical Methodology'; the 1977 issue was 'Series B (Methodological)'. The app's loop is an EM-style variant rather than the paper's plain maximum-likelihood EM: its M-step is a conjugate posterior update (and the share has a Beta prior, a0/b0 from outlierPriorShare × outlierPriorStrength), the wide component shares the standard component's centre with outlierScale × its scale, and it runs a fixed five passes instead of iterating to convergence.",
+      "usedBy": ["src/app/forecastModel.ts"]
+    },
+    "goeckenjan-2020": {
+      "evidence": "clinical-study",
+      "authors": ["Goeckenjan M", "Schiwek E", "Wimberger P"],
+      "title": "Continuous body temperature monitoring to improve the diagnosis of female infertility",
+      "container": "Geburtshilfe und Frauenheilkunde",
+      "year": 2020,
+      "volume": "80",
+      "issue": "7",
+      "pages": "702–712",
+      "doi": "10.1055/a-1191-7888",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "Three higher values occurring after six consecutive measurements of lower temperatures were considered to indicate a temperature shift. The third value had to be 0.2 °C higher than the coverline. The coverline connects the highest value of the last six lower temperature values.",
+          "at": "methods, the NFP temperature curve rules"
+        }
+      ],
+      "supports": "The three-over-six coverline rule and its 0.2 °C margin, which the thermal-shift anchor runs (with 0.15 °C on centred readings) to date this cycle's rise.",
+      "summary": {
+        "en": "The classic 'three over six' rule for spotting the temperature rise after ovulation."
+      },
+      "topics": ["temperature", "fertility"],
+      "note": "The rule is quoted from the paper's methods, where it is applied as the natural family planning (Sensiplan) rule; the paper itself studies a vaginal temperature sensor. The published rule allows two exceptions (a fourth high reading; replacing a low second or third) that the app does not implement, and it asks the third high reading to clear the coverline by 0.2 °C where the app asks the coolest of three to clear it by 0.15 °C.",
+      "usedBy": ["src/app/forecastModel.ts"]
+    },
+    "harlow-zeger-1991": {
+      "evidence": "method",
+      "authors": ["Harlow SD", "Zeger SL"],
+      "title": "An application of longitudinal methods to the analysis of menstrual diary data",
+      "container": "Journal of Clinical Epidemiology",
+      "year": 1991,
+      "volume": "44",
+      "issue": "10",
+      "pages": "1015–1025",
+      "doi": "10.1016/0895-4356(91)90003-R",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "We first characterize the distribution of cycle length and show that it can be approximated by a mixture of a nearly symmetric distribution centered at 28 days and a stochastically larger component which produces a long right tail.",
+          "at": "abstract"
+        },
+        {
+          "text": "we propose an analytical approach that examines cycle lengths within the symmetric portion of the distribution and cycle lengths within the tail of the distribution separately",
+          "at": "abstract"
+        }
+      ],
+      "supports": "Modelling cycle length as a mixture — a symmetric cluster of ordinary cycles plus a long-tailed minority of stretched ones — which the forecast's EM fit and its wide second component implement.",
+      "summary": {
+        "en": "Why one unusually long cycle is treated as an occasional stretched cycle rather than a new pattern."
+      },
+      "topics": ["cycle"],
+      "note": "Data from college women's menstrual diaries. The abstract describes the mixture but gives no share for the long-tail component; the app's prior share (about one in thirteen) is not from this paper. Harlow, Lin & Ho 2000 (doi 10.1016/S0895-4356(99)00202-4) extend the same 'bipartite model' across the reproductive life span.",
+      "usedBy": ["src/app/forecastModel.ts"]
+    },
+    "leiva-2017": {
+      "evidence": "clinical-study",
+      "authors": ["Leiva RA", "Bouchard TP", "Abdullah SH", "Ecochard R"],
+      "title": "Urinary luteinizing hormone tests: which concentration threshold best predicts ovulation?",
+      "container": "Frontiers in Public Health",
+      "year": 2017,
+      "volume": "5",
+      "pages": "320",
+      "doi": "10.3389/fpubh.2017.00320",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "The best scenario to predict ovulation at random was within 24 h after the first single positive test.",
+          "at": "abstract, results"
+        },
+        {
+          "text": "At least, one day with LH ≥25 mIU/ml followed by three negatives (LH <25) occurred before ovulation in 31% of all cycles.",
+          "at": "abstract, results"
+        }
+      ],
+      "supports": "That an ovulation strip turns positive about a day before ovulation (the lead from a positive test is the luteal phase plus one day), and that a single positive day can sit among negatives.",
+      "summary": {
+        "en": "Why a positive ovulation test is read as ovulation about a day later."
+      },
+      "topics": ["fertility"],
+      "note": "283 cycles from 107 women with daily first-morning urine and ultrasound-dated ovulation. Erratum: doi 10.3389/fpubh.2018.00345.",
+      "usedBy": ["src/app/forecastModel.ts", "src/app/i18n/en.ts"]
+    },
+    "lenton-1984": {
+      "evidence": "clinical-study",
+      "authors": ["Lenton EA", "Landgren BM", "Sexton L"],
+      "title": "Normal variation in the length of the luteal phase of the menstrual cycle: identification of the short luteal phase",
+      "container": "British Journal of Obstetrics and Gynaecology",
+      "year": 1984,
+      "volume": "91",
+      "issue": "7",
+      "pages": "685–689",
+      "doi": "10.1111/j.1471-0528.1984.tb04831.x",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "The length of the luteal phase was defined as the interval (in days) following but not including, the luteinizing hormone peak, up to and including the day before onset of menstruation.",
+          "at": "abstract"
+        },
+        {
+          "text": "the majority of the data followed a normal frequency distribution which gave a mean (+/- SD) for normal luteal phase length of 14.13 (+/- 1.41) days",
+          "at": "abstract"
+        }
+      ],
+      "supports": "The 14-day default luteal phase (lutealPhaseLength) and its small spread (SD about 1.4 days) — the reason the onset is read as one luteal phase after ovulation.",
+      "summary": {
+        "en": "Why the app assumes about 14 days from ovulation to the next period, and why that stretch varies so little."
+      },
+      "topics": ["cycle", "fertility"],
+      "note": "327 luteal phases, counted from the day after the LH peak; ovulation follows the peak by roughly a day, so the same data counted from ovulation would be nearer 13 days. Bull et al. 2019 (bull-2019) found a mean of 12.4 days by temperature in app users.",
+      "usedBy": ["src/app/cycle.ts", "src/app/forecastModel.ts"]
+    },
+    "murphy-2007": {
+      "evidence": "method",
+      "authors": ["Murphy KP"],
+      "title": "Conjugate Bayesian analysis of the Gaussian distribution",
+      "container": "University of British Columbia (technical note)",
+      "year": 2007,
+      "url": "https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf",
+      "language": "en",
+      "accessed": "2026-09-27",
+      "quotes": [
+        {
+          "text": "N G(µ, λ|µ0, κ0, α0, β0) def= N (µ|µ0, (κ0λ)−1)Ga(λ|α0, rate = β0)",
+          "at": "§3.2 Prior (normal-Gamma), eq. (63)"
+        },
+        {
+          "text": "µn = (κ0µ0 + nx̄)/(κ0 + n); κn = κ0 + n; αn = α0 + n/2; βn = β0 + ½ Σᵢ₌₁ⁿ (xi − x̄)² + κ0n(x̄ − µ0)²/(2(κ0 + n))",
+          "at": "§3.3 Posterior, eqs. (86)–(89)"
+        },
+        {
+          "text": "We see that the posterior sum of squares, βn, combines the prior sum of squares, β0, the sample sum of squares, ∑i(xi − x̄)², and a term due to the discrepancy between the prior mean and sample mean.",
+          "at": "§3.3 Posterior, after eq. (89)"
+        },
+        {
+          "text": "In the special case that m = 1, it can be shown (see below) that this is a T-distribution p(x|D) = t2αn(x|µn, βn(κn + 1)/(αnκn))",
+          "at": "§3.5 Posterior predictive, eq. (100)"
+        },
+        {
+          "text": "We can see this is a T-distribution with center at µn, precision Λ = αnκn/(βn(κn+1)), and degree of freedom 2αn.",
+          "at": "§3.5 Posterior predictive, after eq. (110)"
+        },
+        {
+          "text": "Let X ∼ Ga(shape = a, rate = b) and Y = 1/X. Then it is easy to show that Y ∼ IG(shape = a, scale = b)",
+          "at": "§10.2 Inverse Gamma distribution"
+        },
+        {
+          "text": "mean = b/(a − 1), a > 1",
+          "at": "§10.2 Inverse Gamma distribution, eq. (281)"
+        }
+      ],
+      "supports": "The conjugate update of the log cycle length's mean and variance (fitPosterior: κn, µn, αn, βn), the Student-t posterior predictive with 2αn degrees of freedom and squared scale βn(κn+1)/(αnκn), and the posterior-mean spread β/(α−1) behind spreadDays.",
+      "summary": {
+        "en": "The arithmetic that turns your cycle lengths into a range of likely days rather than one date, and keeps that range wide while there are only a few cycles to go on."
+      },
+      "topics": ["cycle"],
+      "note": "Last updated 3 October 2007; unpublished technical note. The quoted equations are from the normal-Gamma section (a Gamma prior on the precision λ = σ⁻²), which is the same model as the code's Normal-Inverse-Gamma on σ² by §10.2's reciprocal relation; the note's own NIG section (§6, eq. 206) gives the identical predictive with V = 1/κ. Equations are linearised from the PDF's two-dimensional layout (fractions written with '/', x̄ restored where text extraction dropped the bar, sub- and superscripts flattened); the prose around them is verbatim. The note treats n unweighted observations; the app substitutes a weighted mean, weighted sum of squares and effective sample size Σw for x̄, Σ(xi − x̄)² and n, and fits ln(cycle length) rather than days.",
+      "usedBy": ["src/app/forecastModel.ts"]
+    },
+    "nhs-periods": {
+      "evidence": "health-service",
+      "organization": "NHS",
+      "title": "Periods",
+      "container": "nhs.uk",
+      "year": 2023,
+      "url": "https://www.nhs.uk/conditions/periods/",
+      "language": "en",
+      "accessed": "2026-09-27",
+      "quotes": [
+        {
+          "text": "For most women this happens around every 28 days, but it's common for periods to be more or less frequent than this, ranging from every 21 days to every 35 days."
+        },
+        {
+          "text": "Your period can last between 2 and 7 days, but it will usually last for about 5 days."
+        },
+        {
+          "text": "It's around the time you ovulate, which is about 12 to 16 days before the start of your next period."
+        }
+      ],
+      "supports": "The defaults a forecast starts from before there is any history: a 28-day cycle (defaultCycleLength) and a 5-day period (defaultPeriodLength).",
+      "summary": {
+        "en": "The 28-day cycle and five-day period the forecast starts from before it has your own history."
+      },
+      "topics": ["cycle"],
+      "note": "Page last reviewed 5 January 2023; its next review was due 5 January 2026. The page cites no source for its figures.",
+      "usedBy": ["src/app/cycle.ts"]
+    },
+    "nist-dlmf-2026": {
+      "evidence": "method",
+      "organization": "National Institute of Standards and Technology (NIST)",
+      "title": "NIST Digital Library of Mathematical Functions, §8.17 Incomplete Beta Functions",
+      "container": "NIST Digital Library of Mathematical Functions, Release 1.2.8 of 2026-09-15",
+      "year": 2026,
+      "url": "https://dlmf.nist.gov/8.17",
+      "language": "en",
+      "accessed": "2026-09-27",
+      "quotes": [
+        {
+          "text": "I_x(a,b) = B_x(a,b)/B(a,b)",
+          "at": "§8.17(i), eq. 8.17.2"
+        },
+        {
+          "text": "B(a,b) = Γ(a)Γ(b)/Γ(a+b).",
+          "at": "§8.17(i), eq. 8.17.3"
+        },
+        {
+          "text": "I_x(a,b) = 1 − I_{1−x}(b,a).",
+          "at": "§8.17(i), eq. 8.17.4"
+        },
+        {
+          "text": "I_x(a,b) = x^a(1−x)^b/(a B(a,b)) · (1/(1+ d_1/(1+ d_2/(1+ d_3/(1+ ⋯)))))",
+          "at": "§8.17(v) Continued Fraction, eq. 8.17.22"
+        },
+        {
+          "text": "d_{2m} = m(b−m)x/((a+2m−1)(a+2m)), d_{2m+1} = −(a+m)(a+b+m)x/((a+2m)(a+2m+1)).",
+          "at": "§8.17(v) Continued Fraction, eq. 8.17.23"
+        },
+        {
+          "text": "The expansion (8.17.22) converges rapidly for x<(a+1)/(a+b+2). For x>(a+1)/(a+b+2) or 1−x<(b+1)/(a+b+2), more rapid convergence is obtained by computing I_{1−x}(b,a) and using (8.17.4).",
+          "at": "§8.17(v) Continued Fraction"
+        },
+        {
+          "text": "Alternatives to Steed’s algorithm are the Lentz algorithm Lentz (1976) and the modified Lentz algorithm Thompson and Barnett (1986).",
+          "at": "§3.10(iii) Numerical Evaluation of Continued Fractions, https://dlmf.nist.gov/3.10.iii"
+        }
+      ],
+      "supports": "The regularized incomplete beta function under the Student-t CDF (regularizedIncompleteBeta, betaContinuedFraction in stats.ts): the prefactor x^a(1−x)^b/(a·B(a,b)) built from logGamma, the continued-fraction coefficients d_{2m} and d_{2m+1}, the switch to the symmetry relation past (a+1)/(a+b+2), and the modified Lentz evaluation of the fraction.",
+      "summary": {
+        "en": "The textbook formula the app uses to add up the probability of each day, so the range it shows covers the share of chances it says it does."
+      },
+      "topics": ["cycle"],
+      "note": "Chapter 8 is by R. B. Paris; the DLMF's suggested citation names F. W. J. Olver, A. B. Olde Daalhuis, D. W. Lozier, B. I. Schneider, R. F. Boisvert, C. W. Clark, B. R. Miller, B. V. Saunders, H. S. Cohl and M. A. McClain as editors. First published 2010; the release accessed is 1.2.8 of 2026-09-15. Equations are copied from the pages' TeX alternative text and written linearly; the prose is verbatim. The last quote is from §3.10 of the same library (https://dlmf.nist.gov/3.10). The DLMF does not state the Student-t CDF identity P(T ≤ t) = 1 − ½·I_{ν/(ν+t²)}(ν/2, ½) that studentTCdf uses; that identity still needs its own verbatim source.",
+      "usedBy": ["src/app/stats.ts"]
+    },
+    "rcog-2016": {
+      "evidence": "guideline",
+      "authors": ["Green LJ", "O'Brien PMS", "Panay N", "Craig M"],
+      "organization": "Royal College of Obstetricians and Gynaecologists",
+      "title": "Management of premenstrual syndrome: Green-top Guideline No. 48",
+      "container": "BJOG: An International Journal of Obstetrics & Gynaecology",
+      "year": 2016,
+      "volume": "124",
+      "issue": "3",
+      "pages": "e73–e105",
+      "doi": "10.1111/1471-0528.14260",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "PMS encompasses a vast array of psychological symptoms such as depression, anxiety, irritability, loss of confidence and mood swings.",
+          "at": "section 2.1, p. e80"
+        },
+        {
+          "text": "They must be present during the luteal phase and abate as menstruation begins, which is then followed by a symptom-free week.",
+          "at": "section 2.2, p. e80"
+        }
+      ],
+      "supports": "That mood swings cluster in the luteal phase and ease as bleeding starts, which is why the mood channel is read over the 14 days before an onset (PREMENSTRUAL_WINDOW).",
+      "summary": {
+        "en": "Why mood swings in the fortnight before a period are read as a hint that it is coming."
+      },
+      "topics": ["mood"],
+      "note": "Published online 30 November 2016; in print BJOG 2017;124(3):e73–e105, dated February 2017. Written by Green, O'Brien, Panay and Craig on behalf of the RCOG.",
+      "usedBy": ["src/app/forecastModel.ts"]
+    },
+    "roney-simmons-2013": {
+      "evidence": "clinical-study",
+      "authors": ["Roney JR", "Simmons ZL"],
+      "title": "Hormonal predictors of sexual motivation in natural menstrual cycles",
+      "container": "Hormones and Behavior",
+      "year": 2013,
+      "volume": "63",
+      "issue": "4",
+      "pages": "636–645",
+      "doi": "10.1016/j.yhbeh.2013.02.013",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "Desire exhibited a mid-cycle peak, similar to previous findings; measured progesterone concentrations statistically mediated the fall in desire from mid-cycle to the luteal phase",
+          "at": "abstract"
+        }
+      ],
+      "supports": "Why the lust channel is profiled over the ovulatory window (OVULATORY_WINDOW): desire peaks mid-cycle and falls in the luteal phase.",
+      "summary": {
+        "en": "Why the days you log desire can say a little about when you ovulated."
+      },
+      "topics": ["fertility"],
+      "note": "Daily saliva hormones and diaries from young women over one to two cycles.",
+      "usedBy": ["src/app/forecastModel.ts"]
+    },
+    "who-2022-fp-handbook": {
+      "evidence": "guideline",
+      "organization": "World Health Organization; Johns Hopkins Center for Communication Programs",
+      "title": "Family Planning: A Global Handbook for Providers",
+      "container": "Chapter 18, Fertility Awareness Methods (2022 edition)",
+      "year": 2022,
+      "url": "https://fphandbook.org/chapter-18-fertility-awareness-methods",
+      "language": "en",
+      "accessed": "2026-09-27",
+      "quotes": [
+        {
+          "text": "She watches for her temperature to rise slightly—0.2° to 0.5°C (0.4° to 1.0°F)— just after ovulation (usually about midway through the menstrual cycle).",
+          "at": "p. 310, Basal Body Temperature (BBT) Method"
+        },
+        {
+          "text": "When the woman’s temperature has risen above her regular temperature and stayed higher for 3 full days, ovulation has occurred and the fertile period has passed.",
+          "at": "p. 311"
+        },
+        {
+          "text": "IMPORTANT: If a woman has a fever or other changes in body temperature, the BBT method will be difficult to use.",
+          "at": "p. 310"
+        }
+      ],
+      "supports": "The post-ovulatory rise in waking temperature (0.2–0.5 °C, the 'about a third of a degree' the temperature channel reads), three raised mornings as the sign ovulation has passed, and leaving fevers out of that reading.",
+      "summary": {
+        "en": "How much waking temperature rises after ovulation, and why a fever is left out of that reading."
+      },
+      "topics": ["temperature", "fertility"],
+      "note": "The chapter PDF: https://fphandbook.org/sites/default/files/JHU%20HBk22%20-%20Chapter%2018.pdf. The 2018 edition (p. 300–301) has the same wording.",
+      "usedBy": ["src/app/temperature.ts"]
+    },
+    "wilcox-1995": {
+      "evidence": "cohort",
+      "authors": ["Wilcox AJ", "Weinberg CR", "Baird DD"],
+      "title": "Timing of sexual intercourse in relation to ovulation — effects on the probability of conception, survival of the pregnancy, and sex of the baby",
+      "container": "New England Journal of Medicine",
+      "year": 1995,
+      "volume": "333",
+      "issue": "23",
+      "pages": "1517–1521",
+      "doi": "10.1056/NEJM199512073332301",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "Conception occurred only when intercourse took place during a six-day period that ended on the estimated day of ovulation.",
+          "at": "abstract, results"
+        },
+        {
+          "text": "The probability of conception ranged from 0.10 when intercourse occurred five days before ovulation to 0.33 when it occurred on the day of ovulation itself.",
+          "at": "abstract, results"
+        }
+      ],
+      "supports": "The five fertile days before ovulation (fertileWindowBefore 5).",
+      "summary": {
+        "en": "Why the fertile window opens five days before ovulation."
+      },
+      "topics": ["fertility"],
+      "note": "221 women, 625 cycles, ovulation dated from urinary hormone metabolites. The window found here ends on the day of ovulation; the app's one day after (fertileWindowAfter 1) rests on 1177 (1177-sa-fungerar-agglossning), not on this study.",
+      "usedBy": ["src/app/cycle.ts"]
+    },
+    "wilcox-2004": {
+      "evidence": "cohort",
+      "authors": [
+        "Wilcox AJ",
+        "Baird DD",
+        "Dunson DB",
+        "McConnaughey DR",
+        "Kesner JS",
+        "Weinberg CR"
+      ],
+      "title": "On the frequency of intercourse around ovulation: evidence for biological influences",
+      "container": "Human Reproduction",
+      "year": 2004,
+      "volume": "19",
+      "issue": "7",
+      "pages": "1539–1543",
+      "doi": "10.1093/humrep/deh305",
+      "language": "en",
+      "quotes": [
+        {
+          "text": "The frequency of intercourse rose during the follicular phase, peaking at ovulation and declining abruptly thereafter.",
+          "at": "abstract, results"
+        },
+        {
+          "text": "Intercourse was 24% more frequent during the 6 fertile days than during the remaining non-bleeding days (P < 0.001).",
+          "at": "abstract, results"
+        }
+      ],
+      "supports": "Why the sex channel is profiled over the ovulatory window (OVULATORY_WINDOW): intercourse peaks around ovulation.",
+      "summary": {
+        "en": "Why the days you log sex can say a little about when you ovulated."
+      },
+      "topics": ["fertility"],
+      "note": "68 women with an IUD or tubal ligation, 171 ovulatory cycles, ovulation dated by urinary hormones. A population effect of 24%; the app learns each person's own profile and keeps it flat when it predicts nothing.",
+      "usedBy": ["src/app/forecastModel.ts"]
+    }
+  }
+}

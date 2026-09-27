@@ -15,6 +15,7 @@ index.html
             ├── ForecastScreen    reads cycle.ts + forecastModel.ts
             ├── HistoryScreen     reads cycle.ts + swings.ts
             ├── SettingsScreen    settings, sync controls, backup, about
+            ├── AboutScreen       the disclaimer and every source (references.ts)
             └── BottomNav         the four destinations
 
 src/app/
@@ -240,12 +241,44 @@ The seam the framework draws is "the store stays in the app". It owns
 mechanism; this repo owns what a period is, what a report means, and what the
 numbers add up to.
 
+## Where the numbers come from
+
+The forecast is arithmetic over the reader's own reports, but it starts from
+numbers it did not learn — a 28-day cycle before there is a history, a luteal
+phase, a fertile window, a temperature rise and the rule that dates it, the
+windows the evidence channels are read over — and it computes with published
+statistics. Each is a claim to the reader, so each names its source:
+`docs/references.json` is the registry (OSS_SPEC.md §24) — authors or
+organization, title, journal or publisher, DOI / URL, the kind of evidence,
+the verbatim quotes the number was taken from, what the app uses each for,
+and which files cite it — and code points into it with a `[ref:<id>]` tag in
+the comment beside the number. `tests/references_test.ts` keeps the two in
+step both ways, and `oss-spec validate` checks the same rules.
+
+Where the code departs from a source, the comment says so beside the tag: the
+thermal shift asks 0.15 °C of centred readings where the charting rule asks
+0.2 of raw ones, and the luteal default is the textbook 14 where app data put
+the mean nearer 12.4 — which is why the leads that rest on it are learned.
+Where a constant is the model's own — a temper, a clamp, a prior's strength —
+the comment says it is a choice.
+
+The registry is also what the reader sees. The framework's `references`
+module is its typed face — the shape, the evidence ranking, how an entry is
+cited, the audit the test runs, and the card each entry is shown on — and
+`src/app/references.ts` binds it to this app: the parts of the forecast as
+topics (`cycle`, `fertility`, `temperature`, `mood`), the summary language, and
+the loader. **Settings → About and sources** lists every entry from it beside
+the disclaimer, with the quotes one tap down and a link that is only followed
+when tapped. Nothing is copied by hand.
+
 ## What loads when
 
 There is no server render and no prerender, so everything on the entry path is
 downloaded before anything appears. The whole app is currently one ~150 kB
 chunk (~50 kB gzipped) plus the Inter subset — small enough that splitting it
-would cost more in round trips than it saves.
+would cost more in round trips than it saves. The one exception is the
+references registry, which only the About screen reads and which rides in its
+own chunk behind `import()`.
 
 That is a budget, not an accident. Before adding a static import to `App.tsx`,
 ask whether the first paint needs it; anything heavy belongs behind `import()`.

@@ -15,10 +15,10 @@ Keeps `docs/` honest (OSS_SPEC §11.1). The docs in this repo describe _behaviou
 
 ## Tracking mechanism
 
-`.agent/skills/update-docs/.last-updated` holds the commit this skill last ran against. Diff from it to find what moved:
+`.agents/skills/update-docs/.last-updated` holds the commit this skill last ran against. Diff from it to find what moved:
 
 ```sh
-BASELINE=$(cat .agent/skills/update-docs/.last-updated 2>/dev/null)
+BASELINE=$(cat .agents/skills/update-docs/.last-updated 2>/dev/null)
 git diff --name-only "${BASELINE:-$(git rev-list --max-parents=0 HEAD)}"..HEAD -- src pwa-plugin.ts vite.config.ts
 ```
 
@@ -52,7 +52,7 @@ git diff --name-only "${BASELINE:-$(git rev-list --max-parents=0 HEAD)}"..HEAD -
 - [ ] `make fmt` (prettier formats markdown too)
 - [ ] Record the marker:
 
-      git rev-parse HEAD > .agent/skills/update-docs/.last-updated
+      git rev-parse HEAD > .agents/skills/update-docs/.last-updated
 
 ## Verification
 

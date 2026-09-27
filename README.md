@@ -122,7 +122,7 @@ which takes the swipe for itself and pages the month:
 | Button | What it does                                                                                                                                                                                                                                                                                                                                                                    |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **+**  | The daily report: a button each for blood, mood swings, lust and sex — lit when it happened — plus an optional fertility-test result and an optional waking temperature, on a slider across the range one actually lands in or three digits in the box beside it. Press the date to reach any past day, or to pick a **range** and file a whole period of bleeding in one Save. |
-| **⚙**  | Settings: theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync and its encryption passphrase, the PIN app lock, backup / restore / delete, and the build's version.                                                                                                                                                                           |
+| **⚙**  | Settings: theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync and its encryption passphrase, the PIN app lock, backup / restore / delete, the build's version, and **About and sources** — the disclaimer and every study and guideline behind the forecast's numbers.                                                                       |
 
 ## Configuration
 
@@ -209,6 +209,7 @@ More in [`docs/troubleshooting.md`](docs/troubleshooting.md).
 - [Architecture](docs/architecture.md)
 - [Cycle derivation](docs/cycle.md) — periods, cycle lengths, phases
 - [The forecast model](docs/forecast-model.md) — the Bayesian model behind the prediction
+- [Sources](docs/features/sources.md) — the studies and guidance behind the forecast's numbers
 - [Sync](docs/sync.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [`AGENTS.md`](AGENTS.md) — conventions for humans and coding agents

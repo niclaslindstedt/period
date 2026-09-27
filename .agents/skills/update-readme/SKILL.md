@@ -16,10 +16,10 @@ Keeps `README.md` true to the current public surface (OSS_SPEC §3). The README 
 
 ## Tracking mechanism
 
-`.agent/skills/update-readme/.last-updated` holds the commit this skill last ran against:
+`.agents/skills/update-readme/.last-updated` holds the commit this skill last ran against:
 
 ```sh
-BASELINE=$(cat .agent/skills/update-readme/.last-updated 2>/dev/null)
+BASELINE=$(cat .agents/skills/update-readme/.last-updated 2>/dev/null)
 git diff --name-only "${BASELINE:-$(git rev-list --max-parents=0 HEAD)}"..HEAD
 ```
 
@@ -53,7 +53,7 @@ git diff --name-only "${BASELINE:-$(git rev-list --max-parents=0 HEAD)}"..HEAD
 - [ ] `make fmt`
 - [ ] Record the marker:
 
-      git rev-parse HEAD > .agent/skills/update-readme/.last-updated
+      git rev-parse HEAD > .agents/skills/update-readme/.last-updated
 
 ## Verification
 

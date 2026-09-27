@@ -21,6 +21,7 @@ import {
 } from "@niclaslindstedt/oss-framework/sync";
 import { useApplyTheme } from "@niclaslindstedt/oss-framework/theme";
 
+import { AboutScreen } from "./app/AboutScreen.tsx";
 import {
   BottomNav,
   initialTab,
@@ -147,7 +148,7 @@ export function App() {
     [tab],
   );
   const toggle = useCallback(
-    (next: "report" | "settings") => {
+    (next: "report" | "settings" | "about") => {
       const target = tab === next ? home : next;
       setEnter(screenEnter(tab, target));
       setTab(target);
@@ -352,8 +353,10 @@ export function App() {
               demoData={demo}
               pin={pin}
               onNotice={notice}
+              onOpenAbout={() => toggle("about")}
             />
           )}
+          {tab === "about" && <AboutScreen onBack={() => show("settings")} />}
         </div>
       </main>
 

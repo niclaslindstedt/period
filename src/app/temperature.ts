@@ -119,7 +119,9 @@ export function formatTemperatureDelta(
  * Narrower than {@link MIN_CELSIUS}/{@link MAX_CELSIUS} on purpose: those
  * bound what the document will *store* (a guard against a mis-keyed decimal
  * point), while these bound what a waking temperature actually does. The whole
- * cyclic signal is a step of about 0.3 °C somewhere between 36 and 37.3, and a
+ * cyclic signal is a step of 0.2–0.5 °C after ovulation
+ * [ref:who-2022-fp-handbook] — 0.2–0.3 in app data [ref:bull-2019] — somewhere
+ * between 36 and 37.3, and a
  * slider given fifteen degrees to cover would bury that step under a
  * fingertip.
  */
@@ -139,12 +141,16 @@ export const BAND_STEP_CELSIUS = 0.05;
  * are. The post-ovulatory rise the model reads is a third of a degree; an
  * illness is several times that, so one fever left in the evidence would drag
  * a whole cycle's estimate after it. The stop stores the clinical threshold,
- * and `forecastModel.ts` leaves everything above the band out of the
+ * 38.0 °C [ref:1177-feber], and `forecastModel.ts` leaves everything above the band out of the
  * temperature channel (see {@link isFever}).
  */
 export const FEVER_CELSIUS = 38;
 
-/** Whether a reading is too high to say anything about a cycle. */
+/** Whether a reading is too high to say anything about a cycle — a fever is
+ *  what makes waking temperatures hard to read [ref:who-2022-fp-handbook]:
+ *  above the band's top, 37.5 °C. That line is this app's choice, half a degree under
+ *  the clinical threshold — a reading that high is already several times the
+ *  cyclic step, which is what makes it useless as cycle evidence. */
 export function isFever(celsius: number): boolean {
   return celsius > BAND_MAX_CELSIUS;
 }

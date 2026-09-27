@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// oss-spec:allow-large-file: one posterior — the fit, the six evidence channels that reweight it, and the projections read from it share its types and its clamps; a split by channel is the planned follow-up.
 // The probabilistic forecast — the model behind both the simple and the
 // advanced view of the Forecast screen.
 //
@@ -19,11 +20,14 @@
 //
 // Observed cycle lengths are modelled as log-normal. Cycle-length
 // distributions are right-skewed — a 40-day cycle is far more common than a
-// 16-day one — so a symmetric model on the day scale puts mass on impossible
-// dates and understates the long tail. Working in `ln(days)` fixes both.
+// 16-day one, and the long right tail is a component of its own
+// [ref:harlow-zeger-1991] — so a symmetric model on the day scale puts mass on
+// impossible dates and understates the long tail. Working in `ln(days)` fixes
+// both; the log scale is this model's choice.
 //
 // The parameters get a conjugate Normal-Inverse-Gamma prior, so the posterior
-// is closed-form and the posterior *predictive* is a Student-t. That matters
+// is closed-form and the posterior *predictive* is a Student-t
+// [ref:murphy-2007]. That matters
 // more than it sounds: the t's degrees of freedom grow with the data, so with
 // two cycles logged the predictive tails are genuinely fat and the interval is
 // genuinely wide, without anyone having to hand-tune a fudge factor. The
@@ -44,7 +48,7 @@
 //     stay possible — an unlogged day is not evidence of anything.
 //   - **A mixture, not one bell.** Cycle length is a cluster of ordinary
 //     cycles plus an occasional stretched one (Harlow & Zeger's standard /
-//     nonstandard split). The fit gives each observation a responsibility for
+//     nonstandard split [ref:harlow-zeger-1991]). The fit gives each observation a responsibility for
 //     the standard component and downweights the rest, so one 45-day cycle
 //     stops inflating the spread every ordinary cycle is judged by — and the
 //     predictive keeps a wide component at the fitted outlier share, so the
@@ -52,8 +56,8 @@
 //
 // ## The multivariate model (cycle lengths + mood swings)
 //
-// Mood swings cluster in the luteal phase and peak in the days right before
-// bleeding starts, which makes them a leading indicator rather than a
+// Mood swings belong to the luteal phase and abate as bleeding starts
+// [ref:rcog-2016], which makes them a leading indicator rather than a
 // coincidence. The multivariate model turns that into evidence.
 //
 // From the history it estimates a *symptom profile*: the probability of
@@ -79,7 +83,8 @@
 // That leaves the first half of the cycle silent, and the first half of the
 // cycle is where the one genuinely datable event lives: ovulation. The luteal
 // phase between ovulation and the next onset is the steadiest span in the whole
-// cycle — far steadier than the follicular phase that precedes it — so anything
+// cycle — far steadier than the follicular phase that precedes it
+// [ref:bull-2019] — so anything
 // that pins down ovulation pins down the onset better than anything measured
 // afterwards can.
 //
@@ -87,9 +92,12 @@
 // ({@link OVULATORY_WINDOW}) precisely so the profile can reach back past the
 // luteal phase to the days ovulation actually falls on:
 //
-//   - **Lust.** Sex drive rises toward ovulation. A learned per-lag rate, the
+//   - **Lust.** Sexual desire peaks mid-cycle, around ovulation
+//     [ref:roney-simmons-2013], and health services list it among the signs of
+//     ovulation [ref:1177-agglossning]. A learned per-lag rate, the
 //     same machinery as mood swings, only with the peak in a different place.
-//   - **Sex.** The same, and deliberately learned rather than assumed: whether
+//   - **Sex.** Intercourse, too, peaks at ovulation in a cohort that dated it
+//     [ref:wilcox-2004] — and is deliberately learned rather than assumed: whether
 //     it tracks the cycle at all is a fact about a person's life, not about
 //     their hormones. The shrinkage that keeps a thin mood profile flat is what
 //     keeps a *confounded* channel flat here, so a report that predicts nothing
@@ -203,8 +211,9 @@ export type ModelOptions = {
    *  interval a user sees is properly humble. */
   priorShape: number;
   /** Prior standard deviation of `ln(cycle length)`. 0.11 is about ±3 days at
-   *  a 28-day cycle, which is the between-cycle spread reported for regularly
-   *  cycling adults. */
+   *  a 28-day cycle: the spread of one person's cycles in app data is a mean
+   *  standard deviation of 2.6 days [ref:bull-2019], rounded up here so a
+   *  first interval errs wide rather than narrow. */
   priorLogSd: number;
   /** Half-life of the recency weighting, in cycles. Six is roughly half a
    *  year: long enough to average out a noisy month, short enough that a real
@@ -312,15 +321,17 @@ export type ModelOptions = {
   projectionMaxSpreadShare: number;
   /**
    * How much wider the *nonstandard* cycle component is than the standard one,
-   * on the log scale. Cycle length is a mixture (Harlow & Zeger): a symmetric
+   * on the log scale. Cycle length is a mixture [ref:harlow-zeger-1991]: a symmetric
    * cluster of ordinary cycles plus an occasional stretched one — an
    * anovulatory cycle, an illness, a stressful season. Four standard spreads is
    * wide enough that a 45-day cycle in a 28±2 history reads as a member of the
    * wide component rather than as reason to doubt every ordinary cycle.
    */
   outlierScale: number;
-  /** Prior share of cycles that are nonstandard. About one in thirteen, which
-   *  is the order reported for regularly cycling adults. */
+  /** Prior share of cycles that are nonstandard: 0.075, about one in
+   *  thirteen. A choice anchored on the 7% of ovulatory cycles app data found
+   *  at 36–50 days [ref:bull-2019], not a measured share of this model's wide
+   *  component. */
   outlierPriorShare: number;
   /** How many cycles that prior share is worth. Twelve: the share should move
    *  slowly — one odd cycle is not a new regime. */
@@ -377,8 +388,9 @@ export const DEFAULT_MODEL_OPTIONS: ModelOptions = {
 /**
  * How many days before an onset count as "premenstrual" for the symptom
  * profile. Fourteen days is the luteal phase: the clinical description of
- * premenstrual symptoms puts their onset one to two weeks before bleeding,
- * rising toward it. A window is needed because the profile is a *contrast* —
+ * premenstrual symptoms puts them in the luteal phase, abating as bleeding
+ * begins [ref:rcog-2016], and health services put their onset from a few days
+ * to two weeks before it [ref:1177-mens]. A window is needed because the profile is a *contrast* —
  * the rate inside it only means something against the rate outside.
  */
 export const PREMENSTRUAL_WINDOW = 14;
@@ -388,7 +400,7 @@ export const PREMENSTRUAL_WINDOW = 14;
  *
  * It has to reach past the luteal phase, because that is where the event these
  * channels are about actually sits: ovulation is roughly fourteen days before
- * an onset, so a window of fourteen would put the peak exactly on its own edge
+ * an onset [ref:lenton-1984], so a window of fourteen would put the peak exactly on its own edge
  * and see none of the days around it. Twenty-one covers ovulation and the
  * fertile days either side of it while still leaving the first week of a
  * typical cycle outside — and the contrast against that week, when lust is
@@ -725,7 +737,9 @@ export function observationsFrom(
 }
 
 /**
- * The conjugate Normal-Inverse-Gamma update, on the log scale.
+ * The conjugate Normal-Inverse-Gamma update, on the log scale — the textbook
+ * update and predictive [ref:murphy-2007], with each observation's weight
+ * standing in for a count.
  *
  * With no observations this returns the prior, whose predictive is a t on 5
  * degrees of freedom centred at the configured default — a wide, honest
@@ -793,13 +807,16 @@ const ROBUST_ITERATIONS = 5;
  * stretched one.
  *
  * Cycle length is not one distribution. The literature since Harlow & Zeger
- * (1991) models it as a mixture — a symmetric cluster of ordinary ovulatory
+ * (1991) models it as a mixture [ref:harlow-zeger-1991] — a symmetric cluster of ordinary ovulatory
  * cycles and a long-tailed remainder of delayed ones — and a single-component
  * fit pays for ignoring that in one specific way: one 45-day cycle inflates
  * the fitted spread, and every interval for the next year is wider than the
  * reader's actual pattern deserves.
  *
- * So the fit is a small EM: each observation gets a *responsibility* — the
+ * So the fit is a small EM [ref:dempster-1977] — EM-shaped rather than the
+ * textbook maximum-likelihood kind: the refit is the conjugate update, the
+ * share has a Beta prior, and it runs a fixed number of passes rather than to
+ * convergence. Each observation gets a *responsibility* — the
  * posterior probability it belongs to the standard component, judged under the
  * current fit — and the conjugate update is re-run with each weight multiplied
  * by it. An ordinary cycle keeps its weight; a stretched one keeps only a
@@ -1023,8 +1040,10 @@ export function sexProfile(
 
 /**
  * The chance a surge is caught at all, by someone testing through the days it
- * could fall on. Not 1: a strip read at the wrong hour of a surge that lasts
- * about a day is the ordinary way to miss one.
+ * could fall on. Not 1: a strip can read positive on a single day and negative
+ * on the three after it — in about a third of cycles [ref:leiva-2017] — so a
+ * strip read on the wrong day is the ordinary way to miss one. The 0.75 itself
+ * is this model's choice; no study measures it for someone testing at home.
  *
  * It is spread across the lags rather than placed on any of them, which is the
  * subtle half of this profile and the half that is easy to get wrong. `rate` is
@@ -1108,7 +1127,9 @@ export function fertilityTestProfile(
   }
   if (tests === 0) return null;
 
-  // The surge precedes ovulation by about a day, and ovulation precedes the
+  // The surge precedes ovulation by about a day — ovulation is best predicted
+  // within 24 hours of the first positive strip [ref:leiva-2017] — and ovulation
+  // precedes the
   // onset by the luteal phase — so a positive strip leads the onset by one more
   // day than the luteal setting alone.
   const priorLead = cycle.lutealPhaseLength + 1;
@@ -1365,21 +1386,23 @@ export function temperatureLogLikelihoodRatio(
 // This channel does. Nearly all of a cycle's variability lives in the
 // follicular phase — in the Natural Cycles dataset of 600,000 cycles the
 // follicular phase spans 10–30 days across its 95% interval while the luteal
-// phase spans 7–17 — so the day the temperature *steps up* is the moment the
+// phase spans 7–17 [ref:bull-2019] — so the day the temperature *steps up* is the moment the
 // variable half of the cycle ends and the steady half begins. Detect that
 // step, and the onset is a luteal phase away, whatever the follicular phase
 // did this time. That is the sharpest statement the body makes on a schedule,
 // and it is available in the very first tracked cycle, before any profile has
 // enough history to learn from.
 
-/** Readings the rise is judged against — the classic "three over six" rule. */
+/** Readings the rise is judged against — the classic "three over six" rule:
+ *  three higher readings after six lower ones [ref:goeckenjan-2020]. */
 const THERMAL_SHIFT_LOW_DAYS = 6;
 const THERMAL_SHIFT_HIGH_DAYS = 3;
 
 /**
  * How far above the warmest of the six low mornings the coolest of the three
- * high ones must sit, in °C. The textbook coverline rule asks 0.2 on raw
- * temperatures; these readings are already fever-filtered and centred, which
+ * high ones must sit, in °C. The textbook coverline rule asks the third high
+ * reading to clear it by 0.2 on raw temperatures [ref:goeckenjan-2020]; this
+ * departs from it on purpose — these readings are already fever-filtered and centred, which
  * removes the drift the extra margin exists to absorb, and 0.15 still stands
  * three thermometer-noise deviations clear of a flat run.
  */
@@ -1505,6 +1528,8 @@ export function thermalShiftEstimate(
   );
   const detectedDay = detectThermalShift(current);
 
+  // The first high morning is read the day after ovulation [ref:bull-2019], so
+  // the shift leads the onset by one day less than the luteal setting.
   const priorLead = cycle.lutealPhaseLength - 1;
   const k = options.thermalShiftLeadPriorStrength;
   const leadDays =
@@ -1614,7 +1639,9 @@ export const readFertilityTest: BinaryRead = (entry) =>
  * Longest episode the length model represents.
  *
  * A fortnight is well past what this app should be modelling as an ordinary
- * period, and the support has to end somewhere for the survival tail to be
+ * period — health services already call a period longer than ten days a
+ * reason to seek care [ref:1177-mens] — so this is a cap the arithmetic needs,
+ * not a clinical figure: the support has to end somewhere for the survival tail to be
  * finite. Mass that would fall beyond the cap folds back into it rather than
  * being dropped, so the distribution still sums to one.
  */

@@ -36,8 +36,9 @@ prior:
 
 `κ₀ = 1` makes the prior worth exactly one observed cycle — enough to keep a
 first forecast sane, little enough that real data wins immediately. `0.11` on
-the log scale is about ±3 days at a 28-day cycle, the between-cycle spread
-reported for regularly cycling adults.
+the log scale is about ±3 days at a 28-day cycle: in the largest real-world
+dataset the spread of one person's cycles is a mean standard deviation of 2.6
+days (Bull et al. 2019), rounded up here so a first interval errs wide.
 
 The prior is conjugate, so the update is closed form — no sampler, no optimiser,
 microseconds on a phone:
@@ -453,6 +454,15 @@ Two numbers come out, and the second matters more:
   would show up.
 
 ## Where this sits in the literature
+
+Every outside number the model starts from — the default cycle and luteal
+phase, the fertile window, the temperature rise and the rule that dates it,
+the windows each channel is read over, and the statistics underneath — is
+cited in the code with a `[ref:<id>]` tag into `docs/references.json`, and
+listed with the words it was taken from under **Settings → About and
+sources**. The model's own constants — the tempers and clamps, the priors'
+strengths, the half-life, the ovulation test's 0.75 detection rate — are
+design choices, and their comments say so rather than borrow a citation.
 
 The model is a deliberately closed-form assembly of the pieces the cycle
 literature agrees on, chosen so the whole fit runs in microseconds on a phone

@@ -35,7 +35,10 @@ convenience.
 The same applies to what the app _says_. The forecast is arithmetic over logged
 days. Copy must not imply medical authority, diagnose anything, or present an
 estimate as a certainty — the confidence label and the disclaimer on the
-Forecast screen exist for that reason and should not be quietly dropped.
+Forecast screen (and again on About, beside the sources) exist for that reason
+and should not be quietly dropped. And every number the forecast takes from
+outside the reader's own reports cites its source (see "Every outside number
+cites its source" below).
 
 ## Build and test commands
 
@@ -274,6 +277,14 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
 - `src/app/ForecastChart.tsx`, `ProfileCharts.tsx` — the forecast's own charts.
   Built from the framework's chart _primitives_ (`bandScale`, `linePath`,
   `barPath`, `linearScale`), not from its finished chart components.
+- `src/app/references.ts` — the references registry bound to this app (see
+  "Every outside number cites its source"): the framework's `references`
+  types with the parts of the forecast as topics (`cycle`, `fertility`,
+  `temperature`, `mood`), the summary language, and `useReferences`, which
+  loads `docs/references.json` in its own chunk.
+- `src/app/AboutScreen.tsx` — behind Settings → About and sources: the
+  disclaimer, and every entry of the registry on the framework's
+  `ReferenceCard`, grouped by topic. Read-only.
 - `src/app/i18n/en.ts` — every user-facing string.
 - `src/output.ts` — the §19.4 central output module (semantic log helpers over
   the in-app log store).
@@ -369,31 +380,71 @@ supplied by `App.tsx` (which refreshes it on focus, so midnight passing while
 the app is open doesn't leave a stale day). Keep it that way: it is what lets
 the tests pin real dates without fake timers.
 
+### Every outside number cites its source
+
+The forecast learns from the reader's reports, but it starts from numbers it
+did not learn — the default cycle and period, the luteal phase, the fertile
+window, the temperature rise and the three-over-six rule that dates it, the
+fever line, the windows each evidence channel is read over — and computes
+with published statistics (the conjugate update and its Student-t predictive,
+the incomplete beta, EM). Each is a claim made to the reader, and each cites
+its source beside the number.
+
+**The references registry.** `docs/references.json` is the one list of every
+source, keyed by a stable id — the shape OSS_SPEC.md §24 prescribes, which
+`oss-spec validate` checks too: authors or organization, title, where it was
+published, the DOI / URL / ISBN, the language, the kind of evidence
+(`EVIDENCE` in the framework's `references` module: `guideline`,
+`consensus`, `systematic-review`, `meta-analysis`, `randomized-trial`,
+`cohort`, `clinical-study`, `review`, `method`, `dataset`, or
+`health-service`), the verbatim quotes the number was taken from, what the
+app uses it for (`supports`, for a contributor), `usedBy` — the files that
+cite it — and the two fields the About screen reads: `summary`, the same for
+a user, and `topics`, the parts of the forecast it is listed under. Code
+cites an entry with a `[ref:<id>]` tag in the comment beside the number (a
+claim in a catalog string gets its tag in a comment above the key).
+`tests/references_test.ts` runs the framework's `auditReferences` over
+`src/`, and fails on a tag with no entry, an entry nothing cites, a `usedBy`
+that doesn't match the tags, an incomplete entry, or one without its
+`summary` and a `topics` entry. Never invent a reference, a DOI or a quote.
+
+**A choice is not a claim, and a departure says so.** The model's own
+constants — the tempers and clamps, the priors' strengths, the half-life, the
+ovulation test's detection rate, the 37.5 °C fever cut — carry no tag, and
+their comments say they are choices. Where one is derived from a published
+number (the 21-day ovulatory window from a fourteen-day luteal phase), the
+published number is tagged. Where the code departs from its source (0.15 °C
+on centred readings against the charting rule's 0.2; the textbook 14-day
+luteal phase against app data's 12.4), the comment names the departure beside
+the tag.
+
 ## Where new code goes
 
-| Change                               | Goes in                                                                                                                                      |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| A new thing to log about a day       | Probably nowhere — see below. If it survives that: `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` step        |
-| A new derived number or prediction   | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                                                                      |
-| A new statistic over mood swings     | `src/app/swings.ts`                                                                                                                          |
-| A new evidence channel               | A profile + a clamped term in `src/app/forecastModel.ts`, with tests in `tests/forecastModel_test.ts`                                        |
-| A change to what a range save writes | `src/app/bulk.ts`, with tests in `tests/bulk_test.ts`                                                                                        |
-| A change to what pressing a day does | `src/app/daySelection.ts`, with tests in `tests/daySelection_test.ts`                                                                        |
-| A new control on the report form     | `src/app/ReportFields.tsx` — never in one of the two screens that mount it                                                                   |
-| A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`, or a button in `src/app/TopBar.tsx` if it is an action rather than a place    |
-| A new setting                        | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                         |
-| A new developer-only affordance      | `src/app/dev/`, revealed behind `settings.devMode` in `SettingsScreen.tsx` — never in the persisted settings if it must not survive a reload |
-| A change to what the demo shows      | `src/app/dev/demoData.ts` (offsets from `now`, never fixed dates), with tests in `tests/demoData_test.ts`                                    |
-| A new storage backend                | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                              |
-| Any user-facing string               | `src/app/i18n/en.ts`, never inline in a component                                                                                            |
-| A shared UI primitive                | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                                |
+| Change                                     | Goes in                                                                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| A new thing to log about a day             | Probably nowhere — see below. If it survives that: `src/app/types.ts` (model) + `ReportScreen.tsx` (control) + a `migrations.ts` step        |
+| A new derived number or prediction         | `src/app/cycle.ts`, with tests in `tests/cycle_test.ts`                                                                                      |
+| A new statistic over mood swings           | `src/app/swings.ts`                                                                                                                          |
+| A new evidence channel                     | A profile + a clamped term in `src/app/forecastModel.ts`, with tests in `tests/forecastModel_test.ts`                                        |
+| A change to a default, threshold or window | The module that holds it, next to its `[ref:<id>]` tag, plus the entry in `docs/references.json` (its quotes) and `docs/forecast-model.md`   |
+| A new source                               | An entry in `docs/references.json` (with `summary` and `topics`) and its `[ref:<id>]` tag beside the number — About lists it by itself       |
+| A change to what a range save writes       | `src/app/bulk.ts`, with tests in `tests/bulk_test.ts`                                                                                        |
+| A change to what pressing a day does       | `src/app/daySelection.ts`, with tests in `tests/daySelection_test.ts`                                                                        |
+| A new control on the report form           | `src/app/ReportFields.tsx` — never in one of the two screens that mount it                                                                   |
+| A new screen                               | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`, or a button in `src/app/TopBar.tsx` if it is an action rather than a place    |
+| A new setting                              | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                         |
+| A new developer-only affordance            | `src/app/dev/`, revealed behind `settings.devMode` in `SettingsScreen.tsx` — never in the persisted settings if it must not survive a reload |
+| A change to what the demo shows            | `src/app/dev/demoData.ts` (offsets from `now`, never fixed dates), with tests in `tests/demoData_test.ts`                                    |
+| A new storage backend                      | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                              |
+| Any user-facing string                     | `src/app/i18n/en.ts`, never inline in a component                                                                                            |
+| A shared UI primitive                      | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                                |
 
 ## Test conventions
 
 Tests live in `tests/` with a `_test` suffix (OSS_SPEC §20.2) and run under
 Vitest in the `node` environment — they cover the pure domain modules
 (`cycle`, `swings`, `merge`, `migrations`), which is where the app's real logic
-is. No DOM, no testing-library, no mocked clock.
+is, plus `references`, which holds the registry to the tags. No DOM, no testing-library, no mocked clock.
 
 Run one file with `npx vitest run tests/cycle_test.ts`.
 
@@ -423,21 +474,23 @@ with `[Learn more](feature:<slug>)`.
 
 ## Documentation sync points
 
-| If you change…                   | Update…                                                                                                             |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| The derivation in `cycle.ts`     | `docs/cycle.md`, and the README's Examples block if the output shape moved                                          |
-| `forecastModel.ts` or `stats.ts` | `docs/forecast-model.md`, `docs/features/forecast.md`, and the README's What block                                  |
-| The `DayEntry` shape             | `docs/architecture.md`'s data shape, `docs/features/daily-report.md`, and a `migrations.ts` step                    |
-| The sync engine or the merge     | `docs/sync.md`                                                                                                      |
-| The phone wrapper (`native/`)    | `native/README.md`, `native/RELEASING.md`, `docs/features/native-app.md`                                            |
-| A `VITE_*` variable              | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it      |
-| A screen's behaviour             | The matching `docs/features/*.md` and the README's Usage table                                                      |
-| `dayStatus.ts`                   | `docs/features/status.md` and `docs/features/calendar.md` — both screens quote its rules                            |
-| `daySelection.ts` or an editor   | `docs/features/calendar.md`'s editing sections and `docs/features/daily-report.md`, which points at them            |
-| The navigation (nav or top bar)  | `docs/architecture.md`'s tree, the README's Usage tables, and `docs/features/daily-report.md`                       |
-| An evidence channel              | `docs/forecast-model.md`, `docs/features/daily-report.md`, `docs/features/forecast.md`, and the README's What block |
-| Module layout                    | The "Where new code goes" table above and `docs/architecture.md`                                                    |
-| A make target or script          | `CONTRIBUTING.md`, the README's Quick start, and this file's command list                                           |
+| If you change…                       | Update…                                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| The derivation in `cycle.ts`         | `docs/cycle.md`, and the README's Examples block if the output shape moved                                          |
+| `forecastModel.ts` or `stats.ts`     | `docs/forecast-model.md`, `docs/features/forecast.md`, and the README's What block                                  |
+| The `DayEntry` shape                 | `docs/architecture.md`'s data shape, `docs/features/daily-report.md`, and a `migrations.ts` step                    |
+| The sync engine or the merge         | `docs/sync.md`                                                                                                      |
+| The phone wrapper (`native/`)        | `native/README.md`, `native/RELEASING.md`, `docs/features/native-app.md`                                            |
+| A `VITE_*` variable                  | `docs/configuration.md`, `src/vite-env.d.ts`, the README's Configuration table, and the workflows that pass it      |
+| A screen's behaviour                 | The matching `docs/features/*.md` and the README's Usage table                                                      |
+| `dayStatus.ts`                       | `docs/features/status.md` and `docs/features/calendar.md` — both screens quote its rules                            |
+| `daySelection.ts` or an editor       | `docs/features/calendar.md`'s editing sections and `docs/features/daily-report.md`, which points at them            |
+| The navigation (nav or top bar)      | `docs/architecture.md`'s tree, the README's Usage tables, and `docs/features/daily-report.md`                       |
+| An evidence channel                  | `docs/forecast-model.md`, `docs/features/daily-report.md`, `docs/features/forecast.md`, and the README's What block |
+| A `[ref:<id>]` tag anywhere          | `docs/references.json` — the entry, its quotes, its `usedBy`, and its `summary` / `topics` for About                |
+| `references.ts` or `AboutScreen.tsx` | `docs/architecture.md` ("Where the numbers come from"), `docs/features/sources.md`                                  |
+| Module layout                        | The "Where new code goes" table above and `docs/architecture.md`                                                    |
+| A make target or script              | `CONTRIBUTING.md`, the README's Quick start, and this file's command list                                           |
 
 ## Parity and cross-cutting rules
 
@@ -479,8 +532,8 @@ structure, not the wording — it will not catch a stale sentence.
 
 ## Maintenance skills
 
-Skills live under `.agent/skills/` (OSS_SPEC §21). Each has a `SKILL.md` with
-its discovery process, its source→output mapping, and a `.last-updated` marker.
+Skills live under `.agents/skills/` (OSS_SPEC §21); `.claude/skills` is a
+symlink to that tree. Each has a `SKILL.md` with its discovery process, its source→output mapping, and a `.last-updated` marker.
 
 | Skill             | Runs when                                                     |
 | ----------------- | ------------------------------------------------------------- |

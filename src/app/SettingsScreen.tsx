@@ -9,6 +9,7 @@ import {
   SegmentedControl,
   Section,
   ToggleRow,
+  ChevronRightIcon,
   CogIcon,
   DatabaseIcon,
   CloudIcon,
@@ -61,6 +62,8 @@ type Props = {
   /** The app lock, for its section. */
   pin: PinLock;
   onNotice: (message: string) => void;
+  /** Opens About — the disclaimer and the sources behind the forecast. */
+  onOpenAbout: () => void;
 };
 
 export function SettingsScreen({
@@ -71,6 +74,7 @@ export function SettingsScreen({
   demoData,
   pin,
   onNotice,
+  onOpenAbout,
 }: Props) {
   const t = useT();
   const encryptionLabels = useEncryptionLabels(sync.providerName);
@@ -435,6 +439,19 @@ export function SettingsScreen({
         <p className="text-xs leading-snug text-muted">
           {t("settings.privacy")}
         </p>
+        <button
+          type="button"
+          onClick={onOpenAbout}
+          className="-mx-1 flex items-center gap-3 rounded-lg px-1 py-1.5 text-left hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-sm font-medium text-fg-bright">
+              {t("about.open")}
+            </span>
+            <span className="text-xs text-muted">{t("about.openHint")}</span>
+          </span>
+          <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted" />
+        </button>
       </Section>
 
       <ConfirmDialog

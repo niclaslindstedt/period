@@ -41,7 +41,13 @@ import type { AppData } from "./types.ts";
 
 /** Every screen the shell can show. */
 export type Tab =
-  "status" | "report" | "calendar" | "forecast" | "history" | "settings";
+  | "status"
+  | "report"
+  | "calendar"
+  | "forecast"
+  | "history"
+  | "settings"
+  | "about";
 
 /** The screens that are *destinations* — the ones the bottom bar carries and
  *  a swipe moves between. Report and Settings are reached from the top bar

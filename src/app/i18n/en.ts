@@ -340,6 +340,8 @@ export const en = {
       leadLearned:
         "A positive test points at a period about {count} days later — from your own {positives} positive tests and the luteal phase in Settings.",
       counts: "{window} tests taken in the {days} days before a period.",
+      // Ovulation is best predicted within 24 hours of the first positive
+      // strip [ref:leiva-2017].
       none: "No fertility tests logged yet. One positive strip dates ovulation to within a day, which is the sharpest single thing you can tell this forecast.",
     },
 
@@ -354,6 +356,8 @@ export const en = {
       sample:
         "From {window} readings before a period and {baseline} elsewhere.",
       thin: "Take a few more morning readings and this fills in. Until it does, your temperatures do not move the forecast.",
+      // Cycle lengths differ mostly by when ovulation happens, and the rise
+      // after it dates it [ref:bull-2019].
       none: "No temperatures reported yet. Adding them is the single biggest thing you can do for this forecast — the rise after ovulation is what pins down when the next period is due.",
     },
 
@@ -440,6 +444,42 @@ export const en = {
     periodLength: "{count} days",
     cycleGap: "{count}-day cycle",
     empty: "Once you have logged a period or two, the numbers show up here.",
+  },
+
+  // About, behind Settings: the disclaimer again, and every published source
+  // the forecast's numbers rest on (`docs/references.json`), grouped by the
+  // part of the forecast each one serves.
+  about: {
+    title: "About",
+    open: "About and sources",
+    openHint: "The studies and guidance behind the forecast's numbers",
+    sources: "Sources",
+    sourcesIntro:
+      "The studies, guidelines and health service pages behind the forecast's numbers, the strongest evidence first — each with the words the app took from it.",
+    loading: "Loading the sources…",
+    quotes: "What the app took from it",
+    accessed: "Read {date}",
+    openSource: "Open the source",
+    isbn: "ISBN {isbn}",
+    topics: {
+      cycle: "Cycle and period",
+      fertility: "Ovulation and fertile days",
+      temperature: "Waking temperature",
+      mood: "Mood",
+    },
+    evidence: {
+      guideline: "Guideline",
+      consensus: "Consensus statement",
+      "systematic-review": "Systematic review",
+      "meta-analysis": "Meta-analysis",
+      "randomized-trial": "Randomised trial",
+      cohort: "Cohort study",
+      "clinical-study": "Clinical study",
+      review: "Review",
+      method: "Method",
+      dataset: "Reference data",
+      "health-service": "Health service advice",
+    },
   },
 
   settings: {
