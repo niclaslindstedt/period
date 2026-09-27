@@ -25,7 +25,7 @@
 // exchange all stay in the page, which is also the only place the tokens ever
 // exist.
 //
-// Same shape as `icloudBridge.ts`: this file exports STRINGS for the page
+// Like `injected.ts`, this file exports STRINGS for the page
 // (dependency-free, ES5-ish — nothing in them is transpiled) plus the pure
 // narrowing and settling helpers, and it is exercised from the root test
 // suite, so it imports nothing that reaches `expo`.
@@ -33,7 +33,7 @@
 import { escapeForScript } from "./scriptText";
 
 /** The message the page posts to ask for a session. Namespaced like the theme
- *  report and the iCloud requests so the three are never confused. */
+ *  report so the two are never confused. */
 export const AUTH_SESSION_REQUEST_TYPE = "cycle-native/auth-session-request";
 
 /** Where the provider installs itself. The FRAMEWORK's name, not this app's

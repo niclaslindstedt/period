@@ -242,14 +242,7 @@ export function SettingsScreen({
         title={t("settings.sync")}
         icon={<CloudIcon className="h-3.5 w-3.5" />}
       >
-        <p className="text-xs text-muted">
-          {sync.available.includes("icloud")
-            ? t("settings.syncHintICloud")
-            : t("settings.syncHint")}
-        </p>
-        {/* The options are a reading rather than a constant: iCloud is
-            offered by the app's host (see `cloudHost.ts`), so it appears
-            where there is one and is absent in a browser. */}
+        <p className="text-xs text-muted">{t("settings.syncHint")}</p>
         <SegmentedControl<SyncBackendId>
           value={sync.backend}
           // Demo data is showing: connecting or disconnecting would change the

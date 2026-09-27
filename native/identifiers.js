@@ -25,19 +25,6 @@ const DISPLAY_NAME = process.env.APP_DISPLAY_NAME?.trim() || PROJECT_NAME;
 const BUNDLE_ID = process.env.APP_BUNDLE_ID?.trim() || DEV_BUNDLE_ID;
 const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID?.trim() ?? "";
 
-// THE iCLOUD CONTAINER IS NOT THE BUNDLE ID, and deriving it from one would be
-// a mistake. It names a container, registered once in the developer portal and
-// addressed by the app and its native module; the listing it ships under is
-// not its business. Deriving it would mean a plain checkout addressing
-// `iCloud.dev.local.cycle` while the module's Swift — which cannot read a
-// build variable — said something else, and a document store pointed at the
-// wrong container syncs nothing while reporting success.
-//
-// So it is committed, identical in every build, and the Swift agrees with it
-// by being the same string.
-/** The iCloud Drive container the document syncs through. */
-const ICLOUD_CONTAINER = "iCloud.se.agilator.cycle";
-
 // A `production` build is one headed for a store, so the fallbacks above are
 // not good enough: fail here rather than uploading a binary under the dev
 // bundle id or the project name. EAS sets EAS_BUILD_PROFILE on its builders.
@@ -59,5 +46,4 @@ module.exports = {
   DISPLAY_NAME,
   BUNDLE_ID,
   EAS_PROJECT_ID,
-  ICLOUD_CONTAINER,
 };

@@ -2,8 +2,9 @@
 
 Cycle is a PWA first: open it in a browser, add it to the home screen, and it
 is an app. `native/` is the other way in — the same web app, wrapped thinly
-enough to ship through the **App Store** and **Google Play**, and in exchange
-for that wrapper it gains one thing the browser cannot give it: **iCloud**.
+enough to ship through the **App Store** and **Google Play**. What the wrapper
+adds is what a browser cannot: the whole app inside the download, and a
+Dropbox sign-in that stays in the app.
 
 ## What the wrapper is
 
@@ -22,35 +23,12 @@ history.
 
 There is **no native UI**. Everything you see is the web app, unchanged.
 
-## iCloud
+## Where your reports live
 
-**Settings → Sync** offers **iCloud Drive** beside Dropbox, and only in the
-app — a browser has no way to reach a device's iCloud, so on the website the
-option is simply not there.
-
-Choosing it is all there is to it. There is nothing to connect and no window
-to grant anything in: the container belongs to the iCloud account the phone is
-already signed into. From then on the document — one file, `cycle.json` — is
-kept in the app's own iCloud folder, and every device signed into the same
-account merges the same way two Dropbox devices do: day by day, the later edit
-of each winning (see [`../sync.md`](../sync.md)).
-
-The file lives under **Files → iCloud Drive → Cycle**, where you can open it,
-copy it out, or delete it. That is deliberate: these are your reports, and a
-copy you cannot see is a copy you do not control.
-
-Two things it will tell you rather than guess about:
-
-- **iCloud is signed out.** The app says so and offers to reconnect instead of
-  failing quietly; signing in happens in iOS Settings, and the app re-checks
-  every time you come back to it.
-- **The file is in iCloud but has not arrived yet.** Another device wrote it a
-  moment ago and the bytes are still coming down. The app waits, and if they
-  do not arrive it keeps working from the copy on this device and says it is
-  offline — it never treats a file it could not read as an empty one.
-
-Android has no iCloud, so there the app is the web app served from inside the
-download, with Dropbox as before.
+On the phone, exactly where they live on the website: on **this device**, and —
+if you connect it — in **your own Dropbox**. **Settings → Sync** offers those
+two and nothing else. Your reports are health data, and they go nowhere you did
+not choose.
 
 ## Dropbox
 
@@ -65,8 +43,8 @@ comes back is a one-time code the app trades for access to its own folder.
 Two rules, and they are what keep the app and the website the same product:
 
 - **Nothing in `src/` knows the wrapper exists.** The web app does not check
-  whether it is native. It looks for a document-store _capability_ on
-  `window` (`src/app/cloudHost.ts`) and offers the backend when one answers.
+  whether it is native. It looks for a sign-in _capability_ on `window`
+  (`getAuthSessionHost`, from the framework) and uses it when one answers.
 - **The wrapper decides nothing about the cycle.** It moves bytes. What a
   day's report holds, what the forecast predicts and how two copies reconcile
   are the web app's, in `cycle.ts`, `forecastModel.ts` and `merge.ts`. A

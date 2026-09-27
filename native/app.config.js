@@ -7,13 +7,9 @@
 
 const { version } = require("../package.json");
 
-// The listing's name and identifier, and the container the document syncs
-// through. Build variables rather than literals — see ./identifiers.js.
-const {
-  DISPLAY_NAME,
-  BUNDLE_ID,
-  ICLOUD_CONTAINER,
-} = require("./identifiers.js");
+// The listing's name and identifier. Build variables rather than literals —
+// see ./identifiers.js.
+const { DISPLAY_NAME, BUNDLE_ID } = require("./identifiers.js");
 
 // The light theme's page background (`index.html`'s light `theme-color`).
 // Only paints the splash and the chrome before the page reports its own.
@@ -54,30 +50,10 @@ module.exports = () => ({
     ios: {
       supportsTablet: true,
       bundleIdentifier: BUNDLE_ID,
-      entitlements: {
-        // iCloud Documents: the app's own ubiquity container, which is what
-        // `modules/icloud-store` reads and writes. Without all three of these
-        // keys the container URL resolves to nil at runtime and the backend
-        // reports itself unavailable — which is a misconfiguration, not a
-        // state the user can fix.
-        "com.apple.developer.icloud-container-identifiers": [ICLOUD_CONTAINER],
-        "com.apple.developer.ubiquity-container-identifiers": [
-          ICLOUD_CONTAINER,
-        ],
-        "com.apple.developer.icloud-services": ["CloudDocuments"],
-      },
+      // No entitlements. The reports are health data, and they stay on the
+      // device or go to the reader's own Dropbox — nothing here asks for a
+      // container of Apple's to put them in.
       infoPlist: {
-        // Publishes the container's `Documents` folder to the Files app as a
-        // folder called "Cycle", so the user can see, copy and back up the
-        // log the app keeps there. Without this the container syncs but is
-        // invisible — a log its owner cannot open.
-        NSUbiquitousContainers: {
-          [ICLOUD_CONTAINER]: {
-            NSUbiquitousContainerIsDocumentScopePublic: true,
-            NSUbiquitousContainerSupportedFolderLevels: "None",
-            NSUbiquitousContainerName: "Cycle",
-          },
-        },
         // The bundled build is served over plain HTTP on the loopback
         // interface. ATS is left ON — only localhost is excepted, so nothing
         // else in the app may fall back to cleartext.
@@ -100,8 +76,8 @@ module.exports = () => ({
       package: BUNDLE_ID,
       // None. The wrapper reads no sensor, no contact and no file outside its
       // own sandbox — and Play's data-safety form is answered against this
-      // list. iCloud is Apple's, so on Android the app is the web app served
-      // from inside the download and nothing else.
+      // list. On Android the app is the web app served from inside the
+      // download and nothing else.
       permissions: [],
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",

@@ -61,18 +61,19 @@ make native-prebuild   # inspect what the config plugins generate
 ```
 
 It is a thin Expo / React Native shell: the built site served from a loopback
-origin in a WebView, plus one capability a browser cannot have — iCloud Drive.
-**Nothing in `src/` knows it exists**: `src/app/cloudHost.ts` looks for a
-document-store capability on `window` and offers iCloud when one answers. The wrapper also offers Dropbox's
-sign-in an in-app authentication session at `window.__ossAuthSession`, which
-the framework's `getAuthSessionHost` looks for; a browser has none and keeps
-its redirect. The
-wrapper moves bytes and decides nothing about the cycle. The iCloud container
-is committed as `iCloud.se.agilator.cycle` in `native/identifiers.js` and the
-module's Swift and TS, never derived from the bundle id; the bridge's property
-and event names are a contract with `cloudHost.ts` that
-`tests/native_icloud_test.ts` pins. See [`native/README.md`](native/README.md)
-and [`docs/features/native-app.md`](docs/features/native-app.md).
+origin in a WebView. **Nothing in `src/` knows it exists**: the wrapper offers
+Dropbox's sign-in an in-app authentication session at `window.__ossAuthSession`,
+which the framework's `getAuthSessionHost` looks for; a browser has none and
+keeps its redirect. The wrapper moves bytes and decides nothing about the
+cycle. See [`native/README.md`](native/README.md) and
+[`docs/features/native-app.md`](docs/features/native-app.md).
+
+**The reports are health data, and they stay on the device or in the user's
+own Dropbox.** App Store guideline 5.1.3(ii) says apps "may not store personal
+health information in iCloud", so the phone app has no iCloud backend,
+entitlement or container, and must not grow one. A stored backend choice of
+`icloud` from a development build falls back to this device
+(`parseStoredBackend` in `src/app/useSyncEngine.ts`).
 
 The desktop shell in `tauri/` is a Rust project with its own toolchain; `make
 test` and `make lint` stop at its edge:

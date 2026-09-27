@@ -2,7 +2,7 @@
   "name": "cycle-native",
   "version": "0.1.0",
   "private": true,
-  "description": "Thin native (Expo/React Native) wrapper around the cycle log PWA. Bundles the built web app on-device, serves it from a loopback origin in a WebView, and adds an iCloud Drive storage backend.",
+  "description": "Thin native (Expo/React Native) wrapper around the cycle log PWA. Bundles the built web app on-device, serves it from a loopback origin in a WebView, and signs in to Dropbox through the system authentication sheet.",
   "main": "index.ts",
   "scripts": {
     "bundle": "node scripts/bundle-web.mjs",

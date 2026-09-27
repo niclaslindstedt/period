@@ -3,19 +3,18 @@
 //
 // This is a deliberately thin wrapper. It starts a loopback server, points a
 // WebView at it, keeps the native chrome in step with the page's theme, sends
-// off-origin links to the system browser, answers the page when it asks its
-// iCloud container for the document, and opens a provider's sign-in in an
+// off-origin links to the system browser, and opens a provider's sign-in in an
 // authentication session when the page asks for one. There is no native UI at
 // all beyond a spinner and a failure screen — everything a reader sees is the
 // web app, unchanged.
 //
-// The wrapper adds exactly two things the browser cannot do, and it has to add
-// something: App Store guideline 4.2 rejects a build that is only a viewer for
-// a website. Those two are that it serves the cycle log FROM INSIDE THE
-// DOWNLOAD — no network at all, ever, for the app itself — and the iCLOUD
-// backend, which keeps the document in the reader's own container. Both are
-// offered from the OUTSIDE — the page is served unchanged and looks for a
-// capability rather than for this wrapper. See `native/README.md`.
+// The wrapper adds what the browser cannot do, and it has to add something:
+// App Store guideline 4.2 rejects a build that is only a viewer for a website.
+// It serves the cycle log FROM INSIDE THE DOWNLOAD — no network at all, ever,
+// for the app itself — and it signs in to Dropbox through the system's
+// AUTHENTICATION SHEET rather than a browser the app cannot get back from.
+// Both are offered from the OUTSIDE — the page is served unchanged and looks
+// for a capability rather than for this wrapper. See `native/README.md`.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -49,13 +48,6 @@ import {
   barStyleFor,
   isThemeReport,
 } from "./src/injected";
-import {
-  CLOUD_SCRIPT,
-  isCloudRequest,
-  resolveScript,
-  type CloudRequest,
-} from "./src/icloudBridge";
-import { answerCloudRequest } from "./src/icloud";
 import {
   authSessionResolveScript,
   authSessionScript,
@@ -163,16 +155,6 @@ export default function App() {
 
   // --- what the page says ---------------------------------------------------
 
-  // One inbound question about the container. Kept off the render path — a
-  // read can wait on iCloud bringing a file down — and deliberately holding
-  // no state: the document goes from the container straight back into the
-  // page, which is where the app's own merge and its local copy live. The
-  // wrapper keeps no copy of anybody's reports.
-  const answerCloud = useCallback(async (request: CloudRequest) => {
-    const result = await answerCloudRequest(request);
-    webViewRef.current?.injectJavaScript(resolveScript(request.id, result));
-  }, []);
-
   // One sign-in. The sheet is modal and the page waits on it; what comes back
   // is the provider's redirect URL, handed straight to the page, which holds
   // the PKCE verifier and makes the token exchange itself.
@@ -191,10 +173,6 @@ export default function App() {
         return; // not ours — the page may postMessage whatever it likes
       }
 
-      if (isCloudRequest(parsed)) {
-        void answerCloud(parsed);
-        return;
-      }
       if (isAuthSessionRequest(parsed)) {
         void signIn(parsed.id, parsed.url);
         return;
@@ -208,7 +186,7 @@ export default function App() {
         setReported(colour.trim());
       }
     },
-    [answerCloud, signIn],
+    [signIn],
   );
 
   // --- navigation -----------------------------------------------------------
@@ -295,12 +273,11 @@ export default function App() {
             allowsBackForwardNavigationGestures
             setSupportMultipleWindows={false}
             injectedJavaScriptBeforeContentLoaded={BEFORE_LOAD_SCRIPT}
-            // Three scripts, one prop: the theme reporter the chrome follows,
-            // the iCloud host the page looks for, and the auth-session
-            // provider its Dropbox sign-in looks for. All run once the page
-            // has loaded, and all are guarded against a second injection (a
-            // reload re-runs this).
-            injectedJavaScript={`${AFTER_LOAD_SCRIPT}\n${CLOUD_SCRIPT}\n${AUTH_SESSION_SCRIPT}`}
+            // Two scripts, one prop: the theme reporter the chrome follows,
+            // and the auth-session provider its Dropbox sign-in looks for.
+            // Both run once the page has loaded, and both are guarded against
+            // a second injection (a reload re-runs this).
+            injectedJavaScript={`${AFTER_LOAD_SCRIPT}\n${AUTH_SESSION_SCRIPT}`}
             onMessage={onMessage}
             onLoadEnd={hideSplash}
             onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}

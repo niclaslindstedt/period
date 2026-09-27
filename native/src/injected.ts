@@ -9,10 +9,9 @@
 // the reader picked instead of being guessed at.
 //
 // Nothing else crosses this way. The wrapper does not copy the document out of
-// `localStorage` and has no use for it: the iCloud backend is driven from
-// inside the page (see `icloudBridge.ts`), which means the day's spans go
-// straight from the app's own sync engine to the user's own container without
-// this script ever seeing them.
+// `localStorage` and has no use for it: sync is driven from inside the page,
+// so the day's spans go straight from the app's own sync engine to the user's
+// own Dropbox without this script ever seeing them.
 //
 // It also unregisters the service worker (see `SW_TEARDOWN`).
 //

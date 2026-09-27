@@ -2,7 +2,7 @@
 // Splicing text into a script the wrapper injects.
 //
 // Import-free on purpose: the bridges that use it are exercised from the root
-// test suite, which has no `expo` installed (see `icloudWire.ts`).
+// test suite, which has no `expo` installed, so nothing here may import it.
 
 /**
  * A JavaScript string literal holding `text`, safe to splice into a script.

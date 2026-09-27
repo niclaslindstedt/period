@@ -49,18 +49,11 @@ For submission, fill in the placeholders in `eas.json` →
 
 ### 4. iOS capabilities
 
-The app declares one iCloud container, `iCloud.se.agilator.cycle`.
-Before the first store build, in the Apple Developer portal:
-
-1. **Certificates, Identifiers & Profiles → Identifiers → iCloud Containers**
-   — create the container with exactly that identifier.
-2. **Identifiers → the app's App ID → iCloud** — enable the capability and
-   tick that container.
-
-An entitlement the App ID does not carry fails code signing, and — worse — a
-container that signs but was never created resolves to nil at runtime: the app
-builds, installs, launches, and reports iCloud as unavailable with nothing in
-the log to say why.
+None. The app declares no entitlements: the reports are health data, and they
+stay on the device or go to the reader's own Dropbox. The App ID needs no
+capability beyond the defaults — and should carry none the build does not use,
+so if a container capability was ticked on it earlier, untick it before the
+first store build.
 
 ### 5. Dropbox
 
@@ -113,10 +106,8 @@ build without it launches to a blank screen.
 - [ ] `EXPO_PUBLIC_CYCLE_URL` is **unset** — a build that streams the website
       is the exact shape App Store guideline 4.2 rejects.
 - [ ] The version in the root `package.json` is the one you mean to ship.
-- [ ] On a real device signed into iCloud: **Settings → Sync → iCloud
-      Drive**, report a day, and see `cycle.json` appear under **Files → iCloud
-      Drive → Cycle**. Then sign out of iCloud and confirm the app says so
-      rather than losing the day.
+- [ ] On a real device, **Settings → Sync** offers this device and Dropbox,
+      and nothing else.
 - [ ] Settings → Sync → Dropbox opens Dropbox in a sheet over the app (not in
       Safari), and approving closes the sheet and connects. Closing the sheet
       instead leaves nothing connected and shows no error.

@@ -24,7 +24,6 @@ import {
   isAuthSessionRequest,
   redirectUriFor,
 } from "../native/src/authSessionBridge.ts";
-import { CLOUD_REQUEST_TYPE } from "../native/src/icloudBridge.ts";
 
 const REDIRECT = redirectUriFor("se.agilator.cycle");
 
@@ -160,9 +159,6 @@ describe("isAuthSessionRequest", () => {
 
   it("ignores messages that are not ours", () => {
     expect(isAuthSessionRequest({ ...good, type: "cycle-native/theme" })).toBe(
-      false,
-    );
-    expect(isAuthSessionRequest({ ...good, type: CLOUD_REQUEST_TYPE })).toBe(
       false,
     );
     expect(isAuthSessionRequest(null)).toBe(false);
