@@ -533,10 +533,11 @@ the copy in `index.html` does: when the app's description changes, update
 `index.html`'s title/description/Open Graph tags and the manifest copy in
 `pwa-plugin.ts` together.
 
-No SEO and no size budgets, by owner decision: the site is not meant to be
-found, so every page carries `<meta name="robots" content="noindex">`, and
-OSS_SPEC §11.3's sitemap, JSON-LD, `llms.txt`, page-weight budget and
-`seo`/`lighthouse` workflows do not apply here.
+oss-spec:unlisted-website: the web build is a testing surface; users install the app from its store listing
+
+That makes the site unlisted (OSS_SPEC §11.3.12): every page carries
+`<meta name="robots" content="noindex">`, `robots.txt` keeps allowing the fetch
+that reads it, and there is no SEO and no size budget.
 
 ## Maintenance skills
 
