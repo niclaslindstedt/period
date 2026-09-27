@@ -17,11 +17,11 @@ Do **not** use this skill for a targeted fix — if you know exactly which artif
 
 ## Tracking mechanism
 
-Each skill records the commit it last ran against in `.agent/skills/<skill>/.last-updated`. That file is the baseline every discovery step diffs from. An empty or missing file means "never run" — treat the whole history as the diff.
+Each skill records the commit it last ran against in `.agents/skills/<skill>/.last-updated`. That file is the baseline every discovery step diffs from. An empty or missing file means "never run" — treat the whole history as the diff.
 
 ## Registry
 
-The registry is the single source of truth for which sync skills exist in this repo. Every skill directory under `.agent/skills/` must appear here exactly once.
+The registry is the single source of truth for which sync skills exist in this repo. Every skill directory under `.agents/skills/` must appear here exactly once.
 
 | Skill             | Fixes                                                            | Spec sections | Run order                                                                       |
 | ----------------- | ---------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------- |
@@ -38,7 +38,7 @@ For each skill in the registry, decide whether it needs to run:
 1. Read the skill's baseline:
 
    ```sh
-   BASELINE=$(cat .agent/skills/<skill>/.last-updated 2>/dev/null)
+   BASELINE=$(cat .agents/skills/<skill>/.last-updated 2>/dev/null)
    ```
 
 2. Diff the watched paths for that skill against the baseline:
@@ -63,7 +63,7 @@ For each skill in the registry, decide whether it needs to run:
 
 For each scheduled skill, in order:
 
-1. Load `.agent/skills/<skill>/SKILL.md`.
+1. Load `.agents/skills/<skill>/SKILL.md`.
 2. Follow its discovery process, mapping table, and update checklist exactly.
 3. Verify the skill's own verification section passes.
 4. Record the commit hash the skill wrote to its `.last-updated`.
@@ -82,7 +82,7 @@ Between skills, do **not** commit — aggregate all edits into a single working 
 - [ ] Commit with a conventional-commit message describing the sweep
 - [ ] Update this skill's own marker:
 
-      git rev-parse HEAD > .agent/skills/maintenance/.last-updated
+      git rev-parse HEAD > .agents/skills/maintenance/.last-updated
 
 ## Verification
 

@@ -6,6 +6,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    // The references registry, `docs/references.json`, is data the app
+    // imports (`references.ts`) as well as a document.
+    "resolveJsonModule": true,
     "jsx": "react-jsx",
     // The runtime is Preact. `jsxImportSource` points the automatic JSX
     // transform at `preact/jsx-runtime` (matching what `@preact/preset-vite`

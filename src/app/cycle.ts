@@ -84,17 +84,35 @@ export type Forecast = {
 /** Knobs the Settings screen owns. Defaults are the textbook averages, used
  *  verbatim until the history has something better to say. */
 export type CycleOptions = {
-  /** Cycle length assumed before two periods have been logged. */
+  /** Cycle length assumed before two periods have been logged. Twenty-eight
+   *  days is the cycle health services describe [ref:nhs-periods], and the
+   *  median clinical guidelines quote; app data put the mean a day longer
+   *  [ref:bull-2019]. */
   defaultCycleLength: number;
-  /** Period length assumed before any period has been logged. */
+  /** Period length assumed before any period has been logged: about five days
+   *  [ref:nhs-periods] — 5.2 in a clinical sample [ref:creinin-2004], 4.0 when
+   *  only full bleeding days are counted [ref:bull-2019]. */
   defaultPeriodLength: number;
-  /** Days from ovulation to the next period start. Far steadier across people
-   *  than the follicular phase, which is why the prediction counts *back* from
-   *  the next start rather than forward from the last one. */
+  /** Days from ovulation to the next period start. Far steadier than the
+   *  follicular phase — 7–17 days across cycles where the follicular phase
+   *  spans 10–30, so differences in cycle length are differences in when
+   *  ovulation happens [ref:bull-2019] — which is why the prediction counts
+   *  *back* from the next start rather than forward from the last one.
+   *  Fourteen is the textbook figure (14.1 days after the LH peak
+   *  [ref:lenton-1984]; "count 14 days back" [ref:1177-agglossning]); app data
+   *  put the mean nearer 12.4 [ref:bull-2019], which is why it is a setting,
+   *  and why the forecast learns the leads that rest on it from the reader's
+   *  own tests and temperatures. */
   lutealPhaseLength: number;
-  /** Days before ovulation the fertile window opens (sperm survival). */
+  /** Days before ovulation the fertile window opens. Conception happens only
+   *  from intercourse in the six days ending on ovulation day
+   *  [ref:wilcox-1995] — sperm survive the five before it — and app data
+   *  define the window the same way [ref:bull-2019]. */
   fertileWindowBefore: number;
-  /** Days after ovulation it closes (egg viability). */
+  /** Days after ovulation it closes. Conception was observed only up to
+   *  ovulation day itself [ref:wilcox-1995]; the extra day is a margin for the
+   *  egg's survival, about 24 hours, which health services count into the
+   *  window [ref:acog-2019] [ref:1177-agglossning]. */
   fertileWindowAfter: number;
 };
 

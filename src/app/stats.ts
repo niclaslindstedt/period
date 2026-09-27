@@ -84,9 +84,12 @@ export function logGamma(x: number): number {
 
 // --- The regularized incomplete beta function ----------------------------
 //
-// `I_x(a, b)`, evaluated by the modified Lentz continued fraction. This is the
-// standard route to a Student-t CDF and it converges in a few dozen
-// iterations for every argument the forecast produces.
+// `I_x(a, b)`, evaluated by the modified Lentz continued fraction — the
+// fraction and its even and odd coefficients as the DLMF states them, with the
+// symmetry `I_x(a, b) = 1 − I_{1−x}(b, a)` where it would converge slowly
+// [ref:nist-dlmf-2026]. This is the standard route to a Student-t CDF and it
+// converges in a few dozen iterations for every argument the forecast
+// produces.
 
 const FPMIN = 1e-300;
 const EPS = 3e-14;

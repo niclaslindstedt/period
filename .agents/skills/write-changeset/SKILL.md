@@ -14,7 +14,7 @@ description: "Use before opening a PR with any user-visible change, to add the c
 
 ## Tracking mechanism
 
-`.agent/skills/write-changeset/.last-updated` holds the commit this skill last ran against. Unlike the `update-*` skills this one is per-change rather than periodic, so the marker is mostly a record of the last fragment written.
+`.agents/skills/write-changeset/.last-updated` holds the commit this skill last ran against. Unlike the `update-*` skills this one is per-change rather than periodic, so the marker is mostly a record of the last fragment written.
 
 ## Discovery process
 
@@ -66,7 +66,7 @@ description: "Use before opening a PR with any user-visible change, to add the c
 - [ ] Preview the bump the release will derive: `make bump`
 - [ ] Record the marker:
 
-      git rev-parse HEAD > .agent/skills/write-changeset/.last-updated
+      git rev-parse HEAD > .agents/skills/write-changeset/.last-updated
 
 ### The fragment's shape
 
