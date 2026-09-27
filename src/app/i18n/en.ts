@@ -126,7 +126,9 @@ export const en = {
       noPeriod: "No period expected",
       unknown: "No prediction yet",
     },
-    certainty: "About {percent} statistically secure",
+    // "Likely", never "secure" or "safe": beside a fertility call, a word about
+    // safety reads as a claim about safe days, and this is not contraception.
+    certainty: "About {percent} likely",
     certaintyHint:
       "The chance your own reports put on this — not a certainty, and it grows as you log more cycles.",
     fromYourReport: "From your own report for today.",

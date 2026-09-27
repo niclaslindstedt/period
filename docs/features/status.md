@@ -8,9 +8,9 @@ report is saved there is nothing to derive, so the app opens on
 - **The call** — _Fertile_, _Not fertile_, _Period_, or _Period likely_. A day
   you reported bleeding on is a **Period** whatever the model thought; every
   other call comes from the forecast.
-- **How sure it is** — _About 84% statistically secure_. Not a rounding of a
-  feeling: it is the share of the forecast's probability that actually falls on
-  the call above it, so an early history reads low and says so.
+- **How sure it is** — _About 84% likely_. Not a rounding of a feeling: it is
+  the share of the forecast's probability that actually falls on the call above
+  it, so an early history reads low and says so.
 - **Cycle day and next period** — the same two lines the
   [Forecast](forecast.md) screen leads with, from the same fit.
 - **This week** — three days back, today, and three days ahead, each painted the
