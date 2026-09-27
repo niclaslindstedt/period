@@ -544,9 +544,10 @@ that reads it, and there is no SEO and no size budget.
 Skills live under `.agents/skills/` (OSS_SPEC §21); `.claude/skills` is a
 symlink to that tree. Each has a `SKILL.md` with its discovery process, its source→output mapping, and a `.last-updated` marker.
 
-| Skill             | Runs when                                                     |
-| ----------------- | ------------------------------------------------------------- |
-| `maintenance`     | The registry and run order for every other skill — start here |
-| `write-changeset` | Any user-visible change, before opening the PR                |
-| `update-docs`     | `src/app/` changed in a way a `docs/` topic describes         |
-| `update-readme`   | Commands, configuration, or the feature set changed           |
+| Skill             | Runs when                                                                 |
+| ----------------- | ------------------------------------------------------------------------- |
+| `maintenance`     | The registry and run order for every other skill — start here             |
+| `write-changeset` | Any user-visible change, before opening the PR                            |
+| `update-docs`     | `src/app/` changed in a way a `docs/` topic describes                     |
+| `update-readme`   | Commands, configuration, or the feature set changed                       |
+| `sync-oss-spec`   | `validate.sh` reports violations, or the spec copy at the root was bumped |

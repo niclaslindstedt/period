@@ -28,6 +28,7 @@ The registry is the single source of truth for which sync skills exist in this r
 | `write-changeset` | A user-visible change with no fragment in `.changes/unreleased/` | §8.4          | 1 — run first; the fragment describes the change the other skills then document |
 | `update-docs`     | `docs/*.md` vs. source of truth                                  | §11.1         | 2                                                                               |
 | `update-readme`   | `README.md` vs. the current public surface                       | §3            | 3                                                                               |
+| `sync-oss-spec`   | Repo-wide §19 conformance vs. `OSS_SPEC.md`                      | §19, §21      | 4 — run last; catches what the per-artifact skills did not touch                |
 
 Run order matters: `update-readme` reads the docs that `update-docs` rewrites, so it must run after it. A new skill that reads files another skill rewrites goes after that skill.
 
@@ -58,6 +59,7 @@ For each skill in the registry, decide whether it needs to run:
 | `.changes/unreleased/` is empty while `src/` changed               | `write-changeset` |
 | `src/app/**`, `src/*.ts*`, `pwa-plugin.ts`, `vite.config.ts`       | `update-docs`     |
 | `Makefile`, `package.json` scripts, `src/vite-env.d.ts`, `docs/**` | `update-readme`   |
+| `OSS_SPEC.md`, any new file or directory at the repo root          | `sync-oss-spec`   |
 
 ## Execution
 
