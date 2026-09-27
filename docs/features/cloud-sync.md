@@ -8,7 +8,9 @@ the app keeps a copy there too:
   [the app on a phone](native-app.md).
 
 There is no server in between and no account to create — the app talks to your
-provider directly, and the file it writes is plain JSON you can open yourself.
+provider directly. The file it writes is **encrypted on this device with a
+passphrase you choose**, so the provider holds ciphertext it cannot read; see
+[`encryption.md`](encryption.md).
 
 ## Two devices, no prompt
 

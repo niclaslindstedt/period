@@ -478,7 +478,7 @@ export const en = {
       "Cycles + reports also reads this cycle's mood swings, lust, sex, fertility tests and temperatures. Each falls back to cycles alone until there is enough history to learn that pattern.",
     sync: "Sync",
     syncHint:
-      "Reports live on this device. Connect a cloud account to keep a copy and read it on your other devices.",
+      "Reports live on this device. Connect a cloud account to keep an encrypted copy and read it on your other devices.",
     backend: "Where the copy lives",
     connect: "Connect",
     disconnect: "Disconnect",
@@ -516,7 +516,76 @@ export const en = {
     version: "Version",
     build: "Build",
     privacy:
-      "Everything stays on this device unless you connect a cloud account yourself. There is no server, no account, and no analytics.",
+      "Everything stays on this device unless you connect a cloud account yourself, and a copy there is encrypted with your passphrase first. There is no server, no account, and no analytics.",
+  },
+
+  // What stands between the reports and a copy that leaves this device. The
+  // passphrase copy is the part a user must not skim: nobody can recover it,
+  // and the provider never sees anything but ciphertext.
+  encryption: {
+    title: "Encryption",
+    required:
+      "Everything is encrypted on this device before it goes to {name}, which only ever holds ciphertext.",
+    on: "Encrypted. The passphrase is remembered on this device.",
+    paused:
+      "Sync is paused until the passphrase is set — nothing leaves this device unencrypted.",
+    checking: "Checking what {name} holds…",
+    unreachable: "Couldn't reach {name} to check its encryption.",
+    retry: "Try again",
+    set: "Set the passphrase",
+    enter: "Enter the passphrase",
+    change: "Change the passphrase",
+    changed: "Passphrase changed",
+    createTitle: "Choose a passphrase",
+    createHint:
+      "Your reports are encrypted on this device before it reaches {name}. Every device that syncs it will need this passphrase.",
+    unlockTitle: "Enter your passphrase",
+    unlockHint:
+      "The copy in {name} is encrypted. Enter the passphrase you chose on your other device.",
+    changedTitle: "The passphrase has changed",
+    changedHint:
+      "The passphrase was changed on another device. Enter the new one to keep syncing.",
+    changeTitle: "Change the passphrase",
+    changeHint:
+      "The copy in {name} is re-encrypted with the new passphrase. Your other devices will ask for it on their next sync.",
+    noRecovery:
+      "Nobody can recover a forgotten passphrase — not us, not {name}. Write it down somewhere safe.",
+    passphrase: "Passphrase",
+    confirm: "Repeat the passphrase",
+    createSubmit: "Encrypt and sync",
+    unlockSubmit: "Unlock",
+    changeSubmit: "Change",
+    tooShort: "Use at least {min} characters.",
+    mismatch: "The two passphrases don't match.",
+    wrong: "Wrong passphrase. Try again.",
+    failed: "That didn't work. Try again.",
+    offline: "{name} can't be reached right now. Try again when you're online.",
+    working: "Working on the encryption…",
+  },
+
+  // The app lock. A soft lock, and the copy says so: it keeps a borrowed
+  // phone out, it does not encrypt the reports on this device.
+  pin: {
+    title: "App lock",
+    on: "A PIN is asked for on this device",
+    off: "No PIN on this device",
+    hint: "Asked for when the app opens, and again after five minutes in the background.",
+    softWarning:
+      "A PIN keeps a borrowed phone out. It does not encrypt the reports on this device.",
+    set: "Set a PIN",
+    change: "Change the PIN",
+    remove: "Remove the PIN",
+    label: "New PIN",
+    confirm: "Repeat the PIN",
+    current: "Current PIN",
+    tooShort: "Use at least {min} digits.",
+    mismatch: "The two PINs don't match.",
+    wrong: "Wrong PIN.",
+    gateTitle: "Locked",
+    gateHint: "Enter your PIN to open your reports.",
+    gateLabel: "PIN",
+    gateSubmit: "Open",
+    gateWrong: "Wrong PIN. Try again.",
   },
 
   sync: {

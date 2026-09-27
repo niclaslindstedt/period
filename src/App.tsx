@@ -8,6 +8,7 @@ import {
   createToastStore,
 } from "@niclaslindstedt/oss-framework/components";
 import { useSwipeNav } from "@niclaslindstedt/oss-framework/hooks";
+import { usePinLock } from "@niclaslindstedt/oss-framework/encryption";
 import { LogViewer } from "@niclaslindstedt/oss-framework/logging";
 import { UpdateToast, usePwaUpdate } from "@niclaslindstedt/oss-framework/pwa";
 import {
@@ -32,6 +33,11 @@ import { ForecastScreen } from "./app/ForecastScreen.tsx";
 import { HistoryScreen } from "./app/HistoryScreen.tsx";
 import { ReportScreen } from "./app/ReportScreen.tsx";
 import { SettingsScreen } from "./app/SettingsScreen.tsx";
+import {
+  AppLockGate,
+  PassphrasePrompt,
+  usePassphrasePrompt,
+} from "./app/SyncEncryption.tsx";
 import { StatusScreen } from "./app/StatusScreen.tsx";
 import { TopBar } from "./app/TopBar.tsx";
 import { useT } from "./app/i18n/index.ts";
@@ -59,6 +65,11 @@ import { status } from "./output.ts";
 // Module-scoped so the identity stays stable across renders (the framework's
 // `useToasts` keys its subscription on the store object).
 const toasts = createToastStore();
+
+// The app lock's verifier, on this device only, and how long the app may sit
+// in the background before it asks again.
+const PIN_KEY = "cycle:pin";
+const RELOCK_AFTER_MS = 5 * 60_000;
 
 export function App() {
   const t = useT();
@@ -95,6 +106,11 @@ export function App() {
   }, [demo.on]);
   const store = useDocStore(backend);
   const sync = useSyncEngine(store, demo.on);
+  const passphrase = usePassphrasePrompt(sync.encryption, demo.on);
+  const pin = usePinLock({
+    storageKey: PIN_KEY,
+    relockAfterMs: RELOCK_AFTER_MS,
+  });
   const options = useMemo(() => cycleOptions(settings), [settings]);
   const look = useMemo(() => chartLook(settings), [settings]);
 
@@ -197,6 +213,9 @@ export function App() {
   useEffect(() => {
     if (pwa.needRefresh) status(`Update ready: ${pwa.incomingVersion ?? "?"}`);
   }, [pwa.needRefresh, pwa.incomingVersion]);
+
+  // Behind the PIN, nothing of the reports renders — not a screen, not a modal.
+  if (pin.locked) return <AppLockGate pin={pin} />;
 
   return (
     <div className="flex h-full flex-col bg-page text-fg">
@@ -327,6 +346,8 @@ export function App() {
               store={store}
               sync={sync}
               demoData={demo}
+              pin={pin}
+              onAskPassphrase={passphrase.open}
               onNotice={notice}
             />
           )}
@@ -384,6 +405,17 @@ export function App() {
       </div>
 
       <BottomNav active={tab} onSelect={show} />
+
+      <PassphrasePrompt
+        encryption={sync.encryption}
+        providerName={sync.providerName}
+        mode={passphrase.mode}
+        onClose={passphrase.close}
+        onChanged={() => {
+          notice(t("encryption.changed"));
+          void sync.reload();
+        }}
+      />
 
       <SyncDetailsModal
         open={syncDetailsOpen}

@@ -56,8 +56,8 @@ category are an account wrapped around a server you cannot inspect.
 
 This one has no account and no server. Reports live in your browser's
 localStorage. If you want them on more than one device, you connect **your own**
-Dropbox and the app keeps a copy there, in a folder you can open, in a JSON
-file you can read. Nothing else leaves the device: no
+Dropbox and the app keeps a copy there — encrypted on the device with a
+passphrase only you know, so Dropbox holds ciphertext. Nothing else leaves the device: no
 analytics, no telemetry, no third-party requests at runtime.
 
 The forecasting is deliberately simple arithmetic — the median gap between your
@@ -122,7 +122,7 @@ which takes the swipe for itself and pages the month:
 | Button | What it does                                                                                                                                                                                                                                                                                                                                                                    |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **+**  | The daily report: a button each for blood, mood swings, lust and sex — lit when it happened — plus an optional fertility-test result and an optional waking temperature, on a slider across the range one actually lands in or three digits in the box beside it. Press the date to reach any past day, or to pick a **range** and file a whole period of bleeding in one Save. |
-| **⚙**  | Settings: theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync, backup / restore / delete, and the build's version.                                                                                                                                                                                                                           |
+| **⚙**  | Settings: theme, week start, cycle assumptions, forecast detail and temperature unit, cloud sync and its encryption passphrase, the PIN app lock, backup / restore / delete, and the build's version.                                                                                                                                                                           |
 
 ## Configuration
 

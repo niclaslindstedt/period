@@ -21,6 +21,11 @@ import {
   type DropboxAuthResult,
   type StorageAdapter,
 } from "@niclaslindstedt/oss-framework/storage";
+import {
+  WrongPasswordError,
+  useRequiredEncryption,
+  type RequiredEncryption,
+} from "@niclaslindstedt/oss-framework/encryption";
 import type {
   ConnectionProbeResult,
   SaveStatus,
@@ -47,11 +52,17 @@ import type { DocStore } from "./useDocStore.ts";
 // device still holds it — see `docs/sync.md`.
 
 const syncLog = logStore.createLogger("sync");
+const encryptionLog = logStore.createLogger("encryption");
 
 export type SyncBackendId = "local" | "dropbox";
 
 const BACKEND_KEY = "cycle:sync:backend";
 const DROPBOX_TOKENS_KEY = "cycle:sync:dropbox";
+// The passphrase a copy outside this device is encrypted with, remembered on
+// this device per backend (see `useRequiredEncryption`). Beside a working
+// copy that is itself plaintext in the same storage, remembering it exposes
+// nothing new; what it protects is the copy the provider holds.
+const PASSPHRASE_KEY = "cycle:sync:passphrase";
 // Google Drive is gone as a backend. The key stays named so a token a device
 // may still hold is cleared rather than left sitting in storage.
 const RETIRED_GDRIVE_TOKEN_KEY = "cycle:sync:gdrive";
@@ -195,6 +206,9 @@ export type SyncEngine = {
   reconnect: () => Promise<void>;
   /** Actively re-probe reachability, for the "Check connection" button. */
   checkConnection: () => Promise<ConnectionProbeResult>;
+  /** The encryption every copy outside this device requires. Sync is held
+   *  until it is `ready`. */
+  encryption: RequiredEncryption;
 };
 
 export function useSyncEngine(
@@ -228,7 +242,9 @@ export function useSyncEngine(
 
   // The storage adapter for the active cloud backend, wrapped so the cloud
   // copy stays readable offline (`withLocalCache`).
-  const adapter: StorageAdapter | null = useMemo(() => {
+  // The cache sits below the encryption, so it holds exactly the ciphertext
+  // the cloud does.
+  const inner: StorageAdapter | null = useMemo(() => {
     if (backend === "dropbox" && dropboxTokens) {
       const auth = {
         accessToken: dropboxTokens.accessToken,
@@ -252,12 +268,31 @@ export function useSyncEngine(
     return null;
   }, [backend, dropboxTokens]);
 
-  const connected = adapter !== null;
+  // A copy outside this device is only ever an envelope. `adapter` stays null
+  // until the passphrase is held, which is what holds every pull and push
+  // below — there is no path for the document to leave in plaintext.
+  const encryption = useRequiredEncryption({
+    inner,
+    required: backend !== "local",
+    storageKey: `${PASSPHRASE_KEY}:${backend}`,
+    logger: encryptionLog,
+  });
+  const adapter = encryption.adapter;
+
+  const connected = inner !== null;
 
   // Turn a thrown error into the matching surface state. Every failure path
   // funnels through here so the glyph, the command centre, and the log always
   // agree on what went wrong.
   const reportFailure = useCallback((err: unknown, what: string): void => {
+    if (err instanceof WrongPasswordError) {
+      // The passphrase was changed on another device. The encryption state
+      // has already dropped it and asks for the new one; sync waits for it.
+      syncLog.warn(`${what}: the passphrase no longer opens the copy`);
+      setStatus("idle");
+      setStatusDetail(null);
+      return;
+    }
     const detail = describeStorageError(err);
     syncLog.error(`${what} failed — ${detail}`);
     setStatusDetail(detail);
@@ -463,7 +498,10 @@ export function useSyncEngine(
     [adoptDropbox],
   );
 
+  const { forget: forgetPassphrase } = encryption;
   const disconnect = useCallback((): void => {
+    // The remembered passphrase goes with the credentials.
+    forgetPassphrase();
     // Only the credentials go: the document stays on this device, and the copy
     // already in the cloud is left exactly where it is.
     writeDropboxTokens(null);
@@ -472,7 +510,7 @@ export function useSyncEngine(
     setDropboxTokens(null);
     setBackendState("local");
     syncLog.info("disconnected — reports stay on this device");
-  }, []);
+  }, [forgetPassphrase]);
 
   const saveNow = useCallback((): void => {
     if (!adapter || !baselineReady) return;
@@ -528,5 +566,6 @@ export function useSyncEngine(
     reload,
     reconnect,
     checkConnection,
+    encryption,
   };
 }

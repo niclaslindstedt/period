@@ -30,7 +30,9 @@ src/app/
   merge.ts          two documents → one                     (pure)
   migrations.ts     bytes ⇄ AppData, with validation
   useDocStore.ts    the document in state, persisted to localStorage
-  useSyncEngine.ts  the cloud copy: pull on open, debounced push on edit
+  useSyncEngine.ts  the cloud copy: pull on open, debounced push on edit,
+                    held until the copy's passphrase is set
+  SyncEncryption.tsx the passphrase prompt, its Settings lines, the PIN gate
   useAppSettings.ts the settings blob
   backup.ts         export / restore a JSON file
 
