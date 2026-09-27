@@ -140,7 +140,7 @@ export const en = {
   calendar: {
     title: "Calendar",
     noHistory:
-      "Only the days you have logged are coloured so far. Once a period is in, the predicted and fertile days fill in around them.",
+      "Only the days you have logged are colored so far. Once a period is in, the predicted and fertile days fill in around them.",
     // Filled means it happened, hollow means it is expected — so each of the
     // two things a cycle is made of names both states, and the four read as two
     // pairs rather than four unrelated colours.
@@ -274,7 +274,7 @@ export const en = {
     // computed — nothing is rounded up into a reassuring adjective.
     model: {
       title: "The model",
-      how: "Cycle lengths are modelled as log-normal with a conjugate Normal-Inverse-Gamma prior, so the prediction is a Student-t over the days ahead. Days you reported without bleeding are removed and the rest rescaled.",
+      how: "Cycle lengths are modeled as log-normal with a conjugate Normal-Inverse-Gamma prior, so the prediction is a Student-t over the days ahead. Days you reported without bleeding are removed and the rest rescaled.",
       howReports:
         "On top of that, each candidate day is weighed by how well this cycle's reports — mood swings, lust, sex, fertility tests and temperatures — fit the pattern your own history shows at that distance from a period. Every one of them is discounted before it is applied, and the total is capped, so they shift the date rather than decide it.",
       typicalLength: "Typical cycle",
