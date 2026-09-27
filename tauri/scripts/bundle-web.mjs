@@ -5,7 +5,7 @@
 // offline, and changes only when a new binary ships.
 //
 // The build is a plain `vite build` with the default base `/`, which is exactly
-// what a single-origin shell wants, and ONE environment variable changes it.
+// what a single-origin shell wants, and TWO environment variables change it.
 //
 // VITE_SHELL_BUILD drops the service worker (see `vite.config.ts`). It is about
 // the medium rather than the audience: a desktop build has no deployment to
@@ -13,6 +13,10 @@
 // here would precache a copy of files already on local disk and poll a
 // `version.json` that never changes. It also switches the in-app update prompt
 // off, which would otherwise be a toast nobody can act on.
+//
+// VITE_EMBEDDED_BUILD leaves the web edition's link-preview tags and its
+// GitHub Pages `CNAME` out (see `vite.config.ts`): a store app carries no link
+// back to the source or to the web edition's host.
 //
 // That is BUILD-TIME, so `--skip-build` copies whatever the last build left in
 // `dist/` — a webroot re-copied from a plain `npm run build` carries the
@@ -28,11 +32,12 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
+  readFileSync,
   rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const APP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -52,7 +57,7 @@ if (!skipBuild) {
     // Windows command shims are batch files, which Node cannot execute
     // directly (EINVAL); cmd.exe must interpret them.
     shell: WINDOWS,
-    env: { ...process.env, VITE_SHELL_BUILD: "on" },
+    env: { ...process.env, VITE_SHELL_BUILD: "on", VITE_EMBEDDED_BUILD: "on" },
   });
 }
 
@@ -64,6 +69,39 @@ if (!existsSync(DIST_DIR) || !statSync(DIST_DIR).isDirectory()) {
 }
 if (!existsSync(join(DIST_DIR, "index.html"))) {
   console.error(`✗ ${DIST_DIR} has no index.html — that is not a site build.`);
+  process.exit(1);
+}
+
+// A store app carries no link back to the source — no repository, issues,
+// releases or sponsor link, and no trace of the author's GitHub handle at all,
+// not even the web edition's host. That is an owner decision with no
+// exceptions, and VITE_EMBEDDED_BUILD is what strips the site's own traces, so
+// this is the check that nothing else carries one: any file that names the
+// handle refuses the bundle.
+// Checked on `dist/`, before the copy, so a refused build never reaches the
+// webroot.
+const FORBIDDEN = "niclaslindstedt";
+function taintedFiles(dir, found = []) {
+  for (const entry of readdirSync(dir)) {
+    const abs = join(dir, entry);
+    if (statSync(abs).isDirectory()) {
+      taintedFiles(abs, found);
+    } else if (
+      readFileSync(abs).toString("latin1").toLowerCase().includes(FORBIDDEN)
+    ) {
+      found.push(relative(DIST_DIR, abs));
+    }
+  }
+  return found;
+}
+const tainted = taintedFiles(DIST_DIR);
+if (tainted.length) {
+  console.error(
+    `✗ refusing the bundle: ${tainted.join(", ")} name(s) "${FORBIDDEN}". ` +
+      `A store app carries no link to the source. Rebuild through this ` +
+      `script (not --skip-build over a plain site build), or remove the ` +
+      `trace at build time.`,
+  );
   process.exit(1);
 }
 

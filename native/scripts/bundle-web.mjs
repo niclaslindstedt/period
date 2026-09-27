@@ -8,7 +8,9 @@
 // The web build is a plain `npm run build` at the repo root — base `/`, which
 // is exactly what a localhost origin wants — and NOTHING in `src/` is changed
 // for the app. If the wrapper ever needs the web app to behave differently,
-// that is a sign it has stopped being thin.
+// that is a sign it has stopped being thin. The one flag it sets,
+// VITE_EMBEDDED_BUILD, leaves the web edition's link-preview tags and its
+// GitHub Pages `CNAME` out of the build (see `vite.config.ts`).
 //
 // Usage:
 //   node scripts/bundle-web.mjs                 # build the site, then zip it
@@ -58,6 +60,7 @@ if (!skipBuild) {
     stdio: "inherit",
     // npm on Windows is a batch shim, which Node cannot execute directly.
     shell: WINDOWS,
+    env: { ...process.env, VITE_EMBEDDED_BUILD: "on" },
   });
 }
 
@@ -93,6 +96,28 @@ if (count === 0 || !files["index.html"]) {
   throw new Error(
     `dist/ has no index.html (${count} files) — the web build looks empty.`,
   );
+}
+
+// A store app carries no link back to the source — no repository, issues,
+// releases or sponsor link, and no trace of the author's GitHub handle at all,
+// not even the web edition's host. That is an owner decision with no
+// exceptions, and VITE_EMBEDDED_BUILD is what strips the site's own traces, so
+// this is the check that nothing else carries one: any file that names the
+// handle refuses the bundle.
+const FORBIDDEN = "niclaslindstedt";
+const tainted = Object.entries(files)
+  .filter(([, bytes]) =>
+    Buffer.from(bytes).toString("latin1").toLowerCase().includes(FORBIDDEN),
+  )
+  .map(([path]) => path);
+if (tainted.length) {
+  console.error(
+    `\n✗ refusing the bundle: ${tainted.join(", ")} name(s) "${FORBIDDEN}". ` +
+      `A store app carries no link to the source. Rebuild through this ` +
+      `script (not --skip-build over a plain site build), or remove the ` +
+      `trace at build time.\n`,
+  );
+  process.exit(1);
 }
 
 // Deterministic zip: every entry pinned to the ZIP epoch (1980-01-01), so the

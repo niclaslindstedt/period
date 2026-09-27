@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
+import { join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 
 import { appPwa } from "./pwa-plugin.ts";
 
@@ -81,6 +82,42 @@ const version = process.env.GITHUB_SHA
 // nothing left to prompt about.
 const shellBuild = process.env.VITE_SHELL_BUILD === "on";
 
+// A build EMBEDDED in a store app — the phone wrapper's
+// `native/assets/webroot.zip` and the desktop shell's `tauri/webroot/` — set
+// by both `bundle-web.mjs` scripts. A store app carries no link back to the
+// source or to the web edition's host, by owner decision and without
+// exception, so this build leaves out the two things in the site that name
+// them: the Open Graph and Twitter Card tags (the web edition's URL, there
+// only for link previews of it) and the GitHub Pages `CNAME`. Nothing in
+// `src/` changes. The bundle scripts refuse a bundle that still names the
+// author's handle anywhere, so a new trace fails the build instead of
+// shipping.
+const embeddedBuild = process.env.VITE_EMBEDDED_BUILD === "on";
+
+function embedded(): Plugin {
+  let outDir = "";
+  return {
+    name: "embedded-build",
+    apply: "build",
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    transformIndexHtml(html) {
+      return html
+        .replace(/\n\s*<!-- (?:Open Graph|Twitter Card) -->/g, "")
+        .replace(
+          /\n\s*<meta\b[^>]*\b(?:property="og:|name="twitter:)[^>]*>/g,
+          "",
+        );
+    },
+    // Public files are copied before the bundle is written, so by now the
+    // `CNAME` is in `dist/`.
+    writeBundle() {
+      rmSync(join(outDir, "CNAME"), { force: true });
+    },
+  };
+}
+
 export default defineConfig({
   base,
   define: {
@@ -106,5 +143,6 @@ export default defineConfig({
     preact(),
     tailwindcss(),
     appPwa({ base, version, ignorePaths, serviceWorker: !shellBuild }),
+    ...(embeddedBuild ? [embedded()] : []),
   ],
 });
