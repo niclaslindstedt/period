@@ -170,11 +170,25 @@ Three properties make it safe to ship in the production bundle:
 - **Nothing survives a reload.** The switch is module state, never persisted,
   so reloading the page is always the guaranteed way back to the real reports.
 
-`dev/demoData.ts` itself is pure and clock-free like the derivation it feeds:
-`today` is a parameter, and every date in the document is an _offset_ from it
-("26 days ago"), never a fixed date that would age into a stale demo. The
-"randomness" is a hash of each day's offset, so two builds of the same day are
-byte-identical. The clock is read once, in `dev/demoBackend.ts`, when a
+A build made with `VITE_SEED=demo` (`make demo`, and the App Store
+screenshots) is the demo and nothing else: `bootDemo` in `dev/useDemoData.ts`
+loads the backend and turns the switch on before `main.tsx` mounts the app, so
+the first render already reads the demo and the device's own document is never
+read, cached or synced. There the switch cannot be turned off, and Settings →
+Sync refuses to connect or disconnect a backend (so it does for the toggle,
+too — a connect would copy the demo into the reader's cloud). Any other build
+folds the check away.
+
+`dev/demoData.ts` itself is pure like the derivation it feeds: the moment it
+opens is a parameter, and every date in the document is an _offset_ from it
+("26 days ago"), never a fixed date that would age into a stale demo — today
+always lands on day 24 of a cycle, a few days before the next period, and
+`tests/demoData_test.ts` asserts what the screens then show for every day of a
+year. The "randomness" is a hash of each day's offset, so two builds of the
+same moment are identical. It is one invented person's ordinary year: cycles of
+26–31 days, periods of four to six, mood swings in the days before a period,
+and waking temperatures (authored in °F) since spring; Lust and Sex are never
+answered yes and no fertility test is logged. The clock is read once, in `dev/demoBackend.ts`, when a
 document is first seeded.
 
 The builder and the backend sit behind `import()` and are fetched only when the

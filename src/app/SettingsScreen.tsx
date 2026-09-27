@@ -252,12 +252,16 @@ export function SettingsScreen({
             where there is one and is absent in a browser. */}
         <SegmentedControl<SyncBackendId>
           value={sync.backend}
+          // Demo data is showing: connecting or disconnecting would change the
+          // reader's real backend from a session that is not theirs, and the
+          // first save after a connect would copy the demo into their cloud.
           options={sync.available.map((id) => ({
             value: id,
             label: PROVIDER_NAMES[id],
+            disabled: demoData.on && id !== sync.backend,
           }))}
           onChange={(next) => {
-            if (next === sync.backend) return;
+            if (next === sync.backend || demoData.on) return;
             if (next === "local") {
               sync.disconnect();
               return;
@@ -288,7 +292,11 @@ export function SettingsScreen({
             <Button onClick={() => void sync.reload()} disabled={busy}>
               {t("settings.reload")}
             </Button>
-            <Button variant="danger" onClick={sync.disconnect}>
+            <Button
+              variant="danger"
+              onClick={sync.disconnect}
+              disabled={demoData.on}
+            >
               {t("settings.disconnect")}
             </Button>
           </div>

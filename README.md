@@ -94,6 +94,10 @@ Open the printed URL. The app boots on the daily report with today selected:
 press whichever of the four buttons applies, then press **Save report**. Log a few days of a period and the **Forecast** tab starts predicting;
 log a second period and **History** starts drawing. From then on the report is the **+** in the top right.
 
+To open it on a demo instead — a year of one invented person's reports, held
+in memory and never written to the browser — run `make demo`
+(`VITE_SEED=demo`).
+
 To try the production build the way it deploys:
 
 ```sh

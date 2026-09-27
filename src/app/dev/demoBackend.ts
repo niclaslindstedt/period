@@ -11,8 +11,6 @@
 // when the toggle flips off or the page reloads, at which point `App` feeds the
 // real `localDocBackend` back and the untouched document on disk reloads.
 
-import { dayKeyOf } from "@niclaslindstedt/oss-framework/calendar";
-
 import type { AppData } from "../types.ts";
 import type { DocBackend } from "../useDocStore.ts";
 import { buildDemoData } from "./demoData.ts";
@@ -22,16 +20,16 @@ import { buildDemoData } from "./demoData.ts";
  * toggle is turned on, so every enable starts from a pristine sample.
  *
  * The clock is read here rather than in `buildDemoData`, which stays a pure
- * function of the day it is given: the demo document is anchored to the day it
- * was seeded on, so a session that runs past midnight keeps the reports the
- * user has been looking at instead of silently rebuilding under them.
+ * function of the moment it is given: the demo document is anchored to the
+ * moment it was seeded, so a session that runs past midnight keeps the reports
+ * the user has been looking at instead of silently rebuilding under them.
  */
 export function createDemoBackend(): DocBackend {
   let doc: AppData | null = null;
   return {
     id: "demo",
     load() {
-      doc ??= buildDemoData(dayKeyOf(new Date()));
+      doc ??= buildDemoData(new Date());
       return doc;
     },
     save(next) {

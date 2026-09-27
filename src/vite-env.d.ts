@@ -25,6 +25,9 @@ interface ImportMetaEnv {
   readonly VITE_DROPBOX_APP_KEY?: string;
   // App-folder names the synced document is filed under, per provider.
   readonly VITE_DROPBOX_APP_FOLDER?: string;
+  // "demo" boots the app onto the in-memory demo document, and nothing else:
+  // `make demo` and the store screenshots. See `src/app/dev/useDemoData.ts`.
+  readonly VITE_SEED?: string;
 }
 
 interface ImportMeta {

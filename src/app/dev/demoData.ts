@@ -1,129 +1,127 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-// The developer "Demo data" document — a year of daily reports for one
-// invented person, built so every screen in the app has something real to draw.
+// The demo document — a year of one invented person's daily reports. It is the
+// live demo (`make demo`, Settings → Developer → Demo data) and what the App
+// Store screenshots are taken of, so it is written to be photographed: an
+// ordinary, healthy year that gives every screen something real to draw, and
+// nothing on it that would alarm, embarrass or single anyone out.
 //
-// The story it tells, because a demo that isn't a story shows nothing: a woman
-// who has logged her period for a year, whose mood reliably turns in the week
-// before it arrives, and who spent the last six months trying to conceive —
-// which is when the waking temperatures and the ovulation strips start, on
-// roughly nine mornings in ten. Two of those mornings she was ill instead. She
-// is not pregnant: every cycle in the year closes with a period, and the one in
-// progress is three days from its own.
+// The story, such as it is: someone who has logged their period for a year.
+// Cycles run 26 to 31 days and wander a little from month to month, periods
+// last four to six days, and their mood reliably turns in the few days before
+// one arrives — the one symptom the report asks about. In spring they took up
+// a waking temperature on most mornings, which is what lets the forecast date
+// the current cycle's rise. Nothing else: the Lust and Sex answers are never
+// yes and no fertility test is ever logged, because a demo anyone might open
+// on a train should not narrate an intimate life or assume what someone is
+// tracking for.
 //
-// **Every date is relative to `today`.** The document is authored in offsets —
-// "26 days ago", "the period before that" — and only turned into `DayKey`s at
-// build time, so the demo is the same demo whenever it is loaded. Fixed dates
-// would age: a year from now they would show a stale document whose forecast
-// ran out months ago.
+// **Every date is an offset from the moment the demo opens.** The document is
+// authored as "26 days ago", "the period before that", so it never ages and
+// the screens read the same on any day of the year (`tests/demoData_test.ts`
+// walks a whole year of them). Today itself is left unlogged: the Report
+// screen opens on it, and a report already filed has nothing to show being
+// filled in.
 //
-// Pure, clock-free and deterministic, like the derivation it feeds: `today` is
-// a parameter, the "randomness" is a hash of the day's offset, and two calls
-// with the same argument produce identical documents (see
-// `tests/demoData_test.ts`). Reached only through the in-memory demo backend
+// Pure and deterministic: `now` is a parameter, and the "randomness" is a hash
+// of a day's offset, so two calls with the same moment produce identical
+// documents. Reached only through the in-memory demo backend
 // (`demoBackend.ts`) — nothing here is ever written to disk.
 
-import { addDays, daysBetween } from "@niclaslindstedt/oss-framework/calendar";
-import type { DayKey } from "@niclaslindstedt/oss-framework/calendar";
-
-import { FEVER_CELSIUS } from "../temperature.ts";
 import {
-  DOC_VERSION,
-  type AppData,
-  type DayEntry,
-  type FertilityTest,
-} from "../types.ts";
+  addDays,
+  dayKeyOf,
+  type DayKey,
+} from "@niclaslindstedt/oss-framework/calendar";
 
-/** How many days of history the demo carries. A year: long enough for a dozen
- *  cycles, which is what makes the forecast's confidence label read "high" and
- *  gives its backtest something to score. */
+import { parseTemperature } from "../temperature.ts";
+import { DOC_VERSION, type AppData, type DayEntry } from "../types.ts";
+
+/** How many days of history the demo carries. A year: a dozen cycles, which
+ *  is what gives the forecast's backtest something to score and the History
+ *  screen a chart worth reading. */
 export const DEMO_DAYS = 365;
 
-/** Where the demo's "today" sits in the cycle in progress — day 7 of an
- *  expected 29. The period ended two days ago and the fertile window is a week
- *  out, which is the state with the most on screen at once: a period just
- *  logged, a forecast with a fortnight to run, and the fertile days it is
- *  counting towards still ahead. */
-const CURRENT_CYCLE_DAY = 7;
+/** Where today sits in the cycle in progress: day 24 of an expected 29. The
+ *  period and the fertile window after it are both behind, the temperature
+ *  rise has been caught, and the next period is a few days out — the state in
+ *  which the forecast is sharpest and the month view holds all its marks. */
+export const CURRENT_CYCLE_DAY = 24;
 
-/** The length the in-progress cycle is heading for. Only used to place its
- *  ovulation and its premenstrual week — the day it predicts is never logged. */
+/** The length the cycle in progress is heading for. Only used to place its
+ *  ovulation and its temperature rise — the onset it predicts is never
+ *  logged. */
 const EXPECTED_CURRENT_CYCLE = 29;
 
 /**
  * Completed cycle lengths, most recent first.
  *
- * A real cycle is neither a constant nor noise: it varies by a few days around
- * its own centre, with the occasional longer one. Twenty-six to thirty-two
- * around a median of 29 is an ordinary year, and that spread is what gives the
- * forecast an interval worth drawing rather than one falsely confident date.
+ * A real cycle is neither a constant nor noise: it wanders a few days around
+ * its own centre. Twenty-six to thirty-one around an average of 28 is an
+ * ordinary year, and that spread is what gives the forecast an interval worth
+ * drawing rather than one falsely confident date.
  */
-const CYCLE_LENGTHS = [28, 30, 29, 27, 31, 28, 29, 26, 30, 28, 29, 32, 27];
+const CYCLE_LENGTHS = [28, 30, 27, 29, 31, 28, 26, 29, 28, 28, 27, 29, 30];
 
-/** How many days each period bled, cycle by cycle (index 0 is the most recent,
- *  which started 26 days ago). Four to six, as periods are. */
-const PERIOD_LENGTHS = [5, 4, 5, 6, 4, 5, 5, 4, 6, 5, 4, 5, 5];
+/** How many days each period bled, cycle by cycle (index 0 is the one in
+ *  progress). Four to six, as periods are. */
+const PERIOD_LENGTHS = [5, 5, 4, 5, 6, 5, 4, 5, 5, 6, 4, 5, 5, 4];
 
 /** The luteal phase of each cycle — the days from ovulation to the next
- *  period. The steadiest span in the cycle, which is exactly why the model
- *  counts ovulation backwards from an onset rather than forwards from a
- *  start. */
-const LUTEAL_LENGTHS = [14, 14, 13, 14, 15, 14, 14, 13, 14, 14, 15, 14, 13];
+ *  period. The steadiest span in the cycle, which is why the model counts
+ *  ovulation backwards from an onset rather than forwards from a start. */
+const LUTEAL_LENGTHS = [14, 14, 13, 14, 14, 13, 14, 15, 14, 13, 14, 14, 13, 14];
 
-/**
- * How many days before each period her mood turns, cycle by cycle.
- *
- * A window rather than a per-day coin flip, because that is what a
- * premenstrual week actually is: a stretch of days that arrives together, not
- * six independent chances of a bad afternoon. The width moves between five and
- * eight days from cycle to cycle, and one day inside each window stays calm
- * (see `quietLead`), so the pattern is strong without ever being a clean step
- * the model could read off in one cycle.
- */
-const MOOD_WINDOWS = [6, 7, 5, 6, 8, 6, 7, 5, 6, 6, 7, 6, 5];
-
-/** How far back the trying-to-conceive stretch runs. Six months: before it she
- *  logged the four answers and nothing else, and from it on the thermometer and
- *  the ovulation strips appear. */
-const TTC_DAYS = 183;
-
-/** The cycle she didn't test in, counted back from the current one. Someone who
- *  tests every morning for six months and never once runs out of strips is a
- *  spreadsheet, not a person. */
-const UNTESTED_CYCLE = 4;
-
-/** The illness: two consecutive mornings, the first this many days ago. Placed
- *  mid-follicular so it reads as what it is — an outlier with nothing to do
- *  with the cycle — rather than as an early luteal shift. */
-const FEVER_OFFSET = 104;
-
-/** Mornings the thermometer simply wasn't there: a trip and a long weekend.
- *  `[first offset, length]`, in days before today. Real coverage is not evenly
- *  scattered — it comes in runs. */
-const TEMPERATURE_GAPS: readonly (readonly [number, number])[] = [
-  [118, 4],
-  [62, 3],
+/** The days before each period on which the mood turned, by the index of the
+ *  cycle that period opens (1 = the day before). Two to four of the last five
+ *  days — a pattern, never a whole week of it. */
+const MOOD_LEADS: readonly (readonly number[])[] = [
+  [1, 2, 4],
+  [1, 3],
+  [2, 3, 4],
+  [1, 2],
+  [1, 2, 3, 5],
+  [2, 4],
+  [1, 3, 4],
+  [1, 2],
+  [2, 3],
+  [1, 2, 4],
+  [1, 3],
+  [2, 3, 5],
+  [1, 2],
+  [1, 4],
 ];
 
-// Channel tags for the hash below. Each field draws from its own stream, so a
-// day with a mood swing is not thereby a day with sex.
-const CH_MOOD = 1;
-const CH_LUST = 2;
-const CH_SEX = 3;
+/** Cycles (by index) whose first day of bleeding came with a mood swing too. */
+const MOOD_ON_DAY_ONE = new Set([1, 4, 7, 10]);
+
+/** Ordinary bad days elsewhere in the cycle, as offsets from today. A handful
+ *  in a year, spread out, none of them in the last month. */
+const STRAY_MOOD_DAYS = new Set([47, 96, 151, 212, 268, 331]);
+
+/** How far back the waking temperatures go: about five months, since the
+ *  spring the thermometer arrived. */
+export const TEMPERATURE_DAYS = 150;
+
+/** Mornings the thermometer stayed in the drawer: a week away and a long
+ *  weekend. `[first offset, length]`, in days before today. Real coverage is
+ *  not evenly scattered — it comes in runs. */
+const TEMPERATURE_GAPS: readonly (readonly [number, number])[] = [
+  [104, 6],
+  [58, 3],
+];
+
+// Channel tags for the hash below, so each draw has its own stream.
 const CH_TEMP = 4;
 const CH_TEMP_MISS = 5;
-const CH_TEST_MISS = 6;
 const CH_HOUR = 7;
 const CH_MINUTE = 8;
-const CH_QUIET = 9;
 
 /**
  * A stable pseudo-random number in `[0, 1)` for one day and one channel.
  *
- * Keyed on the day's **offset from today**, not on its date, which is what
- * makes the demo reproducible: a given cycle-day always draws the same
- * numbers, so the document has the same shape today, tomorrow, and next year —
- * it only slides along the calendar. A PRNG seeded once and walked forwards
- * would lose that the moment a day was added at the front.
+ * Keyed on the day's **offset from today**, not on its date, which keeps the
+ * demo the same demo whenever it is opened: a given cycle day always draws the
+ * same numbers, and the document only slides along the calendar.
  */
 function noise(offset: number, channel: number): number {
   let h = (Math.imul(offset, 374761393) + Math.imul(channel, 668265263)) >>> 0;
@@ -131,17 +129,6 @@ function noise(offset: number, channel: number): number {
   h = Math.imul(h, 1274126177) >>> 0;
   h = (h ^ (h >>> 16)) >>> 0;
   return h / 4294967296;
-}
-
-/** Day of the week in `Date.getDay()` numbering, without touching a clock:
- *  2024-01-01 was a Monday, so everything counts from there. */
-function weekdayOf(day: DayKey): number {
-  return (((daysBetween("2024-01-01", day) + 1) % 7) + 7) % 7;
-}
-
-function roundTo(value: number, decimals: number): number {
-  const factor = 10 ** decimals;
-  return Math.round(value * factor) / factor;
 }
 
 /** One cycle, in days-before-today coordinates. Larger offsets are further in
@@ -158,27 +145,21 @@ export type DemoCycle = {
   periodLength: number;
   /** Offset of ovulation: `nextStart` plus this cycle's luteal phase. */
   ovulation: number;
-  /** How many days before the next period her mood turned this cycle. */
-  moodWindow: number;
 };
 
 /**
  * Lay the year out as cycles, most recent first.
  *
- * Built backwards from today because that is the end that has to stay put: the
- * demo's whole point is that "today" lands on a particular day of a particular
- * cycle, and anchoring the far end instead would let that slide every time a
- * length in the table above was edited.
+ * Built backwards from today because that is the end that has to stay put:
+ * the demo's whole point is that today lands on a particular day of a
+ * particular cycle.
  */
 export function demoCycles(): DemoCycle[] {
   const cycles: DemoCycle[] = [];
   let start = CURRENT_CYCLE_DAY - 1;
   let nextStart = start - EXPECTED_CURRENT_CYCLE;
   // One cycle past the far end of the window, so the oldest logged days sit
-  // inside a modelled cycle rather than falling off the back of the list. Only
-  // its most recent days are ever logged — its own period began before the
-  // year did, which is what a year of logging that started mid-cycle looks
-  // like.
+  // inside a modelled cycle: a year of logging that began mid-cycle.
   for (let i = 0; ; i++) {
     cycles.push({
       index: i,
@@ -186,7 +167,6 @@ export function demoCycles(): DemoCycle[] {
       nextStart,
       periodLength: PERIOD_LENGTHS[i % PERIOD_LENGTHS.length]!,
       ovulation: nextStart + LUTEAL_LENGTHS[i % LUTEAL_LENGTHS.length]!,
-      moodWindow: MOOD_WINDOWS[i % MOOD_WINDOWS.length]!,
     });
     if (start > DEMO_DAYS) return cycles;
     nextStart = start;
@@ -194,9 +174,7 @@ export function demoCycles(): DemoCycle[] {
   }
 }
 
-/** The cycle a day belongs to. Offsets descend within a cycle, so the first
- *  cycle whose start is at or before the day (in offset terms, at or above it)
- *  is the one it falls in. */
+/** The cycle a day belongs to: the first whose start is at or before it. */
 function cycleAt(cycles: DemoCycle[], offset: number): DemoCycle {
   for (const cycle of cycles) {
     if (offset <= cycle.start) return cycle;
@@ -204,62 +182,41 @@ function cycleAt(cycles: DemoCycle[], offset: number): DemoCycle {
   return cycles[cycles.length - 1]!;
 }
 
-/** The one day inside a cycle's premenstrual window that stayed calm. Keyed on
- *  the cycle rather than the day, so it is one day per cycle and not a rate. */
-function quietLead(cycle: DemoCycle): number {
-  return 1 + Math.floor(noise(cycle.index, CH_QUIET) * cycle.moodWindow);
-}
-
-/** Build one day's report. `offset` is days before today; everything the day
- *  answers is a function of where it sits in its cycle. */
-function demoEntry(date: DayKey, offset: number, cycle: DemoCycle): DayEntry {
+/** Build one day's report. `offset` is days before today; `newer` is the
+ *  cycle the next period opens, whose premenstrual days these are. */
+function demoEntry(
+  date: DayKey,
+  offset: number,
+  cycle: DemoCycle,
+  newer: DemoCycle | undefined,
+): DayEntry {
   const cycleDay = cycle.start - offset + 1;
   /** Days from this day to the next period start. */
   const lead = offset - cycle.nextStart;
   /** Days from this day to ovulation — positive before it, negative after. */
   const ovLead = offset - cycle.ovulation;
   const bleeding = cycleDay >= 1 && cycleDay <= cycle.periodLength;
-  const ttc = offset <= TTC_DAYS;
-  const feverDay = offset === FEVER_OFFSET || offset === FEVER_OFFSET - 1;
 
-  // The premenstrual window is the pattern the demo exists to show: her mood
-  // turns a few days out and stays turned until the period arrives, bar the
-  // one day that doesn't. Elsewhere a swing is an ordinary bad day — a little
-  // likelier over the first days of bleeding, and rare otherwise.
-  const premenstrual = lead >= 1 && lead <= cycle.moodWindow;
-  let moodChance = 0.04;
-  if (premenstrual) moodChance = lead === quietLead(cycle) ? 0 : 1;
-  else if (bleeding) moodChance = cycleDay <= 2 ? 0.35 : 0.15;
-
-  // Sex drive climbs into the fertile days and falls away during the period.
-  let lustChance = 0.12;
-  if (bleeding) lustChance = 0.03;
-  else if (ovLead >= -1 && ovLead <= 1) lustChance = 0.65;
-  else if (ovLead >= 2 && ovLead <= 4) lustChance = 0.45;
-  else if (ovLead === -2) lustChance = 0.3;
-
-  // Sex is the confounded channel, and the demo says so out loud: a weekend
-  // moves it about as much as the cycle does — until the trying-to-conceive
-  // months, where the fertile days are deliberately aimed at.
-  let sexChance = bleeding ? 0.02 : 0.14;
-  const weekday = weekdayOf(date);
-  if (!bleeding && (weekday === 5 || weekday === 6)) sexChance += 0.18;
-  if (ovLead >= -1 && ovLead <= 5) {
-    sexChance = ttc ? (ovLead >= 0 && ovLead <= 2 ? 0.8 : 0.6) : 0.3;
-  }
-  // Nobody is trying for a baby on the two mornings they woke up ill.
-  if (feverDay) sexChance = 0;
+  // The premenstrual days are the pattern the mood chart is read for, and the
+  // onset's own morning sometimes joins them. The cycle in progress has no
+  // onset yet, so none of its days are premenstrual.
+  const premenstrual =
+    newer !== undefined &&
+    MOOD_LEADS[newer.index % MOOD_LEADS.length]!.includes(lead);
+  const moodSwings =
+    premenstrual ||
+    (cycleDay === 1 && MOOD_ON_DAY_ONE.has(cycle.index)) ||
+    STRAY_MOOD_DAYS.has(offset);
 
   return {
     date,
     bleeding,
-    moodSwings: noise(offset, CH_MOOD) < moodChance,
-    lust: noise(offset, CH_LUST) < lustChance,
-    sex: noise(offset, CH_SEX) < sexChance,
-    temperature: ttc ? demoTemperature(offset, lead, ovLead, feverDay) : null,
-    fertilityTest: ttc
-      ? demoFertilityTest(cycle, offset, cycleDay, ovLead)
-      : null,
+    moodSwings,
+    lust: false,
+    sex: false,
+    temperature:
+      offset <= TEMPERATURE_DAYS ? demoTemperature(offset, lead, ovLead) : null,
+    fertilityTest: null,
     updatedAt: demoStamp(date, offset),
   };
 }
@@ -267,91 +224,60 @@ function demoEntry(date: DayKey, offset: number, cycle: DemoCycle): DayEntry {
 /**
  * The morning's waking temperature, or null on a morning it wasn't taken.
  *
- * A biphasic curve, which is the thing a chart of these is read for: a
- * follicular baseline, a dip as the LH surge peaks, a third of a degree of
- * luteal shift over the two days after ovulation, and a drop back in the last
- * days before the period. The noise is ±0.07 °C — about what a real
- * thermometer and a real night's sleep contribute, and small enough that the
- * step stays visible through it.
+ * Authored in Fahrenheit to two decimals — what a basal thermometer on a US
+ * nightstand reads, and what the store frames show — and stored the way the
+ * Report screen stores a typed °F reading (`parseTemperature`), so every value
+ * reads back as the digits that were typed. A biphasic curve: a follicular
+ * baseline near 97.4 °F, a dip on the morning of ovulation, a rise of about
+ * two thirds of a degree over the mornings after it, and a drop back in the
+ * last mornings before the period. The noise is about ±0.09 °F — a real
+ * thermometer and a real night's sleep — small enough that the rise clears
+ * the app's own three-over-six rule (`detectThermalShift`) in every cycle.
  */
 function demoTemperature(
   offset: number,
   lead: number,
   ovLead: number,
-  feverDay: boolean,
 ): number | null {
-  // The illness overrides everything, a missed morning included: the first day
-  // is the slider's fever stop (what the app stores when you tap it), the
-  // second a real reading on the way back down. Both sit above the band, so
-  // `forecastModel.ts` leaves them out of the temperature channel — which is
-  // precisely the behaviour worth having in a demo document.
-  if (feverDay) return offset === FEVER_OFFSET ? FEVER_CELSIUS : 37.8;
   for (const [first, length] of TEMPERATURE_GAPS) {
     if (offset <= first && offset > first - length) return null;
   }
-  if (noise(offset, CH_TEMP_MISS) < 0.06) return null;
+  if (noise(offset, CH_TEMP_MISS) < 0.12) return null;
 
-  let celsius = 36.36;
-  if (ovLead === 1) celsius -= 0.06;
-  else if (ovLead === 0) celsius += 0.02;
-  else if (ovLead === -1) celsius += 0.14;
-  else if (ovLead === -2) celsius += 0.24;
-  else if (ovLead < -2) celsius += 0.3;
-  if (lead <= 1) celsius -= 0.12;
-  else if (lead === 2) celsius -= 0.06;
-  celsius += (noise(offset, CH_TEMP) - 0.5) * 0.14;
-  return roundTo(celsius, 2);
+  let f = 97.4;
+  if (ovLead === 0) f -= 0.08;
+  else if (ovLead === -1) f += 0.5;
+  else if (ovLead === -2) f += 0.6;
+  else if (ovLead < -2) f += 0.66;
+  if (lead >= 0 && lead <= 1) f -= 0.3;
+  else if (lead === 2) f -= 0.12;
+  f += (noise(offset, CH_TEMP) - 0.5) * 0.18;
+  return parseTemperature(f.toFixed(2), "f");
 }
 
-/**
- * What an ovulation strip said that morning, or null on a morning none was
- * used.
- *
- * Tested the way strips actually get used: from cycle day 9, one a morning,
- * stopping the day after the positive — there is no reason to keep testing once
- * the surge has been caught, and a box holds twenty. The positive lands the day
- * before ovulation, which is where an LH surge is.
- */
-function demoFertilityTest(
-  cycle: DemoCycle,
-  offset: number,
-  cycleDay: number,
-  ovLead: number,
-): FertilityTest | null {
-  if (cycle.index === UNTESTED_CYCLE) return null;
-  if (cycleDay < 9) return null;
-  // Testing stops the morning after the surge was caught.
-  if (ovLead < 0) return null;
-  // The surge itself is never a missed morning — the day she caught it is by
-  // definition a day she tested, and a cycle whose positive went unrecorded
-  // would be a cycle the demo silently fails to show the sharpest evidence the
-  // document can hold.
-  if (ovLead !== 1 && noise(offset, CH_TEST_MISS) < 0.1) return null;
-  return ovLead === 1 ? "positive" : "negative";
-}
-
-/** When the report was filed: the evening of its own day. Reports carry the
- *  stamp the merge tie-breaks on, so they have to be real timestamps in the
- *  past — and a tracker gets filled in at bedtime. */
+/** When the report was filed: the evening of its own day, as a local
+ *  wall-clock time (the way a save stamps it), so it reads right in any time
+ *  zone. */
 function demoStamp(date: DayKey, offset: number): string {
-  const hour = 20 + Math.floor(noise(offset, CH_HOUR) * 3);
+  const [year, month, day] = date.split("-").map(Number);
+  const hour = 21 + Math.floor(noise(offset, CH_HOUR) * 2);
   const minute = Math.floor(noise(offset, CH_MINUTE) * 60);
-  return `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00.000Z`;
+  return new Date(year!, month! - 1, day!, hour, minute).toISOString();
 }
 
 /**
- * Build the demo document: one report a day for the year ending yesterday.
- *
- * Today itself is left unlogged on purpose — the Report screen opens on today,
- * and a demo whose first screen is already filled in has nothing to show being
- * filled in.
+ * Build the demo document for the moment it opens: one report a day for the
+ * year ending yesterday.
  */
-export function buildDemoData(today: DayKey): AppData {
+export function buildDemoData(now: Date): AppData {
+  const today = dayKeyOf(now);
   const cycles = demoCycles();
   const entries: Record<DayKey, DayEntry> = {};
   for (let offset = DEMO_DAYS; offset >= 1; offset--) {
     const date = addDays(today, -offset);
-    entries[date] = demoEntry(date, offset, cycleAt(cycles, offset));
+    const cycle = cycleAt(cycles, offset);
+    const newer = cycle.index > 0 ? cycles[cycle.index - 1] : undefined;
+    entries[date] = demoEntry(date, offset, cycle, newer);
   }
   return { version: DOC_VERSION, entries };
 }

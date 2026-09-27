@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check actionlint release clean docs website website-dev install icons check-seo changelog bump tauri tauri-bundle tauri-clean tauri-fast tauri-fmt tauri-fmt-check tauri-install tauri-lint tauri-package tauri-package-debug tauri-test native-install native-bundle native-typecheck native-prebuild store-preflight store-metadata
+.PHONY: demo build test lint fmt fmt-check actionlint release clean docs website website-dev install icons check-seo changelog bump tauri tauri-bundle tauri-clean tauri-fast tauri-fmt tauri-fmt-check tauri-install tauri-lint tauri-package tauri-package-debug tauri-test native-install native-bundle native-typecheck native-prebuild store-preflight store-metadata store-upload
 
 build:
 	npm run build
@@ -20,6 +20,11 @@ release:
 
 clean:
 	rm -rf dist node_modules
+
+# The dev server on the demo: a year of one person's cycle, held in memory,
+# nothing read from or written to this browser's document (src/app/dev/).
+demo:
+	VITE_SEED=demo npm run dev
 
 install:
 	npm install

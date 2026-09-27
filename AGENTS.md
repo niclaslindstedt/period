@@ -213,7 +213,9 @@ like SVG's `focusable` as `"false"` rather than a JSX boolean.
   adapters (debounced push, conflict / auth / throttle handling). Suspended
   wholesale while demo data has taken over storage.
 - `src/app/dev/` — the developer "Demo data" switch: a year of invented reports
-  (`demoData.ts`, pure and clock-free, every date an offset from `today`), the
+  (`demoData.ts`, pure, every date an offset from the moment it opens — also
+  the store screenshots' data, booted before the first render by
+  `VITE_SEED=demo` / `make demo`), the
   in-memory `DocBackend` that serves them (`demoBackend.ts`), and the
   never-persisted flag both `App` and Settings read (`useDemoData.ts`). Behind
   `import()`, so a production user never downloads it.
@@ -370,7 +372,7 @@ the tests pin real dates without fake timers.
 | A new screen                         | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`, or a button in `src/app/TopBar.tsx` if it is an action rather than a place    |
 | A new setting                        | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                         |
 | A new developer-only affordance      | `src/app/dev/`, revealed behind `settings.devMode` in `SettingsScreen.tsx` — never in the persisted settings if it must not survive a reload |
-| A change to what the demo shows      | `src/app/dev/demoData.ts` (offsets from `today`, never fixed dates), with tests in `tests/demoData_test.ts`                                  |
+| A change to what the demo shows      | `src/app/dev/demoData.ts` (offsets from `now`, never fixed dates), with tests in `tests/demoData_test.ts`                                    |
 | A new storage backend                | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                              |
 | Any user-facing string               | `src/app/i18n/en.ts`, never inline in a component                                                                                            |
 | A shared UI primitive                | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                                |

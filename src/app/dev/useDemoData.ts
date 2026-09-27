@@ -32,6 +32,13 @@ export function demoBackendModule(): DemoBackendModule | null {
 
 let on = false;
 
+/** True in a build made with `VITE_SEED=demo` (`make demo`, the store
+ *  screenshots); folds to `false` in any other build. There the demo is not a
+ *  toggle but the whole session: `bootDemo` turns it on before the app mounts,
+ *  and turning it off is refused, since that would read the device's own
+ *  document into a build that promised to show none of it. */
+export const DEMO = import.meta.env.VITE_SEED === "demo";
+
 const subscribers = new Set<() => void>();
 
 function notify(): void {
@@ -53,6 +60,7 @@ let seq = 0;
  *  chunk — so the flag flips once that chunk has landed and `App` can build the
  *  backend synchronously from that render on. */
 export function setDemoData(next: boolean): void {
+  if (DEMO && !next) return;
   const token = ++seq;
   if (on === next) return;
   if (!next) {
@@ -67,6 +75,16 @@ export function setDemoData(next: boolean): void {
     on = true;
     notify();
   });
+}
+
+/** The store demo's boot (`VITE_SEED=demo`): load the backend chunk and turn
+ *  the demo on BEFORE the first render, so the first frame the store build
+ *  paints is already the demo — no render ever reads, caches or syncs the
+ *  device's own document. `main.tsx` awaits it; nothing mounts if it fails. */
+export async function bootDemo(): Promise<void> {
+  backend = await import("./demoBackend.ts");
+  seq += 1;
+  on = true;
 }
 
 /** The toggle, as the Settings screen reads and writes it. */

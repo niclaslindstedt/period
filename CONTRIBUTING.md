@@ -25,6 +25,7 @@ make build
 make test
 make lint
 make fmt-check
+make demo         # the dev server on the demo document (VITE_SEED=demo)
 ```
 
 ## Development workflow
