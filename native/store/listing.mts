@@ -192,7 +192,7 @@ export const RULES: StoreRules = {
   brand: {
     projectName: "Cycle",
     publisher: "Agilator AB",
-    marketingUrl: "https://cycle.niclaslindstedt.se/",
+    marketingUrl: "https://apps.agilator.se/cycle/",
     // Generated from one row in agilatorab/apps — see that repository's
     // AGENTS.md. A policy that claims less than the app does is a compliance
     // problem rather than a typo, so the row changes in the same release the
@@ -212,10 +212,10 @@ export const RULES: StoreRules = {
   },
 
   apple: {
-    // A cycle log. HEALTH_AND_FITNESS is where somebody looking for a period
-    // tracker looks; MEDICAL second, because the forecast is about the
-    // reader's own body rather than their workout.
-    categories: ["HEALTH_AND_FITNESS", "MEDICAL"],
+    // A cycle log, filed under HEALTH_AND_FITNESS alone — where somebody
+    // looking for a period tracker looks. MEDICAL is deliberately absent: it
+    // invites review to weigh the forecast as a medical device.
+    categories: ["HEALTH_AND_FITNESS"],
 
     advisory: {
       // A cycle log. Most rows are NONE and not a judgement call: the app
