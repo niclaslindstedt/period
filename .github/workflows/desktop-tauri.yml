@@ -148,6 +148,8 @@ jobs:
           # that Dropbox app must also allow http://127.0.0.1:53682/ … :53684/.
           dropbox-app-key: ${{ secrets.VITE_DROPBOX_APP_KEY }}
           dropbox-app-folder: ${{ secrets.VITE_DROPBOX_APP_FOLDER }}
+          # macOS signing and notarization — see .github/actions/apple-signing,
+          # which package-desktop runs on the macOS target.
           # The same six release.yml passes, so a dispatch here rehearses the
           # release's macOS half: a wrong certificate or password shows up
           # before a version is tagged. All six empty packages as before.
