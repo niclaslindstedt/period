@@ -117,17 +117,32 @@ function dibEntry(size, rgba) {
   return Buffer.concat([header, pixels, Buffer.alloc(maskStride * size)]);
 }
 
-function encodePng(width, height, rgba) {
-  const raw = Buffer.alloc((width * 4 + 1) * height);
+// `opaque` writes colour type 2 (RGB, no alpha channel at all) instead of 6
+// (RGBA): the App Store refuses an app icon that carries alpha, even one whose
+// every pixel is fully opaque, so the phone icon is encoded without it.
+function encodePng(width, height, rgba, { opaque = false } = {}) {
+  const channels = opaque ? 3 : 4;
+  const stride = width * channels + 1;
+  const raw = Buffer.alloc(stride * height);
   for (let y = 0; y < height; y++) {
-    raw[y * (width * 4 + 1)] = 0; // filter: none
-    rgba.copy(raw, y * (width * 4 + 1) + 1, y * width * 4, (y + 1) * width * 4);
+    raw[y * stride] = 0; // filter: none
+    if (!opaque) {
+      rgba.copy(raw, y * stride + 1, y * width * 4, (y + 1) * width * 4);
+      continue;
+    }
+    for (let x = 0; x < width; x++) {
+      const from = (y * width + x) * 4;
+      const to = y * stride + 1 + x * 3;
+      raw[to] = rgba[from];
+      raw[to + 1] = rgba[from + 1];
+      raw[to + 2] = rgba[from + 2];
+    }
   }
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // colour type: RGBA
+  ihdr[9] = opaque ? 2 : 6; // colour type: RGB or RGBA
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk("IHDR", ihdr),
@@ -292,6 +307,20 @@ function renderIcon(size, options) {
   return encodePng(size, size, renderIconRgba(size, options));
 }
 
+/** The square tile with no alpha channel, for the phone app's icon. With
+ *  `radius: 0` every pixel is already fully covered, so dropping the channel
+ *  loses nothing. */
+function renderOpaqueIcon(size, options) {
+  return encodePng(
+    size,
+    size,
+    renderIconRgba(size, { ...options, radius: 0 }),
+    {
+      opaque: true,
+    },
+  );
+}
+
 // The 1200×630 Open Graph card: the mark on the left, a month of day cells on
 // the right with a run of them filled — the app's whole idea in one glance.
 function renderOg() {
@@ -397,7 +426,8 @@ writeFileSync(
 // app on a home screen and the PWA on a home screen are one product rather
 // than two that resemble each other.
 //   icon          — iOS wants a square, fully opaque icon and applies its own
-//                   mask, so the tile is not pre-rounded.
+//                   mask, so the tile is not pre-rounded, and the PNG has no
+//                   alpha channel (the App Store refuses one that does).
 //   adaptive-icon — Android masks the foreground to whatever shape the
 //                   launcher uses, so the mark is inset to the safe zone and
 //                   the tile runs to the edges (app.config.js paints the same
@@ -406,7 +436,7 @@ writeFileSync(
 //                   corners.
 const nativeAssets = join(root, "native", "assets");
 mkdirSync(nativeAssets, { recursive: true });
-writeFileSync(join(nativeAssets, "icon.png"), renderIcon(1024, { radius: 0 }));
+writeFileSync(join(nativeAssets, "icon.png"), renderOpaqueIcon(1024));
 writeFileSync(
   join(nativeAssets, "adaptive-icon.png"),
   renderIcon(1024, { pad: 0.18, radius: 0 }),
