@@ -297,6 +297,11 @@ The worker is "prompt to update": it installs the new build's assets, parks in
 `waiting`, and only takes over when the user taps the update toast. A silent
 swap could discard a half-typed report.
 
+Only the website has one. The desktop and phone apps ship the site inside the
+binary and update from their store, so both bundle scripts build with
+`VITE_SHELL_BUILD=on` — no worker, no update prompt (`__SHELL_BUILD__`) — and
+refuse a webroot holding `sw.js`.
+
 The prompt itself is anchored to the bottom nav rather than to the viewport —
 `App.tsx` gives it a zero-height slot immediately above the bar and
 `styles.css` re-points the framework's card at it — because the bottom of the

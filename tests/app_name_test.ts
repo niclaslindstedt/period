@@ -19,6 +19,12 @@ describe("the phone bundle's build environment", () => {
     expect(env.VITE_EMBEDDED_BUILD).toBe("on");
   });
 
+  it("builds the shell edition: no service worker, no update prompt", () => {
+    const env = webBuildEnv({}, "preview");
+    expect(env.VITE_SHELL_BUILD).toBe("on");
+    expect(env.VITE_NATIVE_BUILD).toBe("on");
+  });
+
   it("falls back to the project's own name in a plain checkout", () => {
     expect(webBuildEnv({}, "preview").APP_DISPLAY_NAME).toBe(PROJECT_NAME);
     expect(
@@ -49,12 +55,12 @@ describe("resolveAppName", () => {
 
   it("is the project name on the website and the desktop app", () => {
     expect(resolveAppName({ APP_DISPLAY_NAME: LISTING })).toBe("Cycle");
-    expect(
-      resolveAppName({
-        VITE_EMBEDDED_BUILD: "on",
-        VITE_SHELL_BUILD: "on",
-        APP_DISPLAY_NAME: LISTING,
-      }),
-    ).toBe("Cycle");
+    // The desktop shell's build: embedded and a shell, but not the phone.
+    const desktop: Record<string, string> = {
+      VITE_EMBEDDED_BUILD: "on",
+      VITE_SHELL_BUILD: "on",
+      APP_DISPLAY_NAME: LISTING,
+    };
+    expect(resolveAppName(desktop)).toBe("Cycle");
   });
 });

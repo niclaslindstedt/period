@@ -8,11 +8,19 @@
 // The web build is a plain `npm run build` at the repo root — base `/`, which
 // is exactly what a localhost origin wants — and NOTHING in `src/` is changed
 // for the app. If the wrapper ever needs the web app to behave differently,
-// that is a sign it has stopped being thin. It sets two variables
+// that is a sign it has stopped being thin. It sets four variables
 // (`web-build-env.mjs`): VITE_EMBEDDED_BUILD, which leaves the web edition's
-// link-preview tags and its GitHub Pages `CNAME` out of the build, and
+// link-preview tags and its GitHub Pages `CNAME` out of the build;
+// VITE_SHELL_BUILD, the desktop shell's flag, because this site ships inside
+// the binary too — no service worker, no in-app update prompt, a new version
+// comes from the store; VITE_NATIVE_BUILD, which marks the phone build; and
 // APP_DISPLAY_NAME, the listing name the top bar's wordmark carries (the
 // project's own name in a plain checkout). See `vite.config.ts`.
+//
+// The flags are build-time, so `--skip-build` re-zips whatever the last build
+// left in `dist/` — and a website build there carries sw.js and the web
+// edition's links. The zip is refused when either is found
+// (`webroot-guard.mjs`).
 //
 // Usage:
 //   node scripts/bundle-web.mjs                 # build the site, then zip it
@@ -40,6 +48,7 @@ import { fileURLToPath } from "node:url";
 import { zipSync } from "fflate";
 
 import { webBuildEnv } from "./web-build-env.mjs";
+import { webrootProblems } from "./webroot-guard.mjs";
 
 const APP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_DIR = resolve(APP_DIR, "..");
@@ -110,24 +119,16 @@ if (count === 0 || !files["index.html"]) {
   );
 }
 
-// A store app carries no link back to the source — no repository, issues,
-// releases or sponsor link, and no trace of the author's GitHub handle at all,
-// not even the web edition's host. That is an owner decision with no
-// exceptions, and VITE_EMBEDDED_BUILD is what strips the site's own traces, so
-// this is the check that nothing else carries one: any file that names the
-// handle refuses the bundle.
-const FORBIDDEN = "niclaslindstedt";
-const tainted = Object.entries(files)
-  .filter(([, bytes]) =>
-    Buffer.from(bytes).toString("latin1").toLowerCase().includes(FORBIDDEN),
-  )
-  .map(([path]) => path);
-if (tainted.length) {
+// Refuse a webroot that carries what the phone app must not: a service
+// worker (sw.js — VITE_SHELL_BUILD=on leaves it out) or the author's handle
+// (VITE_EMBEDDED_BUILD=on strips the site's own traces). See
+// `webroot-guard.mjs`.
+const problems = webrootProblems(files);
+if (problems.length) {
   console.error(
-    `\n✗ refusing the bundle: ${tainted.join(", ")} name(s) "${FORBIDDEN}". ` +
-      `A store app carries no link to the source. Rebuild through this ` +
-      `script (not --skip-build over a plain site build), or remove the ` +
-      `trace at build time.\n`,
+    `\n✗ refusing the bundle:\n  ${problems.join("\n  ")}\n` +
+      `Rebuild through this script (not --skip-build over a plain site ` +
+      `build), or remove the trace at build time.\n`,
   );
   process.exit(1);
 }

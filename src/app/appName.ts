@@ -16,21 +16,18 @@ export const PROJECT_NAME = "Cycle";
 
 /** The build environment {@link resolveAppName} reads. */
 export type AppNameEnv = {
-  VITE_EMBEDDED_BUILD?: string;
-  VITE_SHELL_BUILD?: string;
+  VITE_NATIVE_BUILD?: string;
   APP_DISPLAY_NAME?: string;
 };
 
 /**
- * The name a build carries: the listing name in the phone build (embedded in a
- * store app, and not the desktop shell), the project name everywhere else. A
+ * The name a build carries: the listing name in the phone build (the one that
+ * sets VITE_NATIVE_BUILD), the project name everywhere else. A
  * stray APP_DISPLAY_NAME in a website or desktop build changes nothing — the
  * desktop app from GitHub Releases is the web edition, not a store listing.
  */
 export function resolveAppName(env: AppNameEnv): string {
-  const phone =
-    env.VITE_EMBEDDED_BUILD === "on" && env.VITE_SHELL_BUILD !== "on";
-  if (!phone) return PROJECT_NAME;
+  if (env.VITE_NATIVE_BUILD !== "on") return PROJECT_NAME;
   return env.APP_DISPLAY_NAME?.trim() || PROJECT_NAME;
 }
 

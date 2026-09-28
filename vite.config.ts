@@ -71,11 +71,12 @@ const version = process.env.GITHUB_SHA
   ? buildLabel
   : `${buildLabel}+${new Date().toISOString()}`;
 
-// A build for the DESKTOP SHELL (tauri/), set by `tauri/scripts/bundle-web.mjs`.
+// A build that ships INSIDE A BINARY — the desktop shell (tauri/) and the
+// phone app (native/) — set by both `bundle-web.mjs` scripts.
 //
 // It changes exactly one thing, and it is about the medium rather than the
 // audience: the service worker is left out (`serviceWorker: false` below —
-// everything else `appPwa` writes into the `<head>` still applies). A desktop
+// everything else `appPwa` writes into the `<head>` still applies). Such a
 // build has no deployment to discover an update from — a new version arrives
 // as a new binary — so a worker here would precache a copy of files already on
 // local disk and then serve the page from ITS copy. `__SHELL_BUILD__` carries

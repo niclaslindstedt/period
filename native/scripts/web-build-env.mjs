@@ -3,9 +3,15 @@
 // between this wrapper and the site it bundles, kept apart from
 // `bundle-web.mjs` so a test can read it without running a build.
 //
-// Two variables, both read by the root `vite.config.ts`:
+// Four variables, all read by the root `vite.config.ts`:
 //
 //   VITE_EMBEDDED_BUILD  "on": a store app, so no link back to the source.
+//   VITE_SHELL_BUILD     "on": the site ships inside the binary, as in the
+//                        desktop shell, so there is no service worker and no
+//                        in-app update prompt — a new version arrives from
+//                        the store.
+//   VITE_NATIVE_BUILD    "on": this is the phone app, the one build that
+//                        carries a store listing's name (`src/app/appName.ts`).
 //   APP_DISPLAY_NAME     the name the app calls itself in its top bar — the
 //                        listing name in a store build, so the
 //                        wordmark inside the app matches the name under its
@@ -38,6 +44,8 @@ export function webBuildEnv(env, profile) {
   return {
     ...env,
     VITE_EMBEDDED_BUILD: "on",
+    VITE_SHELL_BUILD: "on",
+    VITE_NATIVE_BUILD: "on",
     APP_DISPLAY_NAME: listingName || PROJECT_NAME,
   };
 }
