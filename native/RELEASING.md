@@ -22,6 +22,16 @@ instead:
   (Settings → Secrets and variables → Actions → Secrets).
 - **Locally**: `native/.env` (`cp .env.example .env`).
 
+### The listing name and bundle id
+
+The store listing's name and the bundle id are configuration, never committed
+(`identifiers.js`): set them as the repository **secrets** `APP_DISPLAY_NAME`
+and `APP_BUNDLE_ID`, and as EAS environment variables on the project. The name
+does two jobs. It is the name under the icon (`expo.name`), and the bundle step
+passes it to the web build, so the wordmark in the app's top bar says the same
+thing (`scripts/web-build-env.mjs`). A `production` bundle refuses to build
+without it; any other profile falls back to the project's own name, "Cycle".
+
 ### 2. The CI token
 
 Create a **robot** access token at

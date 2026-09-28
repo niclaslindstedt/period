@@ -104,7 +104,11 @@ Pages `CNAME` out: **a store app carries no link back to the source** — no
 repository, issues, releases or sponsor link, and not the author's handle
 anywhere — and both `bundle-web.mjs` scripts refuse a bundle that names it. The package's
 name and identifier come from `APP_DISPLAY_NAME` and `APP_BUNDLE_ID` at
-packaging time (`tauri/scripts/package.mjs`), like the phone app's. The macOS
+packaging time (`tauri/scripts/package.mjs`), like the phone app's. In the
+phone app `APP_DISPLAY_NAME` is also the top bar's wordmark:
+`native/scripts/bundle-web.mjs` passes it to the web build, which reads it as
+`__APP_NAME__` (`src/app/appName.ts`) — the desktop build and the website stay
+"Cycle". The macOS
 package is signed and notarized by `.github/actions/apple-signing` when its six
 optional secrets are set, and packaged as before when they are not. See
 [`tauri/README.md`](tauri/README.md).

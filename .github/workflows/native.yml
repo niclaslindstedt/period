@@ -92,6 +92,10 @@ jobs:
           # (se.agilator.cycle://oauth) as a redirect URI (native/RELEASING.md).
           VITE_DROPBOX_APP_KEY: ${{ secrets.VITE_DROPBOX_APP_KEY }}
           VITE_DROPBOX_APP_FOLDER: ${{ secrets.VITE_DROPBOX_APP_FOLDER }}
+          # The listing name the top bar's wordmark carries, the same secret
+          # EAS names the app by below; a production bundle refuses to build
+          # without it.
+          APP_DISPLAY_NAME: ${{ secrets.APP_DISPLAY_NAME }}
 
       - name: Set up EAS
         uses: expo/expo-github-action@v9

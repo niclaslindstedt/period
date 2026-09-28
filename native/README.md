@@ -44,15 +44,16 @@ be and how two devices' edits reconcile are the web app's, in
 
 ## Layout
 
-| Path                       | What it is                                                                                                  |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `App.tsx`                  | The whole app: a WebView, a spinner, and a failure screen.                                                  |
-| `src/local-server.ts`      | Unpacks `assets/webroot.zip` and serves it on a **fixed** loopback port.                                    |
-| `src/injected.ts`          | The theme reporter injected into the page, the status-bar style it drives, and the service-worker teardown. |
-| `src/authSessionBridge.ts` | **Pure.** The injected sign-in provider (`window.__ossAuthSession`) and its plumbing. Tested from the root. |
-| `src/authSession.ts`       | Opens one sign-in in an authentication session (`expo-web-browser`) and hands back where it ended.          |
-| `src/scriptText.ts`        | **Import-free.** Splicing text safely into an injected script.                                              |
-| `scripts/bundle-web.mjs`   | Builds the web app and packs `dist/` into `assets/webroot.zip`.                                             |
+| Path                        | What it is                                                                                                  |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `App.tsx`                   | The whole app: a WebView, a spinner, and a failure screen.                                                  |
+| `src/local-server.ts`       | Unpacks `assets/webroot.zip` and serves it on a **fixed** loopback port.                                    |
+| `src/injected.ts`           | The theme reporter injected into the page, the status-bar style it drives, and the service-worker teardown. |
+| `src/authSessionBridge.ts`  | **Pure.** The injected sign-in provider (`window.__ossAuthSession`) and its plumbing. Tested from the root. |
+| `src/authSession.ts`        | Opens one sign-in in an authentication session (`expo-web-browser`) and hands back where it ended.          |
+| `src/scriptText.ts`         | **Import-free.** Splicing text safely into an injected script.                                              |
+| `scripts/bundle-web.mjs`    | Builds the web app and packs `dist/` into `assets/webroot.zip`.                                             |
+| `scripts/web-build-env.mjs` | The web build's environment: `VITE_EMBEDDED_BUILD` and the name the top bar carries (`APP_DISPLAY_NAME`).   |
 
 `ios/` and `android/` are **prebuild output**: regenerated from `app.config.js`
 by `expo prebuild --clean`, gitignored, and the source of truth for nothing.

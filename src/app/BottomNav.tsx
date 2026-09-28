@@ -8,6 +8,7 @@ import {
   stepDirection,
 } from "@niclaslindstedt/oss-framework/components";
 
+import { APP_NAME } from "./appName.ts";
 import { ChartIcon, ForecastIcon } from "./icons.tsx";
 import { useT } from "./i18n/index.ts";
 import type { AppData } from "./types.ts";
@@ -149,7 +150,7 @@ export function BottomNav({
       items={items}
       active={active}
       onSelect={onSelect}
-      label={t("app.name")}
+      label={APP_NAME}
       className="app-bottom-nav"
     />
   );

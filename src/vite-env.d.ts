@@ -17,6 +17,10 @@ declare const __BUILD_LABEL__: string;
 declare const __BUILD_COMMIT__: string;
 declare const __BUILD_NUMBER__: string;
 
+// The name the app calls itself: the store listing's in the phone build, the
+// project's own otherwise (see `src/app/appName.ts`).
+declare const __APP_NAME__: string;
+
 // Build-time env the app reads through `import.meta.env`. All optional — the
 // app builds and runs with none of them set. See `docs/configuration.md`.
 interface ImportMetaEnv {

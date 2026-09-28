@@ -8,20 +8,20 @@
 // The web build is a plain `npm run build` at the repo root — base `/`, which
 // is exactly what a localhost origin wants — and NOTHING in `src/` is changed
 // for the app. If the wrapper ever needs the web app to behave differently,
-// that is a sign it has stopped being thin. The one flag it sets,
-// VITE_EMBEDDED_BUILD, leaves the web edition's link-preview tags and its
-// GitHub Pages `CNAME` out of the build (see `vite.config.ts`).
+// that is a sign it has stopped being thin. It sets two variables
+// (`web-build-env.mjs`): VITE_EMBEDDED_BUILD, which leaves the web edition's
+// link-preview tags and its GitHub Pages `CNAME` out of the build, and
+// APP_DISPLAY_NAME, the listing name the top bar's wordmark carries (the
+// project's own name in a plain checkout). See `vite.config.ts`.
 //
 // Usage:
 //   node scripts/bundle-web.mjs                 # build the site, then zip it
 //   node scripts/bundle-web.mjs --skip-build    # re-zip an existing dist/
 //   node scripts/bundle-web.mjs --profile production
 //
-// `--profile` is accepted (and echoed) so the release scripts and the CI
-// workflow can pass the EAS profile through uniformly. It does not change the
-// build today — the web app has no profile-dependent output — but the seam is
-// where a "strip the developer menu from store builds" knob would land, and
-// having the plumbing already correct is cheaper than retrofitting it.
+// `--profile` is passed through by the release scripts and the CI workflow.
+// The web app has no profile-dependent output; the one thing it decides is
+// that a `production` bundle must carry a listing name (APP_DISPLAY_NAME).
 //
 // The zip is a build artifact (gitignored). Generate it before `eas build`;
 // the root `.easignore` is what keeps it in the EAS upload despite that.
@@ -39,6 +39,8 @@ import { fileURLToPath } from "node:url";
 
 import { zipSync } from "fflate";
 
+import { webBuildEnv } from "./web-build-env.mjs";
+
 const APP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_DIR = resolve(APP_DIR, "..");
 const DIST_DIR = join(REPO_DIR, "dist");
@@ -54,13 +56,23 @@ const profile =
   "preview";
 
 if (!skipBuild) {
-  console.log(`• building the web app (npm run build) — profile ${profile}…`);
+  let env;
+  try {
+    env = webBuildEnv(process.env, profile);
+  } catch (error) {
+    console.error(`\n✗ ${error.message}\n`);
+    process.exit(1);
+  }
+  console.log(
+    `• building the web app (npm run build) — profile ${profile}, ` +
+      `named "${env.APP_DISPLAY_NAME}"…`,
+  );
   execFileSync(NPM, ["run", "build"], {
     cwd: REPO_DIR,
     stdio: "inherit",
     // npm on Windows is a batch shim, which Node cannot execute directly.
     shell: WINDOWS,
-    env: { ...process.env, VITE_EMBEDDED_BUILD: "on" },
+    env,
   });
 }
 

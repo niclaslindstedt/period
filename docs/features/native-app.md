@@ -21,7 +21,9 @@ the safe-area bands take the page's own theme. Links out of the app open in
 the system browser. On Android the hardware back button drives the WebView's
 history.
 
-There is **no native UI**. Everything you see is the web app, unchanged.
+There is **no native UI**. Everything you see is the web app, unchanged — but
+for its name: the top bar says the store listing's name, the one under the
+icon, where the website and the desktop app say "Cycle".
 
 ## Where your reports live
 

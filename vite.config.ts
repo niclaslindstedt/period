@@ -10,6 +10,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 
 import { appPwa } from "./pwa-plugin.ts";
+import { resolveAppName } from "./src/app/appName.ts";
 
 // The base path is injected by the deploy workflow via VITE_BASE, one per
 // release channel on the custom domain (cycle.niclaslindstedt.se): the
@@ -118,10 +119,16 @@ function embedded(): Plugin {
   };
 }
 
+// The name the app's top bar carries: the store listing's in the phone build
+// (APP_DISPLAY_NAME, passed by `native/scripts/bundle-web.mjs`), the project's
+// own everywhere else. See `src/app/appName.ts`.
+const appName = resolveAppName(process.env);
+
 export default defineConfig({
   base,
   define: {
     __SHELL_BUILD__: JSON.stringify(shellBuild),
+    __APP_NAME__: JSON.stringify(appName),
     __APP_VERSION__: JSON.stringify(appVersion),
     __BUILD_LABEL__: JSON.stringify(buildLabel),
     __BUILD_COMMIT__: JSON.stringify(commit),
