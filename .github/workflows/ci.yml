@@ -55,7 +55,8 @@ jobs:
           cache-dependency-path: native/package-lock.json
       - run: npm ci
       - run: npm run typecheck
-      - run: npx expo-doctor
+      # `--yes`: npx would otherwise warn that it is fetching the package.
+      - run: npx --yes expo-doctor
 
   changeset:
     # Enforces that every PR touching user-visible code drops a
