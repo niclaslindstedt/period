@@ -18,6 +18,7 @@ import {
   detectThermalShift,
   fertilityTestProfile,
   fitPosterior,
+  hasAnyYes,
   fitRobustPosterior,
   lustProfile,
   OVULATORY_WINDOW,
@@ -735,6 +736,7 @@ describe("symptomLogLikelihoodRatio", () => {
     baseline: 0.1,
     windowDays: 100,
     baselineDays: 100,
+    yesDays: 40,
     informative: true,
   };
   const entry = (date: string, moodSwings: boolean) => ({
@@ -817,6 +819,53 @@ describe("symptomLogLikelihoodRatio", () => {
 // their peak sits: an onset-anchored window of a fortnight cannot see ovulation
 // at all, so these read over the longer window and their bump lands in the
 // middle of it rather than up against the right-hand end.
+describe("hasAnyYes: a channel only answered no draws no chart", () => {
+  const year = Array.from({ length: 12 }, () => 28);
+
+  it("is false for lust and sex never answered yes, with a year logged", () => {
+    const { data } = build({ firstStart: "2025-06-02", cycleLengths: year });
+    const periods = derivePeriods(data);
+    const lust = lustProfile(data, periods, DEFAULT_MODEL_OPTIONS)!;
+    const sex = sexProfile(data, periods, DEFAULT_MODEL_OPTIONS)!;
+    // A full year of answers — enough to be informative — and every rate the
+    // clamp's floor: the flat wall the panel used to draw.
+    expect(lust.informative).toBe(true);
+    expect(lust.yesDays).toBe(0);
+    expect(new Set(lust.rate)).toEqual(new Set([0.02]));
+    expect(hasAnyYes(lust)).toBe(false);
+    expect(hasAnyYes(sex)).toBe(false);
+    expect(
+      hasAnyYes(symptomProfile(data, periods, DEFAULT_MODEL_OPTIONS)),
+    ).toBe(false);
+  });
+
+  it("is true from the first yes, in or out of the window", () => {
+    const { data } = build({ firstStart: "2025-06-02", cycleLengths: year });
+    const periods = derivePeriods(data);
+    const outside = addDays("2025-06-02", 3);
+    data.entries[outside] = { ...data.entries[outside]!, sex: true };
+    const sex = sexProfile(data, periods, DEFAULT_MODEL_OPTIONS)!;
+    expect(sex.yesDays).toBe(1);
+    expect(hasAnyYes(sex)).toBe(true);
+  });
+
+  it("is false with no profile at all", () => {
+    expect(hasAnyYes(null)).toBe(false);
+  });
+
+  it("counts a positive ovulation test as the test channel's yes", () => {
+    const { data } = build({
+      firstStart: "2025-06-02",
+      cycleLengths: year,
+      testLags: [13, 14, 15],
+      positiveTestLag: 14,
+    });
+    const periods = derivePeriods(data);
+    const profile = fertilityTestProfile(data, periods, DEFAULT_MODEL_OPTIONS)!;
+    expect(profile.yesDays).toBe(12);
+  });
+});
+
 describe("lustProfile / sexProfile", () => {
   /** A year of steady cycles with lust reported across the fertile days —
    *  lags 12–16 before onset, which is ovulation ±2 on a 28-day cycle. */

@@ -496,9 +496,28 @@ export type BinaryProfile = {
    *  question was not answered — an untaken test — count for neither. */
   windowDays: number;
   baselineDays: number;
+  /** Answered days, in either bucket, that said yes. Zero for a question the
+   *  reader has only ever answered no to — whose rates are then nothing but the
+   *  clamp's floor, and whose chart would be a flat wall of it (see
+   *  {@link hasAnyYes}). */
+  yesDays: number;
   /** Whether there is enough of both to let the profile move the forecast. */
   informative: boolean;
 };
+
+/**
+ * Whether a channel has ever been answered yes — the test for drawing its
+ * chart at all.
+ *
+ * A question answered only "no" has nothing to show: every rate shrinks to the
+ * same clamped floor, and a chart of it is a row of identical bars that reads
+ * like a pattern when it is the absence of one. So the screen leaves the panel
+ * off, as it does for a channel never answered, rather than drawing it. The
+ * model is unaffected either way — a flat profile moves nothing.
+ */
+export function hasAnyYes(profile: BinaryProfile | null): boolean {
+  return profile !== null && profile.yesDays > 0;
+}
 
 /** The mood-swing channel's profile. The name the screens and the tests know
  *  it by; the shape is the generic one above. */
@@ -994,6 +1013,7 @@ export function binaryProfile(
     baseline: clampRate((baselineYes + a * overall) / (baselineDays + a)),
     windowDays,
     baselineDays,
+    yesDays: baselineYes + windowYes.reduce((sum, s) => sum + s, 0),
     informative: windowDays >= minDays && baselineDays >= minDays,
   };
 }
@@ -1109,10 +1129,12 @@ export function fertilityTestProfile(
   let windowDays = 0;
   let baselineDays = 0;
   let tests = 0;
+  let positives = 0;
 
   for (const entry of sortedEntries(data)) {
     if (entry.fertilityTest === null) continue;
     tests += 1;
+    if (entry.fertilityTest === "positive") positives += 1;
     const lag = lagToNextStart(entry.date, starts);
     if (lag === null) continue;
     if (lag < OVULATORY_WINDOW) windowDays += 1;
@@ -1157,6 +1179,7 @@ export function fertilityTestProfile(
     baseline: FERTILITY_TEST_BASELINE,
     windowDays,
     baselineDays,
+    yesDays: positives,
     // A constructed profile does not need a sample to be usable — it needs a
     // test to read. The one thing being counted here is whether the reader has
     // ever taken one.

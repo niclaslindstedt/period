@@ -30,6 +30,7 @@ import {
 } from "./ForecastChart.tsx";
 import {
   backtest,
+  hasAnyYes,
   probabilisticForecast,
   upcomingPeriods,
   type BinaryProfile,
@@ -719,7 +720,9 @@ function PatternPanels({
 /** One learned yes/no channel: its chart when there is enough history behind
  *  it to be allowed to move anything, and the reason why not when there is not.
  *  A channel with no profile at all — nothing logged yet — is left off the
- *  screen entirely rather than shown as an empty box. */
+ *  screen entirely rather than shown as an empty box, and so is one that has
+ *  only ever been answered no: there is no pattern to draw, and a row of
+ *  identical floor-height bars would look like one. */
 function BinaryPanel({
   profile,
   icon,
@@ -737,7 +740,7 @@ function BinaryPanel({
   note?: string;
 }) {
   const t = useT();
-  if (!profile) return null;
+  if (!profile || !hasAnyYes(profile)) return null;
   return (
     <Section title={title} icon={icon}>
       {profile.informative ? (

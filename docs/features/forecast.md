@@ -99,6 +99,11 @@ week. That is what the screen is for, and most people never need more.
   end, because it is ovulation they are about. A flat sex chart is a fact about
   a life rather than a gap in your logging, and a flat channel is one the model
   leaves out.
+
+  A pattern you have never once answered **yes** to is not drawn at all — mood,
+  lust or sex alike. With no yes there is no pattern to show, only a row of
+  identical bars, so the panel appears with the first yes instead.
+
 - **Your fertility tests** — how likely a test is to read positive at each of
   those lags, and the lead it implies: how many days a positive strip puts
   between itself and the next period. The line says whether that number came
