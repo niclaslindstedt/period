@@ -35,6 +35,7 @@ src/app/
                     held until the copy's passphrase is set
   SyncEncryption.tsx the app's words for the framework's encryption kit
   useAppSettings.ts the settings blob
+  regional.ts       the device's region → week start and °C/°F for a new install (pure)
   backup.ts         export / restore a JSON file
 
   dev/demoData.ts    a year of invented reports, relative to today (pure)

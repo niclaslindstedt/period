@@ -194,9 +194,11 @@ asks you to check the digits, and then stores exactly what you entered. It is a
 nudge, not a validator — a tracker that argued with what you measured would be
 the wrong kind of confident.
 
-Choose **Celsius** or **Fahrenheit** in **Settings → Forecast**. That is a
-display choice only: reports are always stored the same way, so changing it
-never rewrites a day and two devices set differently stay in sync.
+Choose **Celsius** or **Fahrenheit** in **Settings → Forecast**. A new install
+starts on the one your phone's region uses — Fahrenheit in the United States,
+Celsius elsewhere — and after that it is yours to change. That is a display
+choice only: reports are always stored the same way, so changing it never
+rewrites a day and two devices set differently stay in sync.
 
 ## Why so few fields
 

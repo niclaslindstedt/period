@@ -12,6 +12,11 @@ import {
   type ChartView,
 } from "./ForecastChart.tsx";
 import type { ForecastModelKind } from "./forecastModel.ts";
+import {
+  deviceLanguages,
+  regionalDefaults,
+  type RegionalDefaults,
+} from "./regional.ts";
 import type { TemperatureUnit } from "./temperature.ts";
 
 // The app's own (non-theme) settings: which of the two themes is active, how
@@ -64,16 +69,24 @@ export type AppSettings = {
   captureLogs: boolean;
 };
 
-export const DEFAULT_SETTINGS: AppSettings = {
+/**
+ * The settings a fresh install starts with, given what the device's locale asks
+ * for. The week start and the temperature unit follow the region (Sunday and
+ * °F in the United States, Monday and °C in Sweden — see `regional.ts`);
+ * everything else is the same everywhere.
+ */
+export function defaultSettings(regional: RegionalDefaults): AppSettings {
+  return { ...BASE_SETTINGS, ...regional };
+}
+
+const BASE_SETTINGS: Omit<AppSettings, keyof RegionalDefaults> = {
   // Follow the device out of the box: a cycle tracker is often opened in bed,
   // and the OS already knows whether that means dark.
   theme: "system",
-  weekStartsOn: 1,
   defaultCycleLength: DEFAULT_CYCLE_OPTIONS.defaultCycleLength,
   defaultPeriodLength: DEFAULT_CYCLE_OPTIONS.defaultPeriodLength,
   lutealPhaseLength: DEFAULT_CYCLE_OPTIONS.lutealPhaseLength,
   showFertileWindow: true,
-  temperatureUnit: "c",
   // Simple by default: the forecast's job is one date and how sure it is, and
   // most people never need to see the machinery behind it.
   forecastDetail: "simple",
@@ -88,6 +101,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   devMode: false,
   captureLogs: false,
 };
+
+/** This device's defaults. Read once at load: they only apply until the first
+ *  write, and every launch after that reads the stored settings instead. */
+export const DEFAULT_SETTINGS: AppSettings = defaultSettings(
+  regionalDefaults(deviceLanguages()),
+);
 
 const STORAGE_KEY = "cycle:settings";
 
@@ -105,42 +124,61 @@ function clampNumber(
   return Math.min(max, Math.max(min, n));
 }
 
-function parseSettings(raw: string): AppSettings {
+/**
+ * Read a stored settings blob over `defaults`.
+ *
+ * A stored value always wins over the device's defaults — that is what makes
+ * the regional defaults safe to introduce: anyone who has opened the app keeps
+ * the week start and unit they had, because the settings are written back in
+ * full on first launch. Only a key the blob does not carry at all falls back.
+ */
+export function parseSettings(
+  raw: string,
+  defaults: AppSettings = DEFAULT_SETTINGS,
+): AppSettings {
   const parsed = JSON.parse(raw) as unknown;
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return DEFAULT_SETTINGS;
+    return defaults;
   }
   const stored = parsed as Record<string, unknown>;
-  const merged = { ...DEFAULT_SETTINGS, ...stored } as AppSettings;
+  const merged = { ...defaults, ...stored } as AppSettings;
   return {
     ...merged,
     theme:
       merged.theme === "light" || merged.theme === "dark"
         ? merged.theme
         : "system",
-    weekStartsOn: clampNumber(merged.weekStartsOn, 0, 6, 1) as WeekStart,
+    weekStartsOn: clampNumber(
+      merged.weekStartsOn,
+      0,
+      6,
+      defaults.weekStartsOn,
+    ) as WeekStart,
     defaultCycleLength: clampNumber(
       merged.defaultCycleLength,
       15,
       60,
-      DEFAULT_SETTINGS.defaultCycleLength,
+      defaults.defaultCycleLength,
     ),
     defaultPeriodLength: clampNumber(
       merged.defaultPeriodLength,
       1,
       15,
-      DEFAULT_SETTINGS.defaultPeriodLength,
+      defaults.defaultPeriodLength,
     ),
     lutealPhaseLength: clampNumber(
       merged.lutealPhaseLength,
       8,
       20,
-      DEFAULT_SETTINGS.lutealPhaseLength,
+      defaults.lutealPhaseLength,
     ),
     // Enumerations get the same treatment the numbers do: a stored value this
     // build does not recognise falls back rather than reaching a `switch` that
     // has no case for it.
-    temperatureUnit: merged.temperatureUnit === "f" ? "f" : "c",
+    temperatureUnit:
+      merged.temperatureUnit === "f" || merged.temperatureUnit === "c"
+        ? merged.temperatureUnit
+        : defaults.temperatureUnit,
     forecastDetail:
       merged.forecastDetail === "advanced" ? "advanced" : "simple",
     forecastModel:
