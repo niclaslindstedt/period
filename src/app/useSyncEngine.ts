@@ -63,8 +63,9 @@ const DROPBOX_TOKENS_KEY = "cycle:sync:dropbox";
 // copy that is itself plaintext in the same storage, remembering it exposes
 // nothing new; what it protects is the copy the provider holds.
 const ENCRYPTION_KEY = "cycle:sync:encryption";
-// Google Drive is gone as a backend. The key stays named so a token a device
-// may still hold is cleared rather than left sitting in storage.
+// A backend the app no longer offers kept its sign-in token under this key.
+// The key stays named so a token a device may still hold is cleared rather
+// than left sitting in storage.
 const RETIRED_GDRIVE_TOKEN_KEY = "cycle:sync:gdrive";
 // The phone app's development builds offered iCloud Drive before any store
 // release. It is gone for good: App Store guideline 5.1.3(ii) says apps "may

@@ -88,9 +88,7 @@ did move, that is a bug worth reporting.
 ## Sync
 
 **"Reconnect needed"**
-The provider's session lapsed. Tap the cloud glyph → **Reconnect**. Google
-Drive's popup tokens are short-lived by design, so this is normal after a while
-rather than a fault.
+The provider's session lapsed. Tap the cloud glyph → **Reconnect**.
 
 **"Offline — editing a local copy"**
 The backend was unreachable. Your edits are safe locally and push on their own
