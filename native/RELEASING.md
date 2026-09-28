@@ -121,3 +121,6 @@ build without it launches to a blank screen.
 - [ ] Settings → Sync → Dropbox opens Dropbox in a sheet over the app (not in
       Safari), and approving closes the sheet and connects. Closing the sheet
       instead leaves nothing connected and shows no error.
+- [ ] Settings → Export a backup opens the share sheet with
+      `cycle-backup-<date>.json`, and saving it to Files gives a file that
+      Settings → Restore from a backup reads back.

@@ -40,13 +40,26 @@ leaves for Safari. Closing the sheet simply leaves Dropbox unconnected. The
 app never sees your Dropbox password; the sheet is Dropbox's page, and what
 comes back is a one-time code the app trades for access to its own folder.
 
+## Backups
+
+**Settings → Export a backup** opens the phone's share sheet with the backup
+file (`cycle-backup-<date>.json`): save it to Files, mail it to yourself, or
+send it anywhere the sheet offers. On the website the same button downloads
+the file. **Restore from a backup** reads it back in both.
+
+The file goes only where you send it from the sheet. The app keeps nothing
+beyond the one latest export, in the phone's temporary cache, which the next
+export clears.
+
 ## What the wrapper is not allowed to do
 
 Two rules, and they are what keep the app and the website the same product:
 
 - **Nothing in `src/` knows the wrapper exists.** The web app does not check
   whether it is native. It looks for a sign-in _capability_ on `window`
-  (`getAuthSessionHost`, from the framework) and uses it when one answers.
+  (`getAuthSessionHost`, from the framework) and uses it when one answers;
+  a backup goes through the framework's `saveFile`, which finds the
+  wrapper's `save-file` capability the same way.
 - **The wrapper decides nothing about the cycle.** It moves bytes. What a
   day's report holds, what the forecast predicts and how two copies reconcile
   are the web app's, in `cycle.ts`, `forecastModel.ts` and `merge.ts`. A

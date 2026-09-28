@@ -20,13 +20,16 @@ Thin is the design, not an aspiration. The wrapper:
   the WebView's history;
 - opens Dropbox's sign-in in an **authentication session** when the page asks
   for one (`src/authSessionBridge.ts` → `src/authSession.ts` →
-  `expo-web-browser`) — see [Signing in to Dropbox](#signing-in-to-dropbox).
+  `expo-web-browser`) — see [Signing in to Dropbox](#signing-in-to-dropbox);
+- hands an export to the **share sheet** when the page saves a file — the
+  backup in Settings (`src/saveFileBridge.ts` → `src/saveFile.ts` →
+  `expo-file-system` + `expo-sharing`) — see [Exports](#exports).
 
 That is the entire list, and it is deliberately not empty: **App Store
 guideline 4.2 rejects a build that is only a viewer for a website**, so the
-wrapper has to do things the browser cannot. The self-contained bundle and
-the authentication session are those things. Adding a third is allowed;
-adding one that makes `src/` aware of this wrapper is not.
+wrapper has to do things the browser cannot. The self-contained bundle, the
+authentication session and the share sheet are those things. Adding another
+is allowed; adding one that makes `src/` aware of this wrapper is not.
 
 **The reports stay on the device or in the reader's own Dropbox.** They are
 health data, and nothing in this wrapper offers a place of Apple's to keep
@@ -34,7 +37,8 @@ them — no container, no entitlement, no store beside Dropbox.
 
 **Nothing in the repo's `src/` knows this exists.** The page looks for a
 sign-in **capability** on `window` and this installs one, so a browser —
-which has none — keeps its redirect flow. The app never asks what it is
+which has none — keeps its redirect flow; the same goes for `save-file` and
+the browser's download. The app never asks what it is
 running inside.
 
 The wrapper also decides nothing about the cycle log. It moves bytes: a file
@@ -44,16 +48,18 @@ be and how two devices' edits reconcile are the web app's, in
 
 ## Layout
 
-| Path                        | What it is                                                                                                  |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `App.tsx`                   | The whole app: a WebView, a spinner, and a failure screen.                                                  |
-| `src/local-server.ts`       | Unpacks `assets/webroot.zip` and serves it on a **fixed** loopback port.                                    |
-| `src/injected.ts`           | The theme reporter injected into the page, the status-bar style it drives, and the service-worker teardown. |
-| `src/authSessionBridge.ts`  | **Pure.** The injected sign-in provider (`window.__ossAuthSession`) and its plumbing. Tested from the root. |
-| `src/authSession.ts`        | Opens one sign-in in an authentication session (`expo-web-browser`) and hands back where it ended.          |
-| `src/scriptText.ts`         | **Import-free.** Splicing text safely into an injected script.                                              |
-| `scripts/bundle-web.mjs`    | Builds the web app and packs `dist/` into `assets/webroot.zip`.                                             |
-| `scripts/web-build-env.mjs` | The web build's environment: `VITE_EMBEDDED_BUILD` and the name the top bar carries (`APP_DISPLAY_NAME`).   |
+| Path                        | What it is                                                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `App.tsx`                   | The whole app: a WebView, a spinner, and a failure screen.                                                       |
+| `src/local-server.ts`       | Unpacks `assets/webroot.zip` and serves it on a **fixed** loopback port.                                         |
+| `src/injected.ts`           | The theme reporter injected into the page, the status-bar style it drives, and the service-worker teardown.      |
+| `src/authSessionBridge.ts`  | **Pure.** The injected sign-in provider (`window.__ossAuthSession`) and its plumbing. Tested from the root.      |
+| `src/authSession.ts`        | Opens one sign-in in an authentication session (`expo-web-browser`) and hands back where it ended.               |
+| `src/saveFileBridge.ts`     | **Pure.** The `save-file` shell descriptor (`window.__ossShell`) and its message plumbing. Tested from the root. |
+| `src/saveFile.ts`           | Writes one export to the cache and opens the share sheet over it (`expo-file-system` + `expo-sharing`).          |
+| `src/scriptText.ts`         | **Import-free.** Splicing text safely into an injected script.                                                   |
+| `scripts/bundle-web.mjs`    | Builds the web app and packs `dist/` into `assets/webroot.zip`.                                                  |
+| `scripts/web-build-env.mjs` | The web build's environment: `VITE_EMBEDDED_BUILD` and the name the top bar carries (`APP_DISPLAY_NAME`).        |
 
 `ios/` and `android/` are **prebuild output**: regenerated from `app.config.js`
 by `expo prebuild --clean`, gitignored, and the source of truth for nothing.
@@ -135,6 +141,35 @@ and the desktop app's. Without it Dropbox shows "Invalid redirect_uri" in the
 sheet.
 
 Other off-origin links are unchanged: they still leave for the system browser.
+
+## Exports
+
+On the website, **Settings → Export a backup** is a download: an anchor
+clicked at a `blob:` URL. Inside the WebView that click goes nowhere — the
+WebView offers the `blob:` URL as a navigation, and the system browser cannot
+open a URL that only exists in here. So the wrapper advertises the framework's
+`save-file` contract (its `docs/native-shell.md`) before the page loads, and
+the page's `saveFile` posts the bytes across instead of downloading them:
+
+```
+Settings → Export a backup
+   │  saveFile({ text, filename, mimeType })   (oss-framework)
+   ▼
+window.__ossShell.capabilities includes "save-file"   — set by src/saveFileBridge.ts
+   │  postMessage({ type: "oss-framework/save-file", id, filename, mimeType, base64 })
+   ▼
+App.tsx → src/saveFile.ts → cache/exports/<id>/<name> → Sharing.shareAsync
+   │  the sheet closes (the platform does not say whether a target was picked)
+   ▼
+"oss-framework/save-file-result" { id, ok } — settles the page's promise
+```
+
+Only the latest export is kept, in the cache directory; the next export clears
+it. The bytes are never logged. `onShouldStartLoadWithRequest` refuses `blob:`
+and `data:` URLs rather than handing them to `Linking.openURL`.
+`expo-sharing`'s config plugin is **not** listed in `app.config.js`: it only
+adds a share _extension_ (receiving files from other apps), which this app does
+not have; opening the sheet needs no plugin.
 
 ## Things that will bite you
 

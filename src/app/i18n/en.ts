@@ -527,7 +527,8 @@ export const en = {
     reload: "Reload from cloud",
     data: "Your data",
     export: "Export a backup",
-    exportHint: "Downloads every report as a JSON file.",
+    exportHint: "Saves every report as a JSON file.",
+    exportFailed: "The backup could not be saved. Your reports are unchanged.",
     import: "Restore from a backup",
     importHint:
       "Merges the file's reports into what is already here — the newer report wins for any day both hold.",

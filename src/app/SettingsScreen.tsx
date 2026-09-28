@@ -26,7 +26,7 @@ import {
 import { LogViewer } from "@niclaslindstedt/oss-framework/logging";
 
 import { logStore } from "./log.ts";
-import { downloadBackup, readBackupFile } from "./backup.ts";
+import { readBackupFile, saveBackup } from "./backup.ts";
 import type { DemoDataToggle } from "./dev/useDemoData.ts";
 import { useT } from "./i18n/index.ts";
 import { mergeDocs } from "./merge.ts";
@@ -336,7 +336,13 @@ export function SettingsScreen({
         icon={<DatabaseIcon className="h-3.5 w-3.5" />}
       >
         <div className="flex flex-col gap-1">
-          <Button onClick={() => downloadBackup(store.data)}>
+          <Button
+            onClick={() => {
+              saveBackup(store.data).catch(() =>
+                onNotice(t("settings.exportFailed")),
+              );
+            }}
+          >
             {t("settings.export")}
           </Button>
           <p className="text-xs text-muted">{t("settings.exportHint")}</p>
