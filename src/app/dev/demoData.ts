@@ -17,7 +17,7 @@
 //
 // **Every date is an offset from the moment the demo opens.** The document is
 // authored as "26 days ago", "the period before that", so it never ages and
-// the screens read the same on any day of the year (`tests/demoData_test.ts`
+// the screens read the same on any day of the year (`tests/demo_test.ts`
 // walks a whole year of them). Today itself is left unlogged: the Report
 // screen opens on it, and a report already filed has nothing to show being
 // filled in.

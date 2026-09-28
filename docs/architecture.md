@@ -187,7 +187,7 @@ folds the check away.
 opens is a parameter, and every date in the document is an _offset_ from it
 ("26 days ago"), never a fixed date that would age into a stale demo — today
 always lands on day 24 of a cycle, a few days before the next period, and
-`tests/demoData_test.ts` asserts what the screens then show for every day of a
+`tests/demo_test.ts` asserts what the screens then show for every day of a
 year. The "randomness" is a hash of each day's offset, so two builds of the
 same moment are identical. It is one invented person's ordinary year: cycles of
 26–31 days, periods of four to six, mood swings in the days before a period,

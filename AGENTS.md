@@ -429,7 +429,7 @@ the tag.
 | A new screen                               | `src/app/<Name>Screen.tsx` + a tab in `src/app/BottomNav.tsx`, or a button in `src/app/TopBar.tsx` if it is an action rather than a place    |
 | A new setting                              | `src/app/useAppSettings.ts` (shape + clamping) + a `Section` in `SettingsScreen.tsx`                                                         |
 | A new developer-only affordance            | `src/app/dev/`, revealed behind `settings.devMode` in `SettingsScreen.tsx` — never in the persisted settings if it must not survive a reload |
-| A change to what the demo shows            | `src/app/dev/demoData.ts` (offsets from `now`, never fixed dates), with tests in `tests/demoData_test.ts`                                    |
+| A change to what the demo shows            | `src/app/dev/demoData.ts` (offsets from `now`, never fixed dates), with tests in `tests/demo_test.ts`                                        |
 | A new storage backend                      | The framework, not here — this app only wires adapters up in `useSyncEngine.ts`                                                              |
 | Any user-facing string                     | `src/app/i18n/en.ts`, never inline in a component                                                                                            |
 | A shared UI primitive                      | The framework, if it is domain-free; `src/app/` only if it is period-specific                                                                |
