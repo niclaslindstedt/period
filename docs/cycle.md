@@ -10,14 +10,17 @@ no symptom weighting, no population data. That is a deliberate choice — a
 simple rule whose failure modes are legible beats a clever one whose output
 nobody can check.
 
-> **The prediction has moved on.** The single date this page derives is still
-> what the Forecast screen's fertile window is drawn from, and it
-> is still the definition of a period, a cycle length and a phase. But the
-> Forecast screen's headline and chart now come from a probabilistic model that
-> reports a _distribution_ over days rather than one of them, and that reads
-> mood swings and waking temperature as well as the gaps. See
-> [the forecast model](forecast-model.md). The two agree on the anchor and the
-> roll-forward rule, so they never name dates a month apart.
+> **The prediction has moved on.** This page is still the definition of a
+> period, a cycle length, a phase and the cycle day. But every date the app
+> names for a period still to come — the Forecast screen's headline, the
+> Periods card under it, and the fertile window counted back from the headline's
+> date — comes from a probabilistic model that reports a _distribution_ over
+> days rather than one of them, and that reads mood swings and waking
+> temperature as well as the gaps. See [the forecast model](forecast-model.md).
+> The single date derived below is a plain average and can fall a day either
+> side of that model's median, so no screen quotes it; the fertile-window rule
+> (`fertileWindowFor`) is shared, which is how the window follows whichever date
+> it is given.
 
 ## From reports to periods
 

@@ -18,8 +18,8 @@ import {
 
 import {
   cycleStats,
+  fertileWindowFor,
   forecast,
-  upcomingStarts,
   type CycleOptions,
 } from "./cycle.ts";
 import {
@@ -31,6 +31,7 @@ import {
 import {
   backtest,
   probabilisticForecast,
+  upcomingPeriods,
   type BinaryProfile,
   type FertilityTestProfile,
   type ForecastModelKind,
@@ -128,9 +129,10 @@ export function ForecastScreen({
   const t = useT();
   const advanced = detail === "advanced";
 
-  // The cycle day, the fertile window and the months-ahead list still come from
-  // the simple derivation — a month grid wants one span, not a distribution
-  // over twelve days.
+  // The cycle day still comes from the simple derivation. Every date on the
+  // screen that names a period — the headline, the fertile window counted back
+  // from it, the Periods card — comes from the posterior, so no two of them
+  // can land a day apart.
   const f = useMemo(
     () => forecast(data, today, options),
     [data, today, options],
@@ -145,7 +147,17 @@ export function ForecastScreen({
   );
   // Three cycles ahead is enough to answer "will it clash with the holiday?"
   // without pretending the fourth one is knowable.
-  const upcoming = useMemo(() => upcomingStarts(f, 3), [f]);
+  const upcoming = useMemo(
+    () => (probabilistic ? upcomingPeriods(probabilistic, 3) : []),
+    [probabilistic],
+  );
+  const fertile = useMemo(
+    () =>
+      probabilistic
+        ? fertileWindowFor(probabilistic.expectedDay, options)
+        : null,
+    [probabilistic, options],
+  );
 
   if (!probabilistic || !f.nextStart || f.cycleDay === null) {
     return (
@@ -185,15 +197,15 @@ export function ForecastScreen({
         </>
       )}
 
-      {showFertileWindow && f.fertileStart && f.fertileEnd && f.ovulation && (
+      {showFertileWindow && fertile && (
         <Section
           title={t("forecast.fertileWindow")}
           icon={<SparklesIcon className="h-3.5 w-3.5" />}
         >
-          <DateSpan start={f.fertileStart} end={f.fertileEnd} />
+          <DateSpan start={fertile.start} end={fertile.end} />
           <p className="flex items-center gap-1.5 text-xs text-muted">
             <OvumIcon className="h-3.5 w-3.5 shrink-0" />
-            {t("forecast.ovulation", { date: formatDay(f.ovulation) })}
+            {t("forecast.ovulation", { date: formatDay(fertile.ovulation) })}
           </p>
         </Section>
       )}

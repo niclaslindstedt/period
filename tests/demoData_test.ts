@@ -12,7 +12,6 @@ import {
   DEFAULT_CYCLE_OPTIONS,
   cycleStats,
   forecast,
-  upcomingStarts,
 } from "../src/app/cycle.ts";
 import { dayStatus } from "../src/app/dayStatus.ts";
 import { createDemoBackend } from "../src/app/dev/demoBackend.ts";
@@ -22,7 +21,10 @@ import {
   TEMPERATURE_DAYS,
   buildDemoData,
 } from "../src/app/dev/demoData.ts";
-import { probabilisticForecast } from "../src/app/forecastModel.ts";
+import {
+  probabilisticForecast,
+  upcomingPeriods,
+} from "../src/app/forecastModel.ts";
 import { parseDoc, serializeDoc } from "../src/app/migrations.ts";
 import { inUnit, isFever, parseTemperature } from "../src/app/temperature.ts";
 import { DOC_VERSION, sortedEntries } from "../src/app/types.ts";
@@ -173,10 +175,11 @@ describe("the store frames, on every day of a year", () => {
       expect(p.confidence).toBe("high");
       expect(p.daysUntilExpected).toBeGreaterThanOrEqual(4);
       expect(p.daysUntilExpected).toBeLessThanOrEqual(6);
-      // The Periods card (the plain average, `upcomingStarts`) opens on the
-      // day the headline names (the posterior median), so one screen never
-      // quotes two dates for the same period.
-      expect(upcomingStarts(f, 1)[0]!.start).toBe(p.expectedDay);
+      // The Periods card opens on the day the headline names, and lists
+      // three periods: the frame shows the whole card.
+      const card = upcomingPeriods(p, 3);
+      expect(card[0]!.start).toBe(p.expectedDay);
+      expect(card.length).toBe(3);
       const eighty = p.intervals.find((i) => i.mass === 0.8)!;
       expect(eighty.widthDays).toBeLessThanOrEqual(6);
       expect(daysBetween(today, eighty.start)).toBeGreaterThan(0);

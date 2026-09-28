@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 
 import { addDays, daysBetween } from "@niclaslindstedt/oss-framework/calendar";
 
-import { DEFAULT_CYCLE_OPTIONS } from "../src/app/cycle.ts";
+import {
+  DEFAULT_CYCLE_OPTIONS,
+  fertileWindowFor,
+  forecast,
+} from "../src/app/cycle.ts";
+import { dayStatus } from "../src/app/dayStatus.ts";
 import {
   backtest,
   binaryLogLikelihoodRatio,
@@ -32,6 +37,7 @@ import {
   temperatureProfile,
   thermalShiftEstimate,
   thermalShiftLogLikelihoodRatio,
+  upcomingPeriods,
   PREMENSTRUAL_WINDOW,
   type CentredReading,
   type CycleObservation,
@@ -1976,6 +1982,123 @@ describe("probabilisticForecast: the cycles after the next one", () => {
       const drawn = f.days.find((d) => d.day === day)!.probability;
       const projected = f.onsets.find((o) => o.day === day)!.probability;
       expect(projected - drawn).toBeLessThan(0.005);
+    }
+  });
+});
+
+describe("upcomingPeriods: the Periods card and the headline, over a year", () => {
+  /** Only what had been logged by `today` — the document as it stood that
+   *  morning, so the walk sees a history grow the way a user's does. */
+  function asOf(data: AppData, today: string): AppData {
+    const out = emptyDoc();
+    for (const [date, entry] of Object.entries(data.entries)) {
+      if (date <= today) out.entries[date] = entry;
+    }
+    return out;
+  }
+
+  // A steady history, an irregular one (24 to 35 days), a minimal tracker who
+  // logs only the bleeding days, and one with evidence that moves the date
+  // off the plain average. Each is walked a day at a time through a year.
+  const irregular = Array.from(
+    { length: 13 },
+    (_, i) => 24 + Math.floor(noise(i + 900) * 12),
+  );
+  const histories: [string, AppData][] = [
+    ["steady", steady().data],
+    [
+      "irregular",
+      build({ firstStart: "2025-09-01", cycleLengths: irregular }).data,
+    ],
+    [
+      "bleeding days only",
+      build({
+        firstStart: "2025-09-01",
+        cycleLengths: irregular,
+        logEveryDay: false,
+      }).data,
+    ],
+    [
+      "with mood swings and temperatures",
+      build({
+        firstStart: "2025-09-01",
+        cycleLengths: [29, 27, 30, 28, 31, 27, 29, 30, 28, 29, 27, 30, 28],
+        swingsBefore: 3,
+        temperatureShift: 0.3,
+      }).data,
+    ],
+  ];
+
+  for (const [name, full] of histories) {
+    it(`never lists a period a day away from the headline — ${name}`, () => {
+      let averageDisagreed = 0;
+      for (let i = 30; i < 30 + 366; i++) {
+        const today = addDays("2025-09-01", i);
+        const doc = asOf(full, today);
+        const p = probabilisticForecast(doc, today);
+        if (!p) continue;
+        const card = upcomingPeriods(p, 3);
+
+        // The first row is the headline's date, and every row is one of the
+        // starts the calendar draws, in order.
+        expect(card[0]!.start).toBe(p.expectedDay);
+        expect(card.map((row) => row.start)).toEqual(
+          p.upcomingStarts.slice(0, 3),
+        );
+
+        // Every day a row spans is a day the calendar paints as an expected
+        // period — the card and the month cannot draw the span differently.
+        const ctx = {
+          data: doc,
+          forecast: p,
+          options: DEFAULT_CYCLE_OPTIONS,
+          showFertileWindow: true,
+        };
+        for (const row of card) {
+          for (let d = row.start; d <= row.end; d = addDays(d, 1)) {
+            if (doc.entries[d]) continue;
+            expect(dayStatus(d, ctx).expectedPeriod).toBe(true);
+          }
+        }
+
+        // The fertile window the screen lists is counted back from the same
+        // date, so it lands where the calendar's window does.
+        const fertile = fertileWindowFor(p.expectedDay);
+        for (let d = fertile.start; d <= fertile.end; d = addDays(d, 1)) {
+          if (d < today) continue;
+          const status = dayStatus(d, ctx);
+          expect(status.startedFertile || status.expectedFertile).toBe(true);
+        }
+
+        // The plain average this card used to read is a separate estimate,
+        // and it does fall a day or more out of step on some mornings.
+        const plain = forecast(doc, today).nextStart;
+        if (plain !== null && plain !== p.expectedDay) averageDisagreed++;
+      }
+      if (name !== "steady") expect(averageDisagreed).toBeGreaterThan(0);
+    }, 120_000);
+  }
+
+  it("lists fewer rows once the projection stops being a date", () => {
+    const p = probabilisticForecast(
+      build({
+        firstStart: "2025-09-01",
+        cycleLengths: [22, 40, 25, 38, 21, 41],
+      }).data,
+      "2026-03-20",
+    )!;
+    const card = upcomingPeriods(p, 3);
+    expect(card.length).toBe(p.upcomingStarts.length);
+    expect(card.length).toBeLessThan(3);
+    expect(card[0]!.start).toBe(p.expectedDay);
+  });
+
+  it("spans each row the typical period length", () => {
+    const p = probabilisticForecast(steady().data, "2026-08-10")!;
+    for (const row of upcomingPeriods(p, 3)) {
+      expect(daysBetween(row.start, row.end) + 1).toBe(
+        p.periodLength.typicalLength,
+      );
     }
   });
 });

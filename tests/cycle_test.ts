@@ -9,7 +9,7 @@ import {
   inProgressPeriod,
   phaseOf,
   typicalPeriodLength,
-  upcomingStarts,
+  fertileWindowFor,
   DEFAULT_CYCLE_OPTIONS,
 } from "../src/app/cycle.ts";
 import { emptyDoc, type AppData } from "../src/app/types.ts";
@@ -293,8 +293,16 @@ describe("typicalPeriodLength", () => {
   });
 });
 
-describe("upcomingStarts", () => {
-  it("spaces each prediction one cycle apart and keeps the span length", () => {
+describe("fertileWindowFor", () => {
+  it("counts ovulation back from a start and opens the window around it", () => {
+    expect(fertileWindowFor("2026-02-26")).toEqual({
+      ovulation: "2026-02-12",
+      start: "2026-02-07",
+      end: "2026-02-13",
+    });
+  });
+
+  it("is the window the plain forecast reports", () => {
     const f = forecast(
       docOf({
         ...period("2026-01-01", 5),
@@ -302,17 +310,12 @@ describe("upcomingStarts", () => {
       }),
       "2026-02-10",
     );
-    const next = upcomingStarts(f, 3);
-    expect(next.map((s) => s.start)).toEqual([
-      "2026-02-26",
-      "2026-03-26",
-      "2026-04-23",
+    const w = fertileWindowFor(f.nextStart!);
+    expect([w.ovulation, w.start, w.end]).toEqual([
+      f.ovulation,
+      f.fertileStart,
+      f.fertileEnd,
     ]);
-    expect(next[0]).toEqual({ start: "2026-02-26", end: "2026-03-02" });
-  });
-
-  it("returns nothing when there is no prediction", () => {
-    expect(upcomingStarts(forecast(emptyDoc(), "2026-03-05"), 3)).toEqual([]);
   });
 });
 

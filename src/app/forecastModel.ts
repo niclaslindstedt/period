@@ -1937,6 +1937,32 @@ export function projectOnsets(
   };
 }
 
+/** One predicted period as a list names it: the day it is expected to start
+ *  and the day it is expected to end. */
+export type UpcomingPeriod = { start: DayKey; end: DayKey };
+
+/**
+ * The next `count` periods, as the Forecast screen's Periods card lists them.
+ *
+ * Read straight off {@link ProbabilisticForecast.upcomingStarts}, so the first
+ * row is the headline's date ({@link ProbabilisticForecast.expectedDay}) and
+ * every row is a stroke the calendar draws — each one the typical period length
+ * long, exactly as `dayStatus.ts` spans it. There is no second derivation of
+ * the next period to fall a day out of step with this one. The list is short
+ * of `count` when the projection stopped early: past that point the model has
+ * no date to name, and the card should not invent one.
+ */
+export function upcomingPeriods(
+  f: ProbabilisticForecast,
+  count: number,
+): UpcomingPeriod[] {
+  const length = Math.max(1, f.periodLength.typicalLength);
+  return f.upcomingStarts.slice(0, Math.max(0, count)).map((start) => ({
+    start,
+    end: addDays(start, length - 1),
+  }));
+}
+
 // --- Putting it together --------------------------------------------------
 
 /** What the within-cycle channels have to work with at prediction time. */

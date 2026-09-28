@@ -9,8 +9,12 @@ Where you are in your cycle, and what is coming.
 - **The chart** — how likely each day is to be the one the next period starts,
   with the credible bands drawn behind it.
 - **Fertile window** — the days around the projected ovulation, with the
-  ovulation date itself named. Turn it off in Settings if you track only your
-  period.
+  ovulation date itself named, counted back from the next period's date. Turn
+  it off in Settings if you track only your period.
+- **Periods** — up to three periods ahead, the first on the date the headline
+  names and each one where the [Calendar](calendar.md) draws it. It lists only
+  as many as your history can place, and is left out when that is just the
+  next one.
 
 The month grid that used to close this screen is now the
 [Calendar](calendar.md) tab, and the one-word "what is today" summary is the

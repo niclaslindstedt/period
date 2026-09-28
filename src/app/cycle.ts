@@ -346,7 +346,7 @@ export function forecast(
   // more than clamping it to 28 would.
   const cycleStart = addDays(nextStart, -cycleLength);
 
-  const ovulation = addDays(nextStart, -options.lutealPhaseLength);
+  const fertile = fertileWindowFor(nextStart, options);
   return {
     cycleLength,
     usingDefault: observed === null,
@@ -355,27 +355,29 @@ export function forecast(
     nextStart,
     nextEnd: addDays(nextStart, Math.max(0, periodLength - 1)),
     daysUntilNext: daysBetween(today, nextStart),
-    ovulation,
-    fertileStart: addDays(ovulation, -options.fertileWindowBefore),
-    fertileEnd: addDays(ovulation, options.fertileWindowAfter),
+    ovulation: fertile.ovulation,
+    fertileStart: fertile.start,
+    fertileEnd: fertile.end,
     confidence: stats.confidence,
   };
 }
 
-/** The next `count` predicted period starts after the current cycle, each one
- *  a further `cycleLength` on. Used by the History screen's outlook list. */
-export function upcomingStarts(
-  f: Forecast,
-  count: number,
-): { start: DayKey; end: DayKey }[] {
-  if (!f.nextStart || !f.nextEnd) return [];
-  const spanLength = daysBetween(f.nextStart, f.nextEnd);
-  const out: { start: DayKey; end: DayKey }[] = [];
-  for (let i = 0; i < count; i++) {
-    const start = addDays(f.nextStart, i * f.cycleLength);
-    out.push({ start, end: addDays(start, spanLength) });
-  }
-  return out;
+/** The fertile window a period start implies: ovulation counted back from it
+ *  by the luteal phase, and the window around that. Counted backwards because
+ *  the luteal phase varies far less than the follicular one (see
+ *  `docs/cycle.md`). Whichever date names the next period — this module's, or
+ *  the posterior median the Forecast screen quotes — the window follows it
+ *  through here, so it cannot sit anywhere else. */
+export function fertileWindowFor(
+  nextStart: DayKey,
+  options: CycleOptions = DEFAULT_CYCLE_OPTIONS,
+): { ovulation: DayKey; start: DayKey; end: DayKey } {
+  const ovulation = addDays(nextStart, -options.lutealPhaseLength);
+  return {
+    ovulation,
+    start: addDays(ovulation, -options.fertileWindowBefore),
+    end: addDays(ovulation, options.fertileWindowAfter),
+  };
 }
 
 /** Where a day sits in its cycle. Used to bucket mood swings by phase in the

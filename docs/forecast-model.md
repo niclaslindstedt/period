@@ -2,9 +2,10 @@
 
 [`cycle.ts`](../src/app/cycle.ts) answers "when is the next period?" with a
 single date: the last start plus the typical gap. [That page](cycle.md) explains
-it, and it is still what the calendar and the fertile window are drawn from.
+it, and it still defines the periods, the cycle lengths and the cycle day — but
+no screen names it as the date of a period to come.
 
-This page is about the other answer — the one the Forecast screen's chart draws.
+This page is about the other answer — the one every screen quotes.
 The truth about a future period is a **distribution over days**, not a date, and
 [`forecastModel.ts`](../src/app/forecastModel.ts) computes it.
 
@@ -420,6 +421,13 @@ clear a half would answer "when is my period in September?" with an empty month.
 So the mark follows the medians and the wording keeps the stricter rule — see
 [the Status screen](features/status.md#the-mark-and-the-word).
 
+The Forecast screen's **Periods** card lists the same medians (`upcomingPeriods`),
+each spanning the typical period length, so its first row is the headline's date
+and every row is a stroke the calendar draws. It used to read the plain average
+from `cycle.ts` instead, and on an irregular history that landed a day off the
+headline above it. When the projection stops early the card lists fewer
+periods, and with only the next one it is not shown at all.
+
 ## Confidence, from the interval itself
 
 The label above the forecast is derived from the width of the 80% interval and
@@ -494,7 +502,8 @@ device.
 - It does not detect ovulation prospectively. The thermal shift is only
   detectable a few mornings _after_ ovulation — that is enough to anchor the
   next onset, but the "ovulation" date and fertile window on the Forecast
-  screen are still `nextStart − luteal phase` and nothing more.
+  screen are still the headline's date minus the luteal phase, and nothing
+  more.
 - It does not use population data. Every profile is learned from your own
   reports; the only outside numbers are the prior's 28 days and ±3, which one
   observed cycle starts overriding.
