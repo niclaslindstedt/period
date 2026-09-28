@@ -58,7 +58,7 @@ install` does not touch it:
 ```sh
 make native-install    # npm --prefix native install
 make native-bundle     # build the web app into native/assets/webroot.zip
-make native-typecheck  # the wrapper's own tsc
+make native-typecheck  # the wrapper's own tsc (CI's `native` job also runs `npx expo-doctor` in native/)
 make native-prebuild   # inspect what the config plugins generate
 ```
 

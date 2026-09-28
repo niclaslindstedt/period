@@ -37,8 +37,10 @@ jobs:
 
   # The native wrapper (native/) is a separate Expo app with its own dependency
   # tree, so nothing in the `build` job above touches it. This job is the guard
-  # that its sources still compile — cheap, because it never builds a native
-  # binary; that only happens on manual dispatch (see native.yml).
+  # that its sources still compile and that expo-doctor finds nothing wrong
+  # with the project (versions out of step with the SDK, a config EAS would
+  # reject) — cheap, because it never builds a native binary; that only
+  # happens on manual dispatch (see native.yml).
   native:
     runs-on: ubuntu-latest
     defaults:
@@ -53,6 +55,7 @@ jobs:
           cache-dependency-path: native/package-lock.json
       - run: npm ci
       - run: npm run typecheck
+      - run: npx expo-doctor
 
   changeset:
     # Enforces that every PR touching user-visible code drops a

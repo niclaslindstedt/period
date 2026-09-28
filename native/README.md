@@ -64,7 +64,7 @@ Never edit them.
 ```sh
 make native-install      # or: npm --prefix native install
 make native-bundle       # build the web app into assets/webroot.zip
-make native-typecheck
+make native-typecheck    # what CI's `native` job runs, with `npx expo-doctor` in native/
 make native-prebuild     # inspect what the config generates
 ```
 
