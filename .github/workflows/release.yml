@@ -1,6 +1,6 @@
 name: release
 
-# Step two of the release pipeline (OSS_SPEC §10.3): triggered by the `v*` tag
+# Step two of the release pipeline: triggered by the `v*` tag
 # `version-bump.yml` pushes. It builds the tagged tree, publishes a GitHub
 # Release whose notes are that version's CHANGELOG section, and chains into
 # `pages.yml` so the new tag is served at `/` immediately rather than waiting

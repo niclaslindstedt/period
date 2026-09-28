@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
-// oss-spec:allow-large-file: one posterior — the fit, the six evidence channels that reweight it, and the projections read from it share its types and its clamps; a split by channel is the planned follow-up.
+// guidelines:allow-large-file: one posterior — the fit, the six evidence channels that reweight it, and the projections read from it share its types and its clamps; a split by channel is the planned follow-up.
 // The probabilistic forecast — the model behind both the simple and the
 // advanced view of the Forecast screen.
 //

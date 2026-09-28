@@ -249,12 +249,12 @@ numbers it did not learn — a 28-day cycle before there is a history, a luteal
 phase, a fertile window, a temperature rise and the rule that dates it, the
 windows the evidence channels are read over — and it computes with published
 statistics. Each is a claim to the reader, so each names its source:
-`docs/references.json` is the registry (OSS_SPEC.md §24) — authors or
+`docs/references.json` is the registry — authors or
 organization, title, journal or publisher, DOI / URL, the kind of evidence,
 the verbatim quotes the number was taken from, what the app uses each for,
 and which files cite it — and code points into it with a `[ref:<id>]` tag in
 the comment beside the number. `tests/references_test.ts` keeps the two in
-step both ways, and `oss-spec validate` checks the same rules.
+step both ways.
 
 Where the code departs from a source, the comment says so beside the tag: the
 thermal shift asks 0.15 °C of centred readings where the charting rule asks

@@ -2,7 +2,7 @@
 // The references: every published source the forecast's numbers rest on, as
 // the app reads them.
 //
-// The registry itself is `docs/references.json` (OSS_SPEC.md §24): one entry
+// The registry itself is `docs/references.json`: one entry
 // per source, keyed by the id the code cites as `[ref:<id>]` beside the
 // number, rule or algorithm it supports — the default cycle and luteal phase,
 // the fertile window, the temperature rise and the rule that dates it, the

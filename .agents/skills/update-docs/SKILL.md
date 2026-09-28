@@ -5,7 +5,7 @@ description: "Use when source under src/ has changed and the docs/ topics that d
 
 # Update docs
 
-Keeps `docs/` honest (OSS_SPEC §11.1). The docs in this repo describe _behaviour that is derived_, not stored — so a one-line change to a threshold in `cycle.ts` can silently falsify a paragraph in `docs/cycle.md` without breaking a single test. That is the specific drift this skill exists to catch.
+Keeps `docs/` honest. The docs in this repo describe _behaviour that is derived_, not stored — so a one-line change to a threshold in `cycle.ts` can silently falsify a paragraph in `docs/cycle.md` without breaking a single test. That is the specific drift this skill exists to catch.
 
 ## When to run
 

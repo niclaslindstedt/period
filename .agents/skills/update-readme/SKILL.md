@@ -5,7 +5,7 @@ description: "Use when the project's public surface has changed — commands, co
 
 # Update README
 
-Keeps `README.md` true to the current public surface (OSS_SPEC §3). The README is the only document most people read, and its Quick start is the one thing that must work from a clean checkout — a stale command there costs a contributor before they have written a line.
+Keeps `README.md` true to the current public surface. The README is the only document most people read, and its Quick start is the one thing that must work from a clean checkout — a stale command there costs a contributor before they have written a line.
 
 ## When to run
 

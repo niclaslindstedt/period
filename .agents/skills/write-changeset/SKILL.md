@@ -5,7 +5,7 @@ description: "Use before opening a PR with any user-visible change, to add the c
 
 # Write a changeset
 
-`CHANGELOG.md`'s released sections are generated, never hand-written (OSS_SPEC §8.4). Each user-visible change contributes one fragment under `.changes/unreleased/`; `version-bump.yml` collates them into a dated section and derives the semver bump from their front matter. CI's `changeset` job fails a PR that changes user-visible code without one.
+`CHANGELOG.md`'s released sections are generated, never hand-written. Each user-visible change contributes one fragment under `.changes/unreleased/`; `version-bump.yml` collates them into a dated section and derives the semver bump from their front matter. CI's `changeset` job fails a PR that changes user-visible code without one.
 
 ## When to run
 

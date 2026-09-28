@@ -1,6 +1,6 @@
 name: version-bump
 
-# Step one of the two-workflow release pipeline (OSS_SPEC §10.3). The
+# Step one of the two-workflow release pipeline. The
 # maintainer dispatches this; it derives the next semver from the changeset
 # fragments in `.changes/unreleased/`, collates them into a new CHANGELOG
 # section, commits the bump, and pushes a `v*` tag. Pushing that tag is what

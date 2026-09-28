@@ -1,5 +1,5 @@
 {
-  "$comment": "Every source the app's numbers and claims rest on, keyed by the id code cites as [ref:<id>] (OSS_SPEC.md §24). usedBy lists the files that cite each entry; tests/references_test.ts keeps it and the tags in step. summary and topics are read by Settings → About and sources: the line a user reads, and the part of the forecast the source is listed under. See AGENTS.md, 'Every number cites its source'.",
+  "$comment": "Every source the app's numbers and claims rest on, keyed by the id code cites as [ref:<id>]. usedBy lists the files that cite each entry; tests/references_test.ts keeps it and the tags in step. summary and topics are read by Settings → About and sources: the line a user reads, and the part of the forecast the source is listed under. See AGENTS.md, 'Every number cites its source'.",
   "references": {
     "1177-agglossning": {
       "evidence": "health-service",

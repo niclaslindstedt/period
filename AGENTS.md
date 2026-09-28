@@ -4,20 +4,6 @@ This file is the canonical source of truth for AI coding agents working in this
 repo. `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `GEMINI.md`, and
 `.github/copilot-instructions.md` are symlinks to this file.
 
-## OSS Spec conformance
-
-This repository adheres to [`OSS_SPEC.md`](OSS_SPEC.md), a prescriptive
-specification for open source project layout, documentation, automation, and
-governance. A copy of the spec lives at the repository root so contributors and
-AI agents can consult it without leaving the repo; its version is recorded in
-the YAML front matter at the top of the file.
-
-Run `oss-spec validate .` (or the standalone
-[`validate.sh`](https://github.com/niclaslindstedt/oss-spec/blob/main/scripts/validate.sh))
-to verify conformance. When in doubt about a layout, naming, or workflow
-decision, consult the relevant section of `OSS_SPEC.md` — it is the source of
-truth for the conventions this repo follows.
-
 ## What this app is, and the one rule that follows from it
 
 A period tracker holds health data about a named person's body. The whole
@@ -399,8 +385,7 @@ the incomplete beta, EM). Each is a claim made to the reader, and each cites
 its source beside the number.
 
 **The references registry.** `docs/references.json` is the one list of every
-source, keyed by a stable id — the shape OSS_SPEC.md §24 prescribes, which
-`oss-spec validate` checks too: authors or organization, title, where it was
+source, keyed by a stable id: authors or organization, title, where it was
 published, the DOI / URL / ISBN, the language, the kind of evidence
 (`EVIDENCE` in the framework's `references` module: `guideline`,
 `consensus`, `systematic-review`, `meta-analysis`, `randomized-trial`,
@@ -449,7 +434,7 @@ the tag.
 
 ## Test conventions
 
-Tests live in `tests/` with a `_test` suffix (OSS_SPEC §20.2) and run under
+Tests live in `tests/` with a `_test` suffix and run under
 Vitest in the `node` environment — they cover the pure domain modules
 (`cycle`, `swings`, `merge`, `migrations`), which is where the app's real logic
 is, plus `references`, which holds the registry to the tags. No DOM, no testing-library, no mocked clock.
@@ -531,27 +516,25 @@ with `[Learn more](feature:<slug>)`.
 
 ## Website staleness
 
-The app _is_ the website (OSS_SPEC §11.2 / §11.4) — `pages.yml` builds it and
+The app _is_ the website — `pages.yml` builds it and
 deploys `dist/`. There is no separate marketing site to drift out of date, but
 the copy in `index.html` does: when the app's description changes, update
 `index.html`'s title/description/Open Graph tags and the manifest copy in
 `pwa-plugin.ts` together.
 
-oss-spec:unlisted-website: the web build is a testing surface; users install the app from its store listing
-
-That makes the site unlisted (OSS_SPEC §11.3.12): every page carries
-`<meta name="robots" content="noindex">`, `robots.txt` keeps allowing the fetch
-that reads it, and there is no SEO and no size budget.
+The website is a testing surface, not where people get the app — they
+install it from its store listing. So the site stays unlisted: every page
+carries `<meta name="robots" content="noindex">`, `robots.txt` keeps allowing
+the fetch that reads it, and there is no SEO and no size budget.
 
 ## Maintenance skills
 
-Skills live under `.agents/skills/` (OSS_SPEC §21); `.claude/skills` is a
+Skills live under `.agents/skills/`; `.claude/skills` is a
 symlink to that tree. Each has a `SKILL.md` with its discovery process, its source→output mapping, and a `.last-updated` marker.
 
-| Skill             | Runs when                                                                 |
-| ----------------- | ------------------------------------------------------------------------- |
-| `maintenance`     | The registry and run order for every other skill — start here             |
-| `write-changeset` | Any user-visible change, before opening the PR                            |
-| `update-docs`     | `src/app/` changed in a way a `docs/` topic describes                     |
-| `update-readme`   | Commands, configuration, or the feature set changed                       |
-| `sync-oss-spec`   | `validate.sh` reports violations, or the spec copy at the root was bumped |
+| Skill             | Runs when                                                     |
+| ----------------- | ------------------------------------------------------------- |
+| `maintenance`     | The registry and run order for every other skill — start here |
+| `write-changeset` | Any user-visible change, before opening the PR                |
+| `update-docs`     | `src/app/` changed in a way a `docs/` topic describes         |
+| `update-readme`   | Commands, configuration, or the feature set changed           |
