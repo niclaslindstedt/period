@@ -4,7 +4,7 @@ This file is the canonical source of truth for AI coding agents working in this
 repo. `CLAUDE.md`, `.cursorrules`, `.windsurfrules`, `GEMINI.md`, and
 `.github/copilot-instructions.md` are symlinks to this file.
 
-Fleet guidelines: APP_GUIDELINES 1.2.0
+Fleet guidelines: APP_GUIDELINES 2.0.0
 
 ## What this app is, and the one rule that follows from it
 
@@ -51,19 +51,23 @@ make native-prebuild   # inspect what the config plugins generate
 ```
 
 It is a thin Expo / React Native shell: the built site served from a loopback
-origin in a WebView. **Nothing in `src/` knows it exists**: the wrapper offers
-Dropbox's sign-in an in-app authentication session at `window.__ossAuthSession`,
-which the framework's `getAuthSessionHost` looks for; a browser has none and
-keeps its redirect. The wrapper moves bytes and decides nothing about the
+origin in a WebView. **Nothing in `src/` talks to it**: a backup reaches the
+share sheet through the framework's `saveFile`, which finds the wrapper's
+capability on `window`. The web build knows only the flag it is built with,
+`VITE_NATIVE_BUILD` (below), which names it and takes the cloud away. The wrapper moves bytes and decides nothing about the
 cycle. See [`native/README.md`](native/README.md) and
 [`docs/features/native-app.md`](docs/features/native-app.md).
 
-**The reports are health data, and they stay on the device or in the user's
-own Dropbox.** App Store guideline 5.1.3(ii) says apps "may not store personal
-health information in iCloud", so the phone app has no iCloud backend,
-entitlement or container, and must not grow one. A stored backend choice of
-`icloud` from a development build falls back to this device
-(`parseStoredBackend` in `src/app/useSyncEngine.ts`).
+**The reports are health data. In the phone app they stay on the device;
+the website and the desktop app also offer the user's own Dropbox.** App Store
+guideline 5.1.3(ii) says apps "may not store personal health information in
+iCloud", so the phone app has no iCloud backend, entitlement or container, and
+must not grow one. It offers no Dropbox either: `PHONE_BUILD`
+(`VITE_NATIVE_BUILD=on`) in `src/app/useSyncEngine.ts` takes Dropbox out of
+the picker and Settings → Sync out of the screen, and the `native` workflow
+passes no `VITE_DROPBOX_*` secret. A stored backend choice of `icloud` — or, in
+the phone app, `dropbox` — from a development build falls back to this device
+(`readStoredBackend`).
 
 The desktop shell in `tauri/` is a Rust project with its own toolchain; `make
 test` and `make lint` stop at its edge:

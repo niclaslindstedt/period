@@ -113,6 +113,18 @@ export const DROPBOX_APP_FOLDER: string =
   (import.meta.env.VITE_DROPBOX_APP_FOLDER as string | undefined)?.trim() ||
   "cycle";
 
+/** The phone app — the build `native/scripts/bundle-web.mjs` makes, with
+ *  VITE_NATIVE_BUILD=on. It keeps the reports on the device and offers no
+ *  cloud at all: no Dropbox in the picker, no connect, no passphrase. A
+ *  backup still leaves through Settings → Your data, as a file the reader
+ *  exports. The website and the desktop app are unchanged. A build-time
+ *  constant, so the phone bundle folds the Dropbox paths away. */
+export const PHONE_BUILD: boolean = import.meta.env.VITE_NATIVE_BUILD === "on";
+
+/** Whether this build offers Dropbox: never in the phone app, and elsewhere
+ *  only when the app key was configured. */
+export const DROPBOX_OFFERED: boolean = !PHONE_BUILD && DROPBOX_APP_KEY !== "";
+
 export const PROVIDER_NAMES: Record<SyncBackendId, string> = {
   local: "This device",
   dropbox: "Dropbox",
@@ -120,10 +132,10 @@ export const PROVIDER_NAMES: Record<SyncBackendId, string> = {
 
 /** Which backends this build can offer — a cloud provider with no client id
  *  configured is hidden from the picker entirely. This device and the user's
- *  own Dropbox, and nothing else. */
+ *  own Dropbox, and nothing else; the phone app, this device alone. */
 export const AVAILABLE_BACKENDS: SyncBackendId[] = [
   "local",
-  ...(DROPBOX_APP_KEY ? (["dropbox"] as const) : []),
+  ...(DROPBOX_OFFERED ? (["dropbox"] as const) : []),
 ];
 
 type DropboxTokens = { accessToken: string; refreshToken: string | null };
@@ -133,9 +145,10 @@ type DropboxTokens = { accessToken: string; refreshToken: string | null };
  *
  * Anything but Dropbox is this device. The retired iCloud choice is also
  * rewritten to this device, and its offline copy of the cloud file dropped,
- * so nothing is left pointing at a place the reports may not go. The reports
- * themselves are untouched: the working copy on this device was never the
- * cloud's to hold.
+ * so nothing is left pointing at a place the reports may not go. So is a
+ * Dropbox choice in the phone app, which offers no cloud (a development
+ * build's), with its sign-in token. The reports themselves are untouched: the
+ * working copy on this device was never the cloud's to hold.
  */
 export function readStoredBackend(
   storage: Pick<Storage, "getItem" | "setItem" | "removeItem">,
@@ -145,6 +158,13 @@ export function readStoredBackend(
     storage.setItem(BACKEND_KEY, "local");
     storage.removeItem(localCacheKey(RETIRED_ICLOUD_BACKEND, "cycle"));
     syncLog.info("the retired iCloud backend fell back to this device");
+    return "local";
+  }
+  if (raw === "dropbox" && PHONE_BUILD) {
+    storage.setItem(BACKEND_KEY, "local");
+    storage.removeItem(DROPBOX_TOKENS_KEY);
+    storage.removeItem(localCacheKey("dropbox", "cycle"));
+    syncLog.info("the phone app offers no Dropbox: back to this device");
     return "local";
   }
   return raw === "dropbox" ? raw : "local";
@@ -246,7 +266,7 @@ export function useSyncEngine(
   // The cache sits below the encryption, so it holds exactly the ciphertext
   // the cloud does.
   const inner: StorageAdapter | null = useMemo(() => {
-    if (backend === "dropbox" && dropboxTokens) {
+    if (!PHONE_BUILD && backend === "dropbox" && dropboxTokens) {
       const auth = {
         accessToken: dropboxTokens.accessToken,
         refreshToken: dropboxTokens.refreshToken,
@@ -404,7 +424,7 @@ export function useSyncEngine(
   // Complete a Dropbox OAuth redirect: trade the `?code=` for tokens, persist
   // them, and adopt the backend. Runs once on boot when a flow is mid-flight.
   useEffect(() => {
-    if (!DROPBOX_APP_KEY || !hasPendingDropboxAuth()) return;
+    if (!DROPBOX_OFFERED || !hasPendingDropboxAuth()) return;
     const code = new URLSearchParams(window.location.search).get("code");
     if (!code) return;
     void (async () => {
@@ -462,7 +482,7 @@ export function useSyncEngine(
         setBackendState("local");
         return;
       }
-      if (!DROPBOX_APP_KEY) throw new Error("Dropbox is not configured");
+      if (!DROPBOX_OFFERED) throw new Error("Dropbox is not configured");
       // In the phone app the redirect would land in the system browser, not
       // in the app, so a host that offers an authentication session is asked
       // for one: consent in a sheet over the app, the redirect handed back,

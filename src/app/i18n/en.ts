@@ -557,6 +557,10 @@ export const en = {
     build: "Build",
     privacy:
       "Everything stays on this device unless you connect a cloud account yourself, and a copy there is encrypted with your passphrase first. There is no server, no account, and no analytics.",
+    // The phone app's version: it offers no cloud, so the only way out is a
+    // backup the reader exports.
+    privacyPhone:
+      "Everything stays on this device — it leaves only in a backup you export yourself. There is no server, no account, and no analytics.",
   },
 
   // What stands between the reports and a copy that leaves this device. The

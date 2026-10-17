@@ -1,9 +1,9 @@
 # The native wrapper
 
 A **thin** Expo / React Native shell around the cycle log, so it can ship to
-the App Store and Google Play — and so it can do the two things a PWA cannot:
-run entirely from inside its own download, and sign in to the reader's own
-**Dropbox** in a system sheet the app gets back from.
+the App Store and Google Play — and so it can do what a PWA cannot: run
+entirely from inside its own download, and hand a backup to the phone's own
+**share sheet**.
 
 Thin is the design, not an aspiration. The wrapper:
 
@@ -18,9 +18,10 @@ Thin is the design, not an aspiration. The wrapper:
   from the phone's light or dark setting (`barStyleFor` in `src/injected.ts`);
   off-origin links go to the system browser, and Android's back button drives
   the WebView's history;
-- opens Dropbox's sign-in in an **authentication session** when the page asks
-  for one (`src/authSessionBridge.ts` → `src/authSession.ts` →
-  `expo-web-browser`) — see [Signing in to Dropbox](#signing-in-to-dropbox);
+- opens a sign-in in an **authentication session** when the page asks for
+  one (`src/authSessionBridge.ts` → `src/authSession.ts` →
+  `expo-web-browser`). The phone app's page offers no cloud and never asks
+  today — see [Signing in to Dropbox](#signing-in-to-dropbox);
 - hands an export to the **share sheet** when the page saves a file — the
   backup in Settings (`src/saveFileBridge.ts` → `src/saveFile.ts` →
   `expo-file-system` + `expo-sharing`) — see [Exports](#exports).
@@ -28,12 +29,15 @@ Thin is the design, not an aspiration. The wrapper:
 That is the entire list, and it is deliberately not empty: **App Store
 guideline 4.2 rejects a build that is only a viewer for a website**, so the
 wrapper has to do things the browser cannot. The self-contained bundle, the
-authentication session and the share sheet are those things. Adding another
+share sheet are those things. Adding another
 is allowed; adding one that makes `src/` aware of this wrapper is not.
 
-**The reports stay on the device or in the reader's own Dropbox.** They are
-health data, and nothing in this wrapper offers a place of Apple's to keep
-them — no container, no entitlement, no store beside Dropbox.
+**The reports stay on the device.** They are health data, and the phone app
+offers no cloud to keep them in: no Sync section, no Dropbox, and nothing of
+Apple's — no container, no entitlement. The web build it serves is built with
+`VITE_NATIVE_BUILD=on`, which hides Dropbox whatever key it is given, and the
+`native` workflow passes it none. A backup the reader exports through the
+share sheet is the only way out.
 
 **Nothing in the repo's `src/` knows this exists.** The page looks for a
 sign-in **capability** on `window` and this installs one, so a browser —
@@ -94,6 +98,11 @@ EXPO_PUBLIC_CYCLE_URL=https://cycle.niclaslindstedt.se/preview/ npm run ios
 ```
 
 ## Signing in to Dropbox
+
+**Not in the phone app today.** Its page offers no Dropbox (see above), so the
+flow below never runs in a phone build; the bridge stays because it is the
+framework's capability and costs nothing unused. It is how the sign-in worked,
+and would work again, in a build that offered Dropbox.
 
 The page's own Dropbox sign-in is a redirect: consent at dropbox.com, then
 back to the page's origin with a code, which the page trades for tokens using

@@ -4,8 +4,9 @@ Your reports always live on **this device** first. Connect a cloud account and
 the app keeps a copy there too:
 
 - **Dropbox** — OAuth (PKCE) with silent token refresh; the document lives in
-  the app folder as `cycle.json`. The same in the browser, the desktop app and
-  [the app on a phone](native-app.md).
+  the app folder as `cycle.json`. The same in the browser and the desktop app.
+  [The app on a phone](native-app.md) offers no cloud: its reports stay on
+  the phone.
 
 There is no server in between and no account to create — the app talks to your
 provider directly. The file it writes is **encrypted on this device with a

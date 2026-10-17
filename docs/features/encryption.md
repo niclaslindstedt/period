@@ -9,6 +9,9 @@ sealed with a key derived from that passphrase (PBKDF2-SHA256, 600,000
 iterations). Dropbox stores ciphertext it cannot read, and so would anyone who
 got into the account.
 
+The phone app offers no cloud, so there is no passphrase there to choose; the
+app lock below is the same on every build.
+
 It is not optional: while a cloud copy is connected and no passphrase is held,
 sync simply waits — nothing is ever sent in plaintext. A copy an earlier
 version left in plaintext is re-written encrypted the first time the app reads

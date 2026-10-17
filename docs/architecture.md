@@ -169,7 +169,7 @@ Three properties make it safe to ship in the production bundle:
   written, and the real document is reloaded untouched when the switch goes off.
 - **Nothing is synced.** `useSyncEngine` takes a `paused` flag that is set for
   as long as the takeover is in effect. No baseline read, no push: a year of
-  invented reports can never reach a connected Dropbox or Drive account, and
+  invented reports can never reach a connected Dropbox account, and
   the cloud copy that is already there is left exactly as it was.
 - **Nothing survives a reload.** The switch is module state, never persisted,
   so reloading the page is always the guaranteed way back to the real reports.

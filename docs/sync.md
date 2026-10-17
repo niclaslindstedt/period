@@ -37,8 +37,12 @@ never in the cloud copy's hands anyway — they are still in that browser.
 ## Connecting
 
 Settings → **Sync** → pick a provider. Dropbox redirects to its consent screen
-and back (in the phone app, in a sheet over the app). The tokens land in this
-browser's localStorage and are used for nothing but that one file.
+and back (in the desktop app, through a loopback listener). The tokens land in
+this browser's localStorage and are used for nothing but that one file.
+
+The phone app has no Sync section: it offers no cloud, whatever its build is
+given (`VITE_NATIVE_BUILD`), and a Dropbox choice a development build left
+behind falls back to this device on launch (`readStoredBackend`).
 
 A provider whose client id wasn't configured at build time doesn't appear in
 the picker at all — see [configuration.md](configuration.md).

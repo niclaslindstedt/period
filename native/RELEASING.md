@@ -60,21 +60,16 @@ For submission, fill in the placeholders in `eas.json` →
 ### 4. iOS capabilities
 
 None. The app declares no entitlements: the reports are health data, and they
-stay on the device or go to the reader's own Dropbox. The App ID needs no
+stay on the device. The App ID needs no
 capability beyond the defaults — and should carry none the build does not use,
 so if a container capability was ticked on it earlier, untick it before the
 first store build.
 
 ### 5. Dropbox
 
-The phone app signs in to Dropbox through an in-app authentication session
-that returns on **`se.agilator.cycle://oauth`** — the bundle id is the URL scheme (see
-[README → Signing in to Dropbox](README.md#signing-in-to-dropbox)). In the
-[Dropbox App Console](https://www.dropbox.com/developers/apps), open the app
-whose key is the `VITE_DROPBOX_APP_KEY` secret and add `se.agilator.cycle://oauth` under
-**Settings → OAuth 2 → Redirect URIs**, exactly as written. The same secret
-(and `VITE_DROPBOX_APP_FOLDER`) is what the build job passes to the web
-bundle; without it the app offers no Dropbox at all.
+None. The phone app offers no Dropbox: the build job passes no
+`VITE_DROPBOX_*` secret to the web bundle, and the bundle, built with
+`VITE_NATIVE_BUILD=on`, would hide Dropbox even if it were given one.
 
 ## Cutting a build
 
@@ -116,11 +111,8 @@ build without it launches to a blank screen.
 - [ ] `EXPO_PUBLIC_CYCLE_URL` is **unset** — a build that streams the website
       is the exact shape App Store guideline 4.2 rejects.
 - [ ] The version in the root `package.json` is the one you mean to ship.
-- [ ] On a real device, **Settings → Sync** offers this device and Dropbox,
-      and nothing else.
-- [ ] Settings → Sync → Dropbox opens Dropbox in a sheet over the app (not in
-      Safari), and approving closes the sheet and connects. Closing the sheet
-      instead leaves nothing connected and shows no error.
+- [ ] On a real device, Settings has **no Sync section**, and About says the
+      reports stay on this device.
 - [ ] Settings → Export a backup opens the share sheet with
       `cycle-backup-<date>.json`, and saving it to Files gives a file that
       Settings → Restore from a backup reads back.

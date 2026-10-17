@@ -2,11 +2,11 @@
 // The stored backend choice (`readStoredBackend` in `src/app/useSyncEngine.ts`).
 //
 // The reports are health data, and they stay on this device or in the user's
-// own Dropbox. A stored choice the app no longer offers must land on this
-// device — never on a backend that silently does nothing, and never on a place
-// the reports may not go.
+// own Dropbox — and in the phone app, on this device alone. A stored choice
+// the build does not offer must land on this device — never on a backend that
+// silently does nothing, and never on a place the reports may not go.
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { localCacheKey } from "@niclaslindstedt/oss-framework/storage";
 
@@ -57,5 +57,62 @@ describe("readStoredBackend", () => {
     for (const raw of ["gdrive", "folder", "", "iCloud"]) {
       expect(readStoredBackend(memoryStorage({ [KEY]: raw }))).toBe("local");
     }
+  });
+});
+
+// The build's own flags, read once at load: stub them, reset the module
+// registry, and load the engine afresh.
+async function engineBuiltWith(env: Record<string, string>) {
+  for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
+  vi.resetModules();
+  return import("../src/app/useSyncEngine.ts");
+}
+
+describe("which backends a build offers", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it("offers Dropbox on the website when the app key is configured", async () => {
+    const engine = await engineBuiltWith({ VITE_DROPBOX_APP_KEY: "key" });
+    expect(engine.PHONE_BUILD).toBe(false);
+    expect(engine.DROPBOX_OFFERED).toBe(true);
+    expect(engine.AVAILABLE_BACKENDS).toEqual(["local", "dropbox"]);
+  });
+
+  it("offers this device alone on the website without the key", async () => {
+    const engine = await engineBuiltWith({ VITE_DROPBOX_APP_KEY: "" });
+    expect(engine.AVAILABLE_BACKENDS).toEqual(["local"]);
+  });
+
+  it("offers no Dropbox in the phone app, even when given the key", async () => {
+    const engine = await engineBuiltWith({
+      VITE_NATIVE_BUILD: "on",
+      VITE_DROPBOX_APP_KEY: "key",
+    });
+    expect(engine.PHONE_BUILD).toBe(true);
+    expect(engine.DROPBOX_OFFERED).toBe(false);
+    expect(engine.AVAILABLE_BACKENDS).toEqual(["local"]);
+  });
+
+  it("brings a phone app that had Dropbox chosen back to this device", async () => {
+    const engine = await engineBuiltWith({
+      VITE_NATIVE_BUILD: "on",
+      VITE_DROPBOX_APP_KEY: "key",
+    });
+    const storage = memoryStorage({
+      [KEY]: "dropbox",
+      "cycle:sync:dropbox": '{"accessToken":"t","refreshToken":null}',
+      [localCacheKey("dropbox", "cycle")]: "ciphertext",
+      "cycle:doc": "the reports",
+    });
+    expect(engine.readStoredBackend(storage)).toBe("local");
+    // The choice, the sign-in and the offline copy of the cloud file go; the
+    // reports on this device stay.
+    expect(Object.fromEntries(storage.map)).toEqual({
+      [KEY]: "local",
+      "cycle:doc": "the reports",
+    });
   });
 });

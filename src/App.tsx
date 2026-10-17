@@ -64,7 +64,7 @@ import { status } from "./output.ts";
 //
 // Everything hangs off one document in localStorage. There is no server: cloud
 // sync, when connected, is a copy of that same document in the user's own
-// Dropbox or Drive.
+// Dropbox — never in the phone app, which keeps the reports on the device.
 
 // Module-scoped so the identity stays stable across renders (the framework's
 // `useToasts` keys its subscription on the store object).

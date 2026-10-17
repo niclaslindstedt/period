@@ -4,7 +4,7 @@ Cycle is a PWA first: open it in a browser, add it to the home screen, and it
 is an app. `native/` is the other way in — the same web app, wrapped thinly
 enough to ship through the **App Store** and **Google Play**. What the wrapper
 adds is what a browser cannot: the whole app inside the download, and a
-Dropbox sign-in that stays in the app.
+backup that leaves through the phone's own share sheet.
 
 ## What the wrapper is
 
@@ -27,18 +27,14 @@ icon, where the website and the desktop app say "Cycle".
 
 ## Where your reports live
 
-On the phone, exactly where they live on the website: on **this device**, and —
-if you connect it — in **your own Dropbox**. **Settings → Sync** offers those
-two and nothing else. Your reports are health data, and they go nowhere you did
-not choose.
+On **this device**, and nowhere else. The phone app offers no cloud: there is
+no Sync section in Settings, no Dropbox and no iCloud. Your reports are health
+data, and the only way they leave the phone is a backup you export yourself
+(below). The website and the desktop app still offer your own Dropbox.
 
-## Dropbox
-
-Connecting Dropbox opens Dropbox's own sign-in in a sheet over the app. You
-approve there, the sheet closes, and the app is connected — the sign-in never
-leaves for Safari. Closing the sheet simply leaves Dropbox unconnected. The
-app never sees your Dropbox password; the sheet is Dropbox's page, and what
-comes back is a one-time code the app trades for access to its own folder.
+A development build that had Dropbox connected comes back to this device on
+its next launch, with every report still on it; its Dropbox sign-in is
+forgotten, and the copy already in Dropbox is left where it is.
 
 ## Backups
 
@@ -55,11 +51,10 @@ export clears.
 
 Two rules, and they are what keep the app and the website the same product:
 
-- **Nothing in `src/` knows the wrapper exists.** The web app does not check
-  whether it is native. It looks for a sign-in _capability_ on `window`
-  (`getAuthSessionHost`, from the framework) and uses it when one answers;
-  a backup goes through the framework's `saveFile`, which finds the
-  wrapper's `save-file` capability the same way.
+- **Nothing in `src/` talks to the wrapper.** A backup goes through the
+  framework's `saveFile`, which finds the wrapper's `save-file` capability
+  on `window`. The one thing the web build knows is the flag it is built
+  with (`VITE_NATIVE_BUILD`): the listing's name, and no cloud.
 - **The wrapper decides nothing about the cycle.** It moves bytes. What a
   day's report holds, what the forecast predicts and how two copies reconcile
   are the web app's, in `cycle.ts`, `forecastModel.ts` and `merge.ts`. A

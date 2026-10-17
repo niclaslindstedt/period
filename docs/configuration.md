@@ -12,8 +12,9 @@ All optional. The app builds and runs with none of them set.
 | ------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `VITE_BASE`               | `/`     | Deploy base path. Drives the bundler base, the service-worker scope, and the PWA install identity. The Pages workflow sets `/` for the released build and `/preview/` for main.                                                                                                                                                                        |
 | `VITE_PWA_IGNORE_PATHS`   | —       | Comma-separated absolute paths this build's service worker must disown. Only the root release sets it (`/preview/`), because a scope is a path prefix and the root worker would otherwise claim the preview channel's navigations.                                                                                                                     |
-| `VITE_DROPBOX_APP_KEY`    | —       | Dropbox OAuth app key (PKCE public client). Unset ⇒ the Dropbox backend is hidden from Settings → Sync rather than offered and then failing.                                                                                                                                                                                                           |
+| `VITE_DROPBOX_APP_KEY`    | —       | Dropbox OAuth app key (PKCE public client). Unset ⇒ the Dropbox backend is hidden from Settings → Sync rather than offered and then failing. The phone app's build never offers Dropbox, set or not, and its workflow does not pass it.                                                                                                                |
 | `VITE_DROPBOX_APP_FOLDER` | `cycle` | The app-folder name shown as the file's location. Dropbox fixes this from the OAuth app's own configuration, so it has to be told what the folder is actually called.                                                                                                                                                                                  |
+| `VITE_NATIVE_BUILD`       | —       | `on` marks the phone app's build (`native/scripts/bundle-web.mjs` sets it): the top bar carries the store listing's name, and the reports stay on the device — no Sync section, no Dropbox, whatever key the build is given.                                                                                                                           |
 | `VITE_SEED`               | —       | `demo` boots the app onto the demo document — one invented person's year of reports, placed from the moment it opens and held in memory — before the first render, with sync paused and backend changes refused (see `src/app/dev/`). `make demo` and the store screenshots set it; a release never does, and the check folds away in any other build. |
 
 Both OAuth identifiers are **public**: the flows are PKCE with no client
@@ -32,9 +33,7 @@ The declarations live in `src/vite-env.d.ts`; the consumers are
   [dropbox.com/developers/apps](https://www.dropbox.com/developers/apps) with
   "App folder" access, add every redirect URI the app uses — the deploy origin for the
   website, `http://127.0.0.1:53682/`, `:53683/` and `:53684/` for the desktop
-  app, and `se.agilator.cycle://oauth` for the phone app (its URL scheme is its bundle id;
-  see [`../native/README.md`](../native/README.md#signing-in-to-dropbox)) —
-  and take the
+  app — and take the
   app key. The app-folder name you pick there is what `VITE_DROPBOX_APP_FOLDER`
   must repeat.
 

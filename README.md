@@ -56,7 +56,8 @@ category are an account wrapped around a server you cannot inspect.
 This one has no account and no server. Reports live in your browser's
 localStorage. If you want them on more than one device, you connect **your own**
 Dropbox and the app keeps a copy there — encrypted on the device with a
-passphrase only you know, so Dropbox holds ciphertext. Nothing else leaves the device: no
+passphrase only you know, so Dropbox holds ciphertext (on the website and the
+desktop app; the phone app keeps the reports on the phone). Nothing else leaves the device: no
 analytics, no telemetry, no third-party requests at runtime.
 
 The forecasting is deliberately simple arithmetic — the median gap between your
