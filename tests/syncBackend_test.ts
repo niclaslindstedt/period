@@ -76,7 +76,6 @@ describe("which backends a build offers", () => {
 
   it("offers Dropbox on the website when the app key is configured", async () => {
     const engine = await engineBuiltWith({ VITE_DROPBOX_APP_KEY: "key" });
-    expect(engine.PHONE_BUILD).toBe(false);
     expect(engine.DROPBOX_OFFERED).toBe(true);
     expect(engine.AVAILABLE_BACKENDS).toEqual(["local", "dropbox"]);
   });
@@ -91,7 +90,6 @@ describe("which backends a build offers", () => {
       VITE_NATIVE_BUILD: "on",
       VITE_DROPBOX_APP_KEY: "key",
     });
-    expect(engine.PHONE_BUILD).toBe(true);
     expect(engine.DROPBOX_OFFERED).toBe(false);
     expect(engine.AVAILABLE_BACKENDS).toEqual(["local"]);
   });

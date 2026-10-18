@@ -120,6 +120,32 @@ function embedded(): Plugin {
   };
 }
 
+// The PHONE build — set by `native/scripts/web-build-env.mjs` alone. The App
+// Store app offers no cloud (see `src/app/useSyncEngine.ts`), so the page's
+// own description, which promises a Dropbox copy and calls the app a PWA,
+// says what the phone app does instead. Its HTML comments go too: they talk
+// about an installed PWA and the web edition's indexing, which the phone app
+// is neither.
+const nativeBuild = process.env.VITE_NATIVE_BUILD === "on";
+
+function phoneEdition(): Plugin {
+  return {
+    name: "phone-edition",
+    apply: "build",
+    transformIndexHtml(html) {
+      return html
+        .replace(/\n?[ \t]*<!--[\s\S]*?-->/g, "")
+        .replace(
+          /(<meta\s+name="description"\s+content=")[^"]*(")/,
+          "$1Cycle is a period and cycle tracker. Log bleeding, mood, lust, " +
+            "sex, temperature and ovulation tests each day, then read your " +
+            "cycle history and a forecast of the next period and fertile " +
+            "window. Your reports stay on this device.$2",
+        );
+    },
+  };
+}
+
 // The name the app's top bar carries: the store listing's in the phone build
 // (APP_DISPLAY_NAME, passed by `native/scripts/bundle-web.mjs`), the project's
 // own everywhere else. See `src/app/appName.ts`.
@@ -152,5 +178,6 @@ export default defineConfig({
     tailwindcss(),
     appPwa({ base, version, ignorePaths, serviceWorker: !shellBuild }),
     ...(embeddedBuild ? [embedded()] : []),
+    ...(nativeBuild ? [phoneEdition()] : []),
   ],
 });

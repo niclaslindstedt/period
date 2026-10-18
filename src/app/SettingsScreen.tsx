@@ -30,6 +30,7 @@ import { readBackupFile, saveBackup } from "./backup.ts";
 import type { DemoDataToggle } from "./dev/useDemoData.ts";
 import { useT } from "./i18n/index.ts";
 import { mergeDocs } from "./merge.ts";
+import { PrivacyNote } from "./PrivacyNote.tsx";
 import { useEncryptionLabels, usePinControlLabels } from "./SyncEncryption.tsx";
 import { serializeDoc } from "./migrations.ts";
 import type { ForecastModelKind } from "./forecastModel.ts";
@@ -38,7 +39,6 @@ import { emptyDoc } from "./types.ts";
 import type { AppSettings, ThemeChoice } from "./useAppSettings.ts";
 import type { DocStore } from "./useDocStore.ts";
 import {
-  PHONE_BUILD,
   PROVIDER_NAMES,
   type SyncBackendId,
   type SyncEngine,
@@ -257,7 +257,7 @@ export function SettingsScreen({
 
       {/* The phone app offers no cloud, so it has nothing to pick here: the
           reports stay on the device, and About says so. */}
-      {!PHONE_BUILD && (
+      {import.meta.env.VITE_NATIVE_BUILD !== "on" && (
         <Section
           title={t("settings.sync")}
           icon={<CloudIcon className="h-3.5 w-3.5" />}
@@ -447,9 +447,7 @@ export function SettingsScreen({
           <dt className="text-muted">{t("settings.build")}</dt>
           <dd className="text-fg">{__BUILD_LABEL__}</dd>
         </dl>
-        <p className="text-xs leading-snug text-muted">
-          {t(PHONE_BUILD ? "settings.privacyPhone" : "settings.privacy")}
-        </p>
+        <PrivacyNote />
         <button
           type="button"
           onClick={onOpenAbout}

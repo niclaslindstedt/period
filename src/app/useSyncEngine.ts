@@ -113,17 +113,20 @@ export const DROPBOX_APP_FOLDER: string =
   (import.meta.env.VITE_DROPBOX_APP_FOLDER as string | undefined)?.trim() ||
   "cycle";
 
-/** The phone app — the build `native/scripts/bundle-web.mjs` makes, with
- *  VITE_NATIVE_BUILD=on. It keeps the reports on the device and offers no
- *  cloud at all: no Dropbox in the picker, no connect, no passphrase. A
- *  backup still leaves through Settings → Your data, as a file the reader
- *  exports. The website and the desktop app are unchanged. A build-time
- *  constant, so the phone bundle folds the Dropbox paths away. */
-export const PHONE_BUILD: boolean = import.meta.env.VITE_NATIVE_BUILD === "on";
+// The phone app — the build `native/scripts/bundle-web.mjs` makes, with
+// VITE_NATIVE_BUILD=on — keeps the reports on the device and offers no cloud
+// at all: no Dropbox in the picker, no connect, no passphrase. A backup still
+// leaves through Settings → Your data, as a file the reader exports. The
+// website and the desktop app are unchanged. Every branch tests
+// `import.meta.env.VITE_NATIVE_BUILD === "on"` where it stands: Vite folds
+// that comparison at the use site, but not a constant derived from it or
+// imported from another module, so that is what takes the Dropbox paths out
+// of the phone bundle.
 
 /** Whether this build offers Dropbox: never in the phone app, and elsewhere
  *  only when the app key was configured. */
-export const DROPBOX_OFFERED: boolean = !PHONE_BUILD && DROPBOX_APP_KEY !== "";
+export const DROPBOX_OFFERED: boolean =
+  import.meta.env.VITE_NATIVE_BUILD !== "on" && DROPBOX_APP_KEY !== "";
 
 export const PROVIDER_NAMES: Record<SyncBackendId, string> = {
   local: "This device",
@@ -135,7 +138,9 @@ export const PROVIDER_NAMES: Record<SyncBackendId, string> = {
  *  own Dropbox, and nothing else; the phone app, this device alone. */
 export const AVAILABLE_BACKENDS: SyncBackendId[] = [
   "local",
-  ...(DROPBOX_OFFERED ? (["dropbox"] as const) : []),
+  ...(import.meta.env.VITE_NATIVE_BUILD !== "on" && DROPBOX_OFFERED
+    ? (["dropbox"] as const)
+    : []),
 ];
 
 type DropboxTokens = { accessToken: string; refreshToken: string | null };
@@ -160,7 +165,7 @@ export function readStoredBackend(
     syncLog.info("the retired iCloud backend fell back to this device");
     return "local";
   }
-  if (raw === "dropbox" && PHONE_BUILD) {
+  if (raw === "dropbox" && import.meta.env.VITE_NATIVE_BUILD === "on") {
     storage.setItem(BACKEND_KEY, "local");
     storage.removeItem(DROPBOX_TOKENS_KEY);
     storage.removeItem(localCacheKey("dropbox", "cycle"));
@@ -179,6 +184,7 @@ function readBackend(): SyncBackendId {
 }
 
 function readDropboxTokens(): DropboxTokens | null {
+  if (import.meta.env.VITE_NATIVE_BUILD === "on") return null;
   try {
     const raw = localStorage.getItem(DROPBOX_TOKENS_KEY);
     if (!raw) return null;
@@ -196,7 +202,7 @@ function writeDropboxTokens(tokens: DropboxTokens | null): void {
 
 /** The document's human-readable location on the active backend. */
 function backendPath(backend: SyncBackendId): string {
-  if (backend === "dropbox") {
+  if (import.meta.env.VITE_NATIVE_BUILD !== "on" && backend === "dropbox") {
     return `Apps/${DROPBOX_APP_FOLDER}/${CLOUD_FILE_NAME}`;
   }
   return "On this device only";
@@ -266,7 +272,11 @@ export function useSyncEngine(
   // The cache sits below the encryption, so it holds exactly the ciphertext
   // the cloud does.
   const inner: StorageAdapter | null = useMemo(() => {
-    if (!PHONE_BUILD && backend === "dropbox" && dropboxTokens) {
+    if (
+      import.meta.env.VITE_NATIVE_BUILD !== "on" &&
+      backend === "dropbox" &&
+      dropboxTokens
+    ) {
       const auth = {
         accessToken: dropboxTokens.accessToken,
         refreshToken: dropboxTokens.refreshToken,
@@ -424,7 +434,13 @@ export function useSyncEngine(
   // Complete a Dropbox OAuth redirect: trade the `?code=` for tokens, persist
   // them, and adopt the backend. Runs once on boot when a flow is mid-flight.
   useEffect(() => {
-    if (!DROPBOX_OFFERED || !hasPendingDropboxAuth()) return;
+    if (
+      import.meta.env.VITE_NATIVE_BUILD === "on" ||
+      !DROPBOX_OFFERED ||
+      !hasPendingDropboxAuth()
+    ) {
+      return;
+    }
     const code = new URLSearchParams(window.location.search).get("code");
     if (!code) return;
     void (async () => {
@@ -482,7 +498,9 @@ export function useSyncEngine(
         setBackendState("local");
         return;
       }
-      if (!DROPBOX_OFFERED) throw new Error("Dropbox is not configured");
+      if (import.meta.env.VITE_NATIVE_BUILD === "on" || !DROPBOX_OFFERED) {
+        throw new Error("Dropbox is not configured");
+      }
       // In the phone app the redirect would land in the system browser, not
       // in the app, so a host that offers an authentication session is asked
       // for one: consent in a sheet over the app, the redirect handed back,

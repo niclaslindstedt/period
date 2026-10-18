@@ -62,10 +62,18 @@ cycle. See [`native/README.md`](native/README.md) and
 the website and the desktop app also offer the user's own Dropbox.** App Store
 guideline 5.1.3(ii) says apps "may not store personal health information in
 iCloud", so the phone app has no iCloud backend, entitlement or container, and
-must not grow one. It offers no Dropbox either: `PHONE_BUILD`
-(`VITE_NATIVE_BUILD=on`) in `src/app/useSyncEngine.ts` takes Dropbox out of
-the picker and Settings → Sync out of the screen, and the `native` workflow
-passes no `VITE_DROPBOX_*` secret. A stored backend choice of `icloud` — or, in
+must not grow one. It offers no Dropbox either: `VITE_NATIVE_BUILD=on` takes
+Dropbox out of the picker (`src/app/useSyncEngine.ts`) and Settings → Sync out
+of the screen, and the `native` workflow passes no `VITE_DROPBOX_*` secret.
+Every branch tests `import.meta.env.VITE_NATIVE_BUILD === "on"` at the use
+site itself — Vite 8 folds that comparison where it stands, but not a
+constant derived from it or imported from another module, so a shared
+`PHONE_BUILD` would leave the other builds' branches riding in the phone
+bundle. Never `VITE_EMBEDDED_BUILD`, which the desktop build sets too. In the
+phone app, Settings → About and the About screen say the reports leave the
+device only in a backup the user exports, and link to the privacy policy on
+apps.agilator.se (`src/app/PrivacyNote.tsx`); the phone build's `index.html`
+carries its own description and no HTML comments (`vite.config.ts`). A stored backend choice of `icloud` — or, in
 the phone app, `dropbox` — from a development build falls back to this device
 (`readStoredBackend`).
 

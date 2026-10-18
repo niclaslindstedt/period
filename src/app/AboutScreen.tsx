@@ -16,7 +16,7 @@ import {
 
 import { useT } from "./i18n/index.ts";
 import { TOPICS, useReferences } from "./references.ts";
-import { PHONE_BUILD } from "./useSyncEngine.ts";
+import { PrivacyNote } from "./PrivacyNote.tsx";
 
 // About, behind Settings: what the app is, and every published source the
 // forecast's numbers rest on. The list is the references
@@ -71,9 +71,7 @@ export function AboutScreen({ onBack }: Props) {
         <p className="text-sm leading-snug text-fg">
           {t("forecast.disclaimer")}
         </p>
-        <p className="text-xs leading-snug text-muted">
-          {t(PHONE_BUILD ? "settings.privacyPhone" : "settings.privacy")}
-        </p>
+        <PrivacyNote />
       </Section>
 
       <Section
