@@ -1,6 +1,6 @@
 # Cycle
 
-> A local-first cycle tracking PWA — two taps a day, then read your cycle history and a forecast of the next period and fertile window. No account, no server.
+> A local-first cycle tracking PWA — two taps a day, then read your cycle history and a forecast of the next period and fertile window. Nothing to sign up for, no server.
 
 [![ci](https://github.com/niclaslindstedt/period/actions/workflows/ci.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/ci.yml)
 [![pages](https://github.com/niclaslindstedt/period/actions/workflows/pages.yml/badge.svg)](https://github.com/niclaslindstedt/period/actions/workflows/pages.yml)
@@ -53,7 +53,7 @@ Period trackers are an unusually bad category to hand your data to: cycle
 history is health data, it is commercially valuable, and most apps in the
 category are an account wrapped around a server you cannot inspect.
 
-This one has no account and no server. Reports live in your browser's
+This one has nothing to sign up for and no server. Reports live in your browser's
 localStorage. If you want them on more than one device, you connect **your own**
 Dropbox and the app keeps a copy there — encrypted on the device with a
 passphrase only you know, so Dropbox holds ciphertext (on the website and the
